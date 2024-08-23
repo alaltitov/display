@@ -1,0 +1,182 @@
+- id: time_update
+  then:
+    - lvgl.label.update:
+        id: display_time
+        text: !lambda |-
+          static char time_buf[16];
+          auto now = id(sntp_time).now();            
+          snprintf(time_buf, sizeof(time_buf), "%02d:%02d", now.hour, now.minute);
+          return time_buf;
+
+    - lvgl.label.update:
+        id: display_day
+        text: !lambda |-
+          static const char * const days_ru[] = {"Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"};
+          static const char * const days_en[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+          static char date_buf[32];
+          auto now = id(sntp_time).now();
+          const char * const * day_names;
+          if (id(language_select_switch).state == true) {
+          day_names = days_ru;
+          } else {
+          day_names = days_en;
+          }
+          snprintf(date_buf, sizeof(date_buf), "%s", day_names[now.day_of_week - 1]);
+          return date_buf;
+
+    - lvgl.label.update:
+        id: display_date
+        text: !lambda |-
+          static const char * const mon_ru[] = {"Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"};
+          static const char * const mon_en[] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+          static char month_buf[32];
+          auto now = id(sntp_time).now();
+          const char * const * mon_names;
+          if (id(language_select_switch).state == true) {
+          mon_names = mon_ru;
+          } else {
+          mon_names = mon_en;
+          }
+          snprintf(month_buf, sizeof(month_buf), "%02d %s", now.day_of_month, mon_names[now.month - 1]);
+          return month_buf;
+
+- id: therm_status_update_on
+  then:
+    - lvgl.label.update:
+        id: thermostat_status
+        text_color: color_deep_orange
+        text: !lambda |-
+          static const char * const therm_status_ru = "Нагрев";
+          static const char * const therm_status_en = "Heating";
+          static char therm_status_buf[32];
+          const char * therm_status;
+          if (id(language_select) == true) {
+          therm_status = therm_status_ru;
+          } else {
+          therm_status = therm_status_en;
+          }
+          snprintf(therm_status_buf, sizeof(therm_status_buf), "%s", therm_status);
+          return therm_status_buf;
+
+- id: therm_status_update_off
+  then:
+    - lvgl.label.update:
+        id: thermostat_status
+        text_color: color_white
+        text: !lambda |-
+          static const char * const therm_state_ru = "Выкл";
+          static const char * const therm_state_en = "Off";
+          static char therm_state_buf[32];
+          const char * therm_state;
+          if (id(language_select) == true) {
+          therm_state = therm_state_ru;
+          } else {
+          therm_state = therm_state_en;
+          }
+          snprintf(therm_state_buf, sizeof(therm_state_buf), "%s", therm_state);
+          return therm_state_buf;
+
+- id: language_select_script
+  then:
+    - if:
+        condition:
+          lambda: return id(language_select);
+        then:
+          - if:
+              condition:
+                lambda: 'return id(relay).state == true;'
+              then:
+                - script.execute: therm_status_update_on
+              else:
+                - script.execute: therm_status_update_off
+                
+          - script.execute: tvoc_state
+          - script.execute: time_update
+
+          - lvgl.label.update:
+              id: climate_description
+              text: "Климат в комнате"
+          - lvgl.label.update:
+              id: light_main_label
+              text: "Основной свет"
+          - lvgl.label.update:
+              id: light_accent_label
+              text: "Акцентный свет"
+          - lvgl.label.update:
+              id: light_night_label
+              text: "Ночник"
+          - lvgl.label.update:
+              id: display_backlight_label
+              text: "Подсветка"
+          - lvgl.label.update:
+              id: display_timeout_label
+              text: "Режим сна (сек)"
+          - lvgl.label.update:
+              id: sensors_buzzer_label
+              text: "Звук датчиков"
+          - lvgl.label.update:
+              id: language_select_label
+              text: "Выбор языка"
+        else:
+          - if:
+              condition:
+                lambda: 'return id(relay).state == false;'
+              then:
+                - script.execute: therm_status_update_off
+              else:
+                - script.execute: therm_status_update_on
+
+          - script.execute: tvoc_state
+          - script.execute: time_update
+
+          - lvgl.label.update:
+              id: climate_description
+              text: "Climate in the room"
+          - lvgl.label.update:
+              id: light_main_label
+              text: "Main light"
+          - lvgl.label.update:
+              id: light_accent_label
+              text: "Accent light"
+          - lvgl.label.update:
+              id: light_night_label
+              text: "Night light"
+          - lvgl.label.update:
+              id: display_backlight_label
+              text: "Backlight"
+          - lvgl.label.update:
+              id: display_timeout_label
+              text: "Sleep mode (sec)"
+          - lvgl.label.update:
+              id: sensors_buzzer_label
+              text: "Buzzer of sensors"
+          - lvgl.label.update:
+              id: language_select_label
+              text: "Language select"
+
+- id: tvoc_state
+  then:
+    - lvgl.label.update:
+        id: tvoc_sensor
+        text: !lambda |-
+          std::string classification = id(sensor_tvoc).state.c_str();
+          if (id(language_select)) {
+          if (classification == "Excellent") {
+          return "Отлично";
+          } else if (classification == "Good") {
+          return "Хорошо";
+          } else if (classification == "Lightly polluted") {
+          return "Слегка загрязнено";
+          } else if (classification == "Moderately polluted") {
+          return "Умеренно загрязнено";
+          } else if (classification == "Heavily polluted") {
+          return "Сильно загрязнено";
+          } else if (classification == "Severely polluted") {
+          return "Критически загрязнено";
+          } else if (classification == "Extremely polluted") {
+          return "Чрезвычайно загрязнено";
+          } else if (classification == "unknown") {
+          return "Неизвестно";
+          }
+          }
+          return classification.c_str();

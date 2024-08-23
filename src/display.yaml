@@ -1,0 +1,879 @@
+# ------------------------------------------- #
+# -------------- SUBSTITUTIONS -------------- #
+# ------------------------------------------- #
+
+substitutions:
+  settings:           "\U0000e900" # settings
+  thermostat:         "\U0000e901" # thermostat
+  lock:               "\U0000e902" # security, alarm
+  camera:             "\U0000e903" # camera
+  curtains:           "\U0000e904" # curtains
+  lights:             "\U0000e905" # lights
+  air_conditioner:    "\U0000e906" # air_conditioner
+  motion:             "\U0000e907" # motion, presence
+  heating:            "\U0000e908" # heating
+  alarm_off:          "\U0000e909" # alarm off
+  alarm_on:           "\U0000e90a" # alarm on
+  ha:                 "\U0000e90b" # home assistant
+  color_temp:         "\U0000e90c" # color_temp
+  ventilation:        "\U0000e90d" # ventilation
+  wifi_25:            "\U0000e91e" # wifi signal from 25% to 1%
+  wifi_50:            "\U0000e91f" # wifi signal from 50% to 25%
+  wifi_75:            "\U0000e910" # wifi signal from 75% to 50%
+  wifi_100:           "\U0000e911" # wifi signal from 100% to 75% or disable
+  humidity:           "\U0000e912" # humidity
+  co2:                "\U0000e913" # co2
+  tvoc:               "\U0000e914" # air quality
+  temperature:        "\U0000e915" # temperature
+  illumination:       "\U0000e916" # lux
+  empty:              "\U0000e917" # placeholder
+  vacuum_cleaner:     "\U0000e918" # vacuum cleaner
+  logo:               "\U0000e919" # logo
+
+# ------------------------------------------- #
+# ---------- GLOBALS VARIABLES -------------- #
+# ------------------------------------------- #
+
+globals:
+  - id: child_protection
+    type: bool
+    restore_value: true
+    initial_value: "false"
+
+  - id: language_select
+    type: bool
+    restore_value: true
+    initial_value: "false"
+
+  - id: display_timeout_global
+    type: int
+    restore_value: true
+    initial_value: "2"
+
+  - id: sensors_buzzer
+    type: bool
+    restore_value: true
+    initial_value: "false"
+
+# ------------------------------------------- #
+# ------------ ESPHOME OPTIONS -------------- #
+# ------------------------------------------- #
+
+esphome:
+  name: display
+  friendly_name: display
+  platformio_options:
+    board_build.flash_mode: dio
+  on_boot:
+    priority: -100  # low priority level
+    then:
+      - if:
+          condition:
+            lambda: 'return id(relay_1);'
+          then:
+            - lvgl.button.update:
+                id: light_accent_btn
+                border_color: color_amber
+                shadow_color: color_amber
+                shadow_opa: COVER
+                shadow_spread: 2
+                shadow_width: 20
+            - lvgl.label.update:
+                id: light_accent_label
+                text_color: color_amber
+            - lvgl.label.update:
+                id: light_accent
+                text_color: color_amber
+          else:
+            - lvgl.button.update:
+                id: light_accent_btn
+                border_color: color_dark_gray
+                shadow_opa: TRANSP
+            - lvgl.label.update:
+                id: light_accent_label
+                text_color: color_dark_gray
+            - lvgl.label.update:
+                id: light_accent
+                text_color: color_dark_gray
+      - if:
+          condition:
+            lambda: |-
+              return id(child_protection) == true;
+          then:
+            - lvgl.widget.show: child_protection_placeholder
+            - lvgl.label.update:
+                id: child_protection_status
+                text_color: color_green
+          else:
+            - lvgl.widget.hide: child_protection_placeholder
+            - lvgl.label.update:
+                id: child_protection_status
+                text_color: color_dark_gray
+      - lambda: 'id(language_select_switch).state = id(language_select);'
+      - lambda: 'id(sensors_buzzer_switch).state = id(sensors_buzzer);'
+      - script.execute: language_select_script
+      - lvgl.roller.update:
+          id: display_timeout_roller
+          selected_index: !lambda return id(display_timeout_global);
+
+      - delay: 1s
+      - lvgl.bar.update:
+          id: boot_bar
+          value: 40
+      - delay: 1s
+      - lvgl.bar.update:
+          id: boot_bar
+          value: 60
+      - delay: 1s
+      - lvgl.bar.update:
+          id: boot_bar
+          value: 80
+      - delay: 1s
+      - lvgl.widget.hide: boot_screen
+
+font: !include display/fonts.yaml
+image: !include display/images.yaml
+script: !include display/script.yaml
+lvgl: !include display/lvgl.yaml
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: "y"
+      CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
+      CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
+      CONFIG_SPIRAM_FETCH_INSTRUCTIONS: y
+      CONFIG_SPIRAM_RODATA: y
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+external_components:
+  - source: github://pr#7338
+    components: [lvgl]
+
+# Enable logging
+logger:
+  level: DEBUG
+
+# Enable Home Assistant API
+api:
+  on_client_connected:
+    - if:
+        condition:
+          lambda: 'return (0 == client_info.find("Home Assistant "));'
+        then:
+          - lvgl.label.update: 
+              id: ha_status
+              text_color: color_blue
+
+  on_client_disconnected:
+    - if:
+        condition:
+          lambda: 'return (0 == client_info.find("Home Assistant "));'
+        then:
+          - lvgl.label.update: 
+              id: ha_status
+              text_color: color_dark_gray
+  encryption:
+    key: !secret display_key
+
+ota:
+  - platform: esphome
+    password: !secret display_ota
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: Europe/Moscow
+    servers:
+     - ntp0.ntp-servers.net
+     - ntp1.ntp-servers.net
+     - ntp2.ntp-servers.net
+    on_time_sync:
+      - script.execute: time_update
+    on_time:
+      - minutes: '*'
+        seconds: 0
+        then:
+          - script.execute: time_update
+
+
+
+
+# ------------------------------------------- #
+# ---------------- SENSORS ------------------ #
+# ------------------------------------------- #
+
+sensor:
+  # WI-FI Signal
+  - platform: wifi_signal
+    id: wifi_signal_percent
+    update_interval: 30s
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "%"
+    on_value: 
+      then:
+        - lvgl.label.update:
+            id: wifi_status
+            text_color: !lambda |-
+              if (id(wifi_signal_percent).state > 0) {
+              return lv_color_hex(0x00FF00);
+              }
+              return lv_color_hex(0x333333);
+            text: !lambda |-
+              if (id(wifi_signal_percent).state > 0 && id(wifi_signal_percent).state < 26) {
+              return "${wifi_25}";
+              } else if (id(wifi_signal_percent).state > 25 && id(wifi_signal_percent).state < 51) {
+              return "${wifi_50}";
+              } else if (id(wifi_signal_percent).state > 50 && id(wifi_signal_percent).state < 76) {
+              return "${wifi_75}";
+              } else if (id(wifi_signal_percent).state > 75) {
+              return "${wifi_100}";
+              }
+              return "${wifi_100}";
+
+  # Weather temperature
+  - platform: homeassistant
+    id: weather_temp
+    entity_id: weather.yandex_weather_2 # Change the entity from your Home Assistant
+    attribute: temperature
+    on_value: 
+      then:
+        - lvgl.label.update:
+            id: weather_temperature
+            text:
+              format: "%.0f°"
+              args: [id(weather_temp).state]
+
+  # Thermostat temperature
+  - platform: homeassistant
+    id: thermostat_id1
+    entity_id: climate.display_living_room_thermostat # Change the entity from your Home Assistant
+    attribute: temperature
+    on_value: 
+      then:
+        - lvgl.arc.update:
+            id: arc_id1
+            value: !lambda return x;
+
+        - lvgl.label.update:
+            id: target_temperature_whole
+            text: !lambda |-
+              static char buf[10];
+              int whole_part = static_cast<int>(id(thermostat_id1).state);
+              snprintf(buf, 10, "%d", whole_part);
+              return buf;
+
+        - lvgl.label.update:
+            id: target_temperature_fraction
+            text: !lambda |-
+              static char buf[10];
+              int whole_part = static_cast<int>(id(thermostat_id1).state);
+              int fractional_part = static_cast<int>((id(thermostat_id1).state - whole_part) * 10);
+              snprintf(buf, 10, ".%01d", fractional_part);
+              return buf;
+
+  # Temperature Home Sensor
+  - platform: homeassistant
+    id: sensor_temperature
+    entity_id: sensor.test_bme680_temperature # Change the entity from your Home Assistant
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: sensor_temperature_thermostat
+            text:
+              format: "%.1f°C"
+              args: [id(sensor_temperature).state]
+              
+        - lvgl.label.update:
+            id: temperature_sensor
+            text:
+              format: "%.1f °C"
+              args: [id(sensor_temperature).state]
+
+        - lvgl.arc.update:
+            id: arc_sensor_temp
+            value: !lambda return x;
+
+  # Humidity Home Sensor
+  - platform: homeassistant
+    id: sensor_humidity
+    entity_id: sensor.test_bme680_humidity # Change the entity from your Home Assistant
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: humidity_sensor
+            text:
+              format: "%.1f %%" 
+              args: [id(sensor_humidity).state]
+
+        - if:
+            condition:
+              lambda: 'return id(sensors_buzzer);'
+            then:
+              - if:
+                  condition:
+                    or:
+                      - lambda: 'return id(sensor_humidity).state > 80.0;'
+                      - lambda: 'return id(sensor_humidity).state < 20.0;'
+                  then:
+                    - homeassistant.service:
+                        service: switch.turn_on
+                        data:
+                          entity_id: switch.test_switch_buzzer
+                  else:
+                    - homeassistant.service:
+                        service: switch.turn_off
+                        data:
+                          entity_id: switch.test_switch_buzzer
+            else:
+              - homeassistant.service:
+                  service: switch.turn_off
+                  data:
+                    entity_id: switch.test_switch_buzzer
+
+# CO2 Home Sensor 
+  - platform: homeassistant
+    id: sensor_co2
+    entity_id: sensor.test_co2_level # Change the entity from your Home Assistant
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: co2_sensor
+            text:
+              format: "%.0f PPM"
+              args: [id(sensor_co2).state]
+
+        - if:
+            condition:
+              lambda: 'return id(sensors_buzzer);'
+            then:
+              - if:
+                  condition:
+                      lambda: 'return id(sensor_co2).state > 1500.0;'
+                  then:
+                    - homeassistant.service:
+                        service: switch.turn_on
+                        data:
+                          entity_id: switch.test_switch_buzzer
+                  else:
+                    - homeassistant.service:
+                        service: switch.turn_off
+                        data:
+                          entity_id: switch.test_switch_buzzer
+            else:
+              - homeassistant.service:
+                  service: switch.turn_off
+                  data:
+                    entity_id: switch.test_switch_buzzer
+
+  # Illumination Home Sensor
+  - platform: homeassistant
+    id: sensor_lux
+    entity_id: sensor.test_bh1750_illuminance # Change the entity from your Home Assistant
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: lux_sensor
+            text:
+              format: "%.0f lx"
+              args: [id(sensor_lux).state]
+
+  # Light Main Brightness
+  - platform: homeassistant
+    id: main_light_brightness
+    entity_id: light.cbe_rgbcw_wi_fi_bluetooth_light # Change the entity from your Home Assistant
+    attribute: brightness
+    on_value:
+      - lvgl.slider.update:
+          id: light_main_brightness_slider
+          value: !lambda return x;
+      - lvgl.label.update:
+          id: light_main_brightness_percent
+          text:
+              format: "%.0f %%"
+              args: [id(main_light_brightness).state / 2]
+
+
+    # Light Main Kelvin
+  - platform: homeassistant
+    id: main_light_kelvin
+    entity_id: light.cbe_rgbcw_wi_fi_bluetooth_light # Change the entity from your Home Assistant
+    attribute: color_temp_kelvin
+    on_value:
+      - lvgl.slider.update:
+          id: light_main_kelvin_slider
+          value: !lambda return x;
+      - lvgl.label.update:
+          id: light_main_kelvin_state
+          text:
+              format: "%.0f K"
+              args: [id(main_light_kelvin).state]
+
+# ------------------------------------------- #
+# ------------- TEXT SENSORS ---------------- #
+# ------------------------------------------- #
+
+text_sensor:
+  # Sun horizon sensor from Home Assistant #
+  - platform: homeassistant
+    id: sun_state
+    entity_id: sun.sun
+
+  # Weather state from Home Assistant #
+  - platform: homeassistant
+    id: weather_state
+    entity_id: weather.yandex_weather_2 # Change the entity from your Home Assistant
+    on_value: 
+      then:
+        - lambda: |-
+            if (id(sun_state).state == "below_horizon" && (id(weather_state).state == "cloudy" || id(weather_state).state == "partlycloudy")) {
+            lv_obj_clear_flag(id(weather_partlycloudy_moon), LV_OBJ_FLAG_HIDDEN);
+            } else {
+            lv_obj_add_flag(id(weather_partlycloudy_moon), LV_OBJ_FLAG_HIDDEN);
+            }
+            if (id(sun_state).state != "below_horizon" && id(weather_state).state == "cloudy") {
+            lv_obj_clear_flag(id(weather_cloudy), LV_OBJ_FLAG_HIDDEN);
+            } else {
+            lv_obj_add_flag(id(weather_cloudy), LV_OBJ_FLAG_HIDDEN);
+            }
+            if (id(sun_state).state != "below_horizon" && id(weather_state).state == "partlycloudy") {
+            lv_obj_clear_flag(id(weather_partlycloudy_sun), LV_OBJ_FLAG_HIDDEN);
+            } else {
+            lv_obj_add_flag(id(weather_partlycloudy_sun), LV_OBJ_FLAG_HIDDEN);
+            }
+            if ((id(sun_state).state != "below_horizon" && id(weather_state).state == "sunny") || (id(sun_state).state != "below_horizon" && id(weather_state).state == "clear-night")) {
+            lv_obj_clear_flag(id(weather_sunny), LV_OBJ_FLAG_HIDDEN);
+            } else {
+            lv_obj_add_flag(id(weather_sunny), LV_OBJ_FLAG_HIDDEN);
+            }
+            if ((id(sun_state).state == "below_horizon" && id(weather_state).state == "sunny") || (id(sun_state).state == "below_horizon" && id(weather_state).state == "clear-night")) {
+            lv_obj_clear_flag(id(weather_clear_night), LV_OBJ_FLAG_HIDDEN);
+            } else {
+            lv_obj_add_flag(id(weather_clear_night), LV_OBJ_FLAG_HIDDEN);
+            }
+            if (id(weather_state).state == "rainy") {
+            lv_obj_clear_flag(id(weather_rainy), LV_OBJ_FLAG_HIDDEN);
+            } else {
+            lv_obj_add_flag(id(weather_rainy), LV_OBJ_FLAG_HIDDEN);
+            }
+            if (id(weather_state).state == "lightning-rainy") {
+            lv_obj_clear_flag(id(weather_lightning_rainy), LV_OBJ_FLAG_HIDDEN);
+            } else {
+            lv_obj_add_flag(id(weather_lightning_rainy), LV_OBJ_FLAG_HIDDEN);
+            }
+            if (id(weather_state).state == "lightning") {
+            lv_obj_clear_flag(id(weather_lightning), LV_OBJ_FLAG_HIDDEN);
+            } else {
+            lv_obj_add_flag(id(weather_lightning), LV_OBJ_FLAG_HIDDEN);
+            }
+            if (id(weather_state).state == "pouring") {
+            lv_obj_clear_flag(id(weather_pouring), LV_OBJ_FLAG_HIDDEN);
+            } else {
+            lv_obj_add_flag(id(weather_pouring), LV_OBJ_FLAG_HIDDEN);
+            }
+            if (id(weather_state).state == "snowy") {
+            lv_obj_clear_flag(id(weather_snowy), LV_OBJ_FLAG_HIDDEN);
+            } else {
+            lv_obj_add_flag(id(weather_snowy), LV_OBJ_FLAG_HIDDEN);
+            }
+            if (id(weather_state).state == "snowy-rainy") {
+            lv_obj_clear_flag(id(weather_snowy_rainy), LV_OBJ_FLAG_HIDDEN);
+            } else {
+            lv_obj_add_flag(id(weather_snowy_rainy), LV_OBJ_FLAG_HIDDEN);
+            }
+            if (id(weather_state).state == "fog") {
+            lv_obj_clear_flag(id(weather_fog), LV_OBJ_FLAG_HIDDEN);
+            } else {
+            lv_obj_add_flag(id(weather_fog), LV_OBJ_FLAG_HIDDEN);
+            }
+            if (id(weather_state).state == "hail") {
+            lv_obj_clear_flag(id(weather_hail), LV_OBJ_FLAG_HIDDEN);
+            } else {
+            lv_obj_add_flag(id(weather_hail), LV_OBJ_FLAG_HIDDEN);
+            }
+            if (id(weather_state).state == "windy") {
+            lv_obj_clear_flag(id(weather_windy), LV_OBJ_FLAG_HIDDEN);
+            } else {
+            lv_obj_add_flag(id(weather_windy), LV_OBJ_FLAG_HIDDEN);
+            }
+            if (id(weather_state).state == "windy-variant") {
+            lv_obj_clear_flag(id(weather_windy_variant), LV_OBJ_FLAG_HIDDEN);
+            } else {
+            lv_obj_add_flag(id(weather_windy_variant), LV_OBJ_FLAG_HIDDEN);
+            }
+
+  # Air Quality Sensor #
+  - platform: homeassistant
+    id: sensor_tvoc
+    entity_id: sensor.test_bme680_iaq_classification # Change the entity from your Home Assistant
+    on_value:
+      then:
+        - script.execute: tvoc_state
+      
+  # Motion Sensor #
+  - platform: homeassistant
+    id: sensor_motion
+    entity_id: binary_sensor.test_presence # Change the entity from your Home Assistant
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: motion_status
+            text_color: !lambda |-
+              if (id(sensor_motion).state == "on") {
+              return lv_color_hex(0x00ff00);
+              }
+              return lv_color_hex(0x333333);
+
+  # Light Main #
+  - platform: homeassistant
+    id: main_light
+    entity_id: light.cbe_rgbcw_wi_fi_bluetooth_light # Change the entity from your Home Assistant
+    on_value:
+      then:  
+        - if:
+            condition:
+              lambda: 'return id(main_light).state == "on";'
+            then:
+              - lvgl.label.update:
+                  id: light_main_label
+                  text_color: color_amber
+              - lvgl.button.update:
+                  id: light_main_btn
+                  border_color: color_amber
+                  shadow_color: color_amber
+                  shadow_opa: COVER
+                  shadow_spread: 2
+                  shadow_width: 20
+              - lvgl.label.update:
+                  id: light_main
+                  text_color: color_amber
+              - lvgl.widget.show: light_main_brightness_percent
+              - lvgl.widget.show: light_main_kelvin_state
+            else:
+              - lvgl.label.update:
+                  id: light_main_label
+                  text_color: color_dark_gray
+              - lvgl.button.update:
+                  id: light_main_btn
+                  border_color: color_dark_gray
+                  shadow_opa: TRANSP              
+              - lvgl.label.update:
+                  id: light_main
+                  text_color: color_dark_gray
+              - lvgl.widget.hide: light_main_brightness_percent
+              - lvgl.widget.hide: light_main_kelvin_state
+              - lvgl.slider.update:
+                  id: light_main_brightness_slider
+                  value: 1
+              - lvgl.slider.update:
+                  id: light_main_kelvin_slider
+                  value: 2700
+
+  # Light Night #
+  - platform: homeassistant
+    id: night_light
+    entity_id: light.lumi_v3_48df_light # Change the entity from your Home Assistant
+    on_value:
+      then:
+         - if:
+            condition:
+              lambda: 'return id(night_light).state == "on";'
+            then:
+              - lvgl.button.update:
+                  id: light_night_btn
+                  border_color: color_amber
+                  shadow_color: color_amber
+                  shadow_opa: COVER
+                  shadow_spread: 2
+                  shadow_width: 20
+              - lvgl.label.update:
+                  id: light_night
+                  text_color: color_amber
+              - lvgl.label.update:
+                  id: light_night_label
+                  text_color: color_amber
+            else:
+              - lvgl.button.update:
+                  id: light_night_btn
+                  border_color: color_dark_gray
+                  shadow_opa: TRANSP
+              - lvgl.label.update:
+                  id: light_night
+                  text_color: color_dark_gray
+              - lvgl.label.update:
+                  id: light_night_label
+                  text_color: color_dark_gray
+
+# ---------------------------------------------- #
+# ---------------- THERMOSTAT ------------------ #
+# ---------------------------------------------- #
+
+climate:
+  - platform: thermostat
+    name: "Living Room Thermostat"
+    id: climate_thermostat
+    sensor: sensor_temperature
+    min_heating_off_time: 5s
+    min_heating_run_time: 5s
+    min_idle_time: 5s
+    visual:
+      min_temperature: 5
+      max_temperature: 45
+      temperature_step: 0.5
+    heat_action:
+      - switch.turn_on: relay
+    idle_action:
+      - switch.turn_off: relay
+    default_preset: Home
+    preset:
+      - name: Home
+        default_target_temperature_low: 22 °C
+
+# ---------------------------------------------- #
+# ------------------ SWITCHS ------------------- #
+# ---------------------------------------------- #
+
+switch:
+  - platform: gpio
+    id: relay
+    name: "Heating Relay"
+    pin: GPIO40
+    on_turn_on:
+      - script.execute: therm_status_update_on
+      - lvgl.label.update:
+          id: sensor_temperature_thermostat
+          text_color: color_deep_orange
+      - lvgl.label.update:
+          id: sensor_temperature_thermostat_icon
+          text_color: color_deep_orange
+      - lvgl.label.update:
+          id: heating_icon
+          text_font: icons_48
+          text_color: color_deep_orange
+          text: "${heating}"
+      - lvgl.label.update:
+          id: heating_status
+          text_color: color_deep_orange
+
+    on_turn_off:
+      - script.execute: therm_status_update_off
+      - lvgl.label.update:
+          id: sensor_temperature_thermostat
+          text_color: color_white
+      - lvgl.label.update:
+          id: sensor_temperature_thermostat_icon
+          text_color: color_white
+      - lvgl.label.update:
+          id: heating_icon
+          text_color: color_black
+          text: " "
+      - lvgl.label.update:
+          id: heating_status
+          text_color: color_dark_gray
+    restore_mode: RESTORE_DEFAULT_ON
+
+  - platform: gpio
+    id: relay_1
+    name: "Light Relay 1"
+    pin: GPIO1
+    on_turn_on:
+      - lvgl.button.update:
+          id: light_accent_btn
+          border_color: color_amber
+          shadow_color: color_amber
+          shadow_opa: COVER
+          shadow_spread: 2
+          shadow_width: 20
+      - lvgl.label.update:
+          id: light_accent_label
+          text_color: color_amber
+      - lvgl.label.update:
+          id: light_accent
+          text_color: color_amber
+
+    on_turn_off:
+      - lvgl.button.update:
+          id: light_accent_btn
+          border_color: color_dark_gray
+          shadow_opa: TRANSP
+      - lvgl.label.update:
+          id: light_accent_label
+          text_color: color_dark_gray
+      - lvgl.label.update:
+          id: light_accent
+          text_color: color_dark_gray
+    restore_mode: RESTORE_DEFAULT_OFF
+
+
+# -------------------------------------------- #
+# ------------------ LIGHTS ------------------ #
+# -------------------------------------------- #
+
+light:
+  # Backlight
+  - platform: monochromatic
+    output: GPIO38
+    name: Backlight
+    id: display_backlight
+    restore_mode: ALWAYS_ON
+
+# ----------------------------------------- #
+# -------------- COLORS ------------------- #
+# ----------------------------------------- #
+
+color:
+  - id: color_black
+    hex: 0d0d0d
+  - id: color_dark_gray
+    hex: 333333
+  - id: color_gray
+    hex: 666666
+  - id: color_white
+    hex: f2f0eb
+  - id: color_red
+    hex: ff0000
+  - id: color_crimson
+    hex: f5075c
+  - id: color_blue
+    hex: 2fc0ff
+  - id: color_yellow
+    hex: e7c12c
+  - id: color_amber
+    hex: f4a900
+  - id: color_mint
+    hex: 39d19c
+  - id: color_green
+    hex: 00ff00
+  - id: color_orange
+    hex: f07c40
+  - id: color_deep_orange
+    hex: ff6600
+  - id: color_violet
+    hex: 9670d6
+  - id: color_dark_blue
+    hex: 4867aa
+
+output:
+    # Backlight LED
+  - platform: ledc
+    pin: GPIO38
+    id: GPIO38
+    frequency: 100Hz
+
+number:
+  - platform: template
+    id: display_timeout
+    name: LVGL Screen timeout
+    optimistic: true
+    unit_of_measurement: "s"
+    initial_value: 180
+    restore_value: true
+    min_value: 60
+    max_value: 600
+    step: 5
+    mode: box
+
+#-------------------------------------------
+# Touchscreen gt911 i2c
+#-------------------------------------------
+i2c:
+  - id: bus_a
+    sda: GPIO19
+    scl: GPIO45
+    frequency: 100kHz
+    
+touchscreen:
+  platform: gt911
+  id: my_touchscreen
+  transform:
+    mirror_x: false
+    mirror_y: false
+  display: my_display
+  on_release:
+      - if:
+          condition: lvgl.is_paused
+          then:
+            - logger.log: "LVGL resuming"
+            - lvgl.resume:
+            - lvgl.widget.redraw:
+            - light.turn_on: display_backlight
+
+  on_touch:
+    - logger.log:
+          format: Touch at (%d, %d)
+          args: [touch.x, touch.y]
+    - lambda: |-
+          ESP_LOGI("cal", "x=%d, y=%d, x_raw=%d, y_raw=%0d",
+              touch.x,
+              touch.y,
+              touch.x_raw,
+              touch.y_raw
+              );
+
+#-------------------------------------------
+# Display st7701s spi
+#-------------------------------------------
+spi:
+  - id: lcd_spi
+    clk_pin: GPIO48
+    mosi_pin: GPIO47
+    
+display:
+  - platform: st7701s
+    id: my_display
+    update_interval: never
+    auto_clear_enabled: false
+    data_rate: 2MHz
+    spi_mode: MODE3
+    color_order: RGB
+    invert_colors: false
+    dimensions:
+      width: 480
+      height: 480
+    transform:
+      mirror_x: false
+      mirror_y: false
+    cs_pin: 39
+      # reset not defined 
+    de_pin: 18
+    hsync_pin: 16
+    vsync_pin: 17
+    pclk_pin: 21
+    init_sequence: 
+      - 1
+      - [0xFF, 0x77, 0x01, 0x00, 0x00, 0x10] # CMD2_BKSEL_BK0
+      - [0xCD, 0x00] # disable MDT flag
+    pclk_frequency: 12MHz
+    pclk_inverted: false
+    data_pins:
+      red:
+        - 11         # R1
+        - 12         # R2
+        - 13         # R3
+        - 14         # R4
+        - 0          # R5
+      green:
+        - 8          # G0
+        - 20         # G1
+        - 3          # G2
+        - 46         # G3
+        - 9          # G4
+        - 10         # G5 
+      blue:
+        - 4          # B1
+        - 5          # B2
+        - 6          # B3
+        - 7          # B4
+        - 15         # B5
