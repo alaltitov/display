@@ -38,13 +38,7 @@
 <img width="400px" src="https://github.com/alaltitov/display/blob/88365f2cab1f1f07e3ad4ec4859655306793b564/png/Allow.png">
 2. Place all files from src folder into esphome folder of your home assistant. Edit display.yaml file according to your configuration, for example wi-fi and ota fields. Replace entities from home assistant with your own (entity_id).
 
-## Future upcoming updates
-- Show/hide sensor on the main screen, configurable from the settings menu
-
 ## Future updates
-- Flexible configuration of control buttons from the menu
-- Selection of the home assistant entity from the settings menu
-- Configuration of sensor values ​​for notification
 - Additional widgets (ventilation, curtains, vacuum cleaner, smart sockets)
 
 ## Documentation
