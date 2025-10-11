@@ -1,0 +1,371 @@
+# TEXT FONT
+
+- file: "assets/fonts/Nunito-SemiBold.ttf"
+  id: nunito_16
+  size: 16
+  bpp: 4
+  glyphsets:
+    - GF_Latin_Core
+    - GF_Cyrillic_Core
+  glyphs: "²"
+
+- file: "assets/fonts/Nunito-SemiBold.ttf"
+  id: nunito_18
+  size: 18
+  bpp: 4
+  glyphsets:
+    - GF_Latin_Core
+    - GF_Cyrillic_Core
+
+- file: "assets/fonts/Nunito-SemiBold.ttf"
+  id: nunito_20
+  size: 20
+  bpp: 4
+  glyphsets:
+    - GF_Latin_Core
+    - GF_Cyrillic_Core
+
+- file: "assets/fonts/Nunito-SemiBold.ttf"
+  id: nunito_30
+  size: 30
+  bpp: 4
+  glyphsets:
+    - GF_Latin_Core
+    - GF_Cyrillic_Core
+
+- file: "assets/fonts/Nunito-SemiBold.ttf"
+  id: nunito_36
+  size: 36
+  bpp: 4
+  glyphsets:
+    - GF_Latin_Core
+    - GF_Cyrillic_Core
+
+- file: "assets/fonts/Nunito-SemiBold.ttf"
+  id: nunito_48
+  size: 48
+  bpp: 4
+  glyphsets:
+    - GF_Latin_Core
+    - GF_Cyrillic_Core
+
+- file: "assets/fonts/Nunito-SemiBold.ttf"
+  id: nunito_56
+  size: 56
+  bpp: 4
+  glyphsets:
+    - GF_Latin_Core
+    - GF_Cyrillic_Core
+
+- file: "assets/fonts/Nunito-SemiBold.ttf"
+  id: nunito_64
+  size: 64
+  bpp: 4
+  glyphsets:
+    - GF_Latin_Core
+    - GF_Cyrillic_Core
+
+- file: "assets/fonts/Nunito-SemiBold.ttf"
+  id: nunito_84
+  size: 84
+  bpp: 4
+  glyphsets:
+    - GF_Latin_Core
+    - GF_Cyrillic_Core
+
+# CUSTOM ICONS FONT
+
+- file: "assets/fonts/icons_v2.ttf"
+  id: icons_24
+  size: 24
+  bpp: 4
+  glyphs: [
+    "\U0000e900", # brightness
+    "\U0000e901", # saturation
+    "\U0000e925", # thermostat
+    "\U0000e93b", # air_conditioner 
+    "\U0000e936", # heating
+    "\U0000e92e", # lock
+    "\U0000e935", # home assistant
+    "\U0000e931", # wifi signal from 25% to 1%
+    "\U0000e932", # wifi signal from 50% to 25%
+    "\U0000e933", # wifi signal from 75% to 50%
+    "\U0000e934", # wifi signal from 100% to 75% or disable
+    "\U0000e938", # humidity
+  ]
+
+- file: "assets/fonts/icons_v2.ttf"
+  id: icons_28
+  size: 28
+  bpp: 4
+  glyphs: [
+    "\U0000e902", # exit
+    "\U0000e926", # fan
+    "\U0000e927", # room_plan
+    "\U0000e938", # humidity 
+    "\U0000e937", # co2
+    "\U0000e93a", # air quality (tvoc)
+    "\U0000e939", # temperature 
+    "\U0000e92f", # illumination (lux)
+    "\U0000e92e", # lock
+    "\U0000e915", # desk lamp
+    "\U0000e916", # spotlight group
+    "\U0000e917", # pendant lamp
+    "\U0000e921", # ceiling lamp variant
+  ]
+
+- file: "assets/fonts/icons_v2.ttf"
+  id: icons_32
+  size: 32
+  bpp: 4
+  glyphs: [
+    "\U0000e91f", # arrow_up
+    "\U0000e920", # arrow_down
+    "\U0000e91c", # stop
+    "\U0000e90e", # volume_off
+    "\U0000e90f", # volume_on
+    "\U0000e910", # volume_minus
+    "\U0000e911", # volume_plus
+  ]
+
+- file: "assets/fonts/icons_v2.ttf"
+  id: icons_36
+  size: 36
+  bpp: 4
+  glyphs: [
+    "\U0000e903", # settings
+    "\U0000e904", # info
+    "\U0000e905", # devices
+    "\U0000e906", # home
+    "\U0000e907", # ceiling
+    "\U0000e908", # lightbulb
+    "\U0000e92e", # lock
+  ]
+
+- file: "assets/fonts/icons_v2.ttf"
+  id: icons_38
+  size: 38
+  bpp: 4
+  glyphs: [
+    "\U0000e909", # power
+    "\U0000e90c", # back step
+    "\U0000e90d", # forward step
+    "\U0000e912", # repeat_all
+    "\U0000e913", # repeat_off
+    "\U0000e914", # repeat_one
+    "\U0000e90a", # play
+    "\U0000e90b", # pause
+    "\U0000e91c", # stop
+    "\U0000e923", # locate
+    "\U0000e924", # docked
+  ]
+
+- file: "assets/fonts/icons_v2.ttf"
+  id: icons_48
+  size: 48
+  bpp: 4
+  glyphs: [
+    "\U0000e90a", # play
+    "\U0000e90b", # pause
+    "\U0000e91f", # arrow_up
+    "\U0000e920", # arrow_down
+    "\U0000e91c", # stop
+    "\U0000e923", # locate
+    "\U0000e924", # docked
+    "\U0000e93b", # air_conditioner 
+    "\U0000e936", # heating
+    "\U0000e938", # humidity
+    "\U0000e939", # temperature 
+  ]
+
+- file: "assets/fonts/icons_v2.ttf"
+  id: icons_72
+  size: 72
+  bpp: 4
+  glyphs: [
+    "\U0000e91b", # music
+    "\U0000e91d", # shutter_close
+    "\U0000e922", # vacuum
+    "\U0000e925", # thermostat
+    "\U0000e93b", # air_conditioner
+  ]
+
+- file: "assets/fonts/icons_v2.ttf"
+  id: icons_90
+  size: 90
+  bpp: 4
+  glyphs: [
+    "\U0000e908", # lightbulb
+    "\U0000e915", # spotlights_group
+    "\U0000e916", # desk_lamp
+    "\U0000e917", # pendant_lamp
+    "\U0000e918", # ceiling_lamp
+    "\U0000e921", # ceiling_lamp_variant
+    "\U0000e919", # night_lamp
+    "\U0000e91d", # 0 - shutter_closed
+    "\U0000e93d", # 10 - shutter
+    "\U0000e93e", # 20 - shutter
+    "\U0000e93f", # 30 - shutter
+    "\U0000e940", # 40 - shutter
+    "\U0000e941", # 50 - shutter
+    "\U0000e93c", # 60 - shutter
+    "\U0000e943", # 70 - shutter
+    "\U0000e944", # 80 - shutter
+    "\U0000e942", # 90 - shutter
+    "\U0000e91e",  # 100 - shutter_open
+    "\U0000e91b", # music
+    "\U0000e91f", # arrow_up
+    "\U0000e920", # arrow_down
+    "\U0000e922", # vacuum
+  ]
+
+- file: "assets/fonts/icons_v2.ttf"
+  id: icons_300
+  size: 300
+  bpp: 4
+  glyphs: [
+    "\U0000e91d", # 0 - shutter_closed
+    "\U0000e93d", # 10 - shutter
+    "\U0000e93e", # 20 - shutter
+    "\U0000e93f", # 30 - shutter
+    "\U0000e940", # 40 - shutter
+    "\U0000e941", # 50 - shutter
+    "\U0000e93c", # 60 - shutter
+    "\U0000e943", # 70 - shutter
+    "\U0000e944", # 80 - shutter
+    "\U0000e942", # 90 - shutter
+    "\U0000e91e"  # 100 - shutter_open
+  ]
+
+# iCONS FONT
+
+- file: "assets/fonts/materialdesignicons-webfont.ttf"
+  id: mdi_icons_24
+  size: 24
+  bpp: 4
+  glyphs: [
+    "\U000F07D0", # home assistant
+    "\U000F15FA", # windsock
+    "\U000F068A", # shield home
+    "\U000F1828", # shield moon
+    "\U000F099D", # shield lock
+    "\U000F06BB", # shield plane
+    "\U000F099E", # shield off
+    "\U000F0498", # shield
+    "\U000F0493", # settings
+    "\U000F032A", # preset eco
+    "\U000F0F9B", # preset away
+    "\U000F14DE", # preset boost     
+    "\U000F04B9", # preset comfort
+    "\U000F02DC", # preset home
+    "\U000F0904", # preset sleep
+    "\U000F046E", # preset activity
+    "\U000F0210", # fan on
+    "\U000F081D", # fan off
+    "\U000F171D", # fan auto
+    "\U000F1472", # fan speed 1
+    "\U000F1473", # fan speed 2
+    "\U000F1474", # fan speed 3
+    "\U000F0F86", # fan low
+    "\U000F0F85", # fan medium/middle
+    "\U000F04C5", # fan high
+    "\U000F04FE", # fan focus
+    "\U000F059D", # fan diffuse
+    "\U000F09DF", # fan custom
+    "\U000F1C91", # swing on
+    "\U000F1C92", # swing off
+    "\U000F0041", # swing both
+    "\U000F0E79", # swing vertical
+    "\U000F0E73", # swing horizontal
+    "\U000F0914", # track light
+    "\U000F18DD", # ceiling light multiple
+    "\U000F08DD", # floor lamp
+    "\U000F11E1", # vanity light
+  ]
+
+
+- file: "assets/fonts/materialdesignicons-webfont.ttf"
+  id: mdi_icons_28
+  size: 28
+  bpp: 4
+  glyphs: [
+    "\U000F0238", # heat
+    "\U000F0717", # cool
+    "\U000F1A79", # heat_cool
+    "\U000F0210", # fan
+    "\U000F1B18", # auto
+    "\U000F0425", # off
+    "\U000F18DD", # ceiling lights
+    "\U000F056E", # devices
+    "\U000F0341", # display lock
+    "\U000F1A4D", # display brightness
+    "\U000F1C70", # display info
+    "\U000F08BB", # display settings
+    "\U000F06A1", # display home
+    "\U000F18F6", # display weather
+    "\U000F03D8", # palette
+  ]
+
+
+- file: "assets/fonts/materialdesignicons-webfont.ttf"
+  id: mdi_icons_40
+  size: 40
+  bpp: 4
+  glyphs: [
+    "\U000F0415", # plus
+    "\U000F0374", # minus
+    "\U000F1107", # socket
+    "\U000F1480", # current
+    "\U000F095B", # voltage
+    "\U000F0241", # power
+    "\U000F068A", # shield home
+    "\U000F1828", # shield moon
+    "\U000F099D", # shield lock
+    "\U000F06BB", # shield plane
+    "\U000F099E", # shield off
+    "\U000F0498", # shield
+  ]
+
+- file: "assets/fonts/materialdesignicons-webfont.ttf"
+  id: mdi_icons_52
+  size: 52
+  bpp: 4
+  glyphs: [
+    "\U000F068A", # shield home
+    "\U000F1828", # shield moon
+    "\U000F099D", # shield lock
+    "\U000F06BB", # shield plane
+    "\U000F099E", # shield off
+    "\U000F0498", # shield
+    "\U000F0826", # home
+    "\U000F1A46", # away
+  ]
+
+- file: "assets/fonts/materialdesignicons-webfont.ttf"
+  id: mdi_icons_68
+  size: 68
+  bpp: 4
+  glyphs: [
+    "\U000F068A", # shield home
+    "\U000F1828", # shield moon
+    "\U000F099D", # shield lock
+    "\U000F06BB", # shield plane
+    "\U000F099E", # shield off
+    "\U000F0498", # shield
+  ]
+
+- file: "assets/fonts/materialdesignicons-webfont.ttf"
+  id: mdi_icons_72
+  size: 72
+  bpp: 4
+  glyphs: [
+    "\U000F099D", # shield lock
+  ]
+
+- file: "assets/fonts/materialdesignicons-webfont.ttf"
+  id: mdi_icons_160
+  size: 160
+  bpp: 4
+  glyphs: [
+    "\U000F1107", # socket
+  ]

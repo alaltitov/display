@@ -1,0 +1,82 @@
+loading:
+  synchronization: "Synchronization..."
+  connection_api: "Connecting to API..."
+
+ota:
+  start:
+    primary: "Starting OTA!"
+    secondary: "Wait..."
+  end: 
+    primary: "Update complete!"
+    secondary: "Rebooting..."
+  error:
+    primary: "Update ERROR!"
+    secondary: "Rebooting..."
+  progress: "Firmware progress %0.1f%%"
+
+settings:
+  backlight: "Backlight"
+  sleep_time: "Sleep time"
+
+sleep_time:
+  never: "Never"
+  minute1: "1 minute"
+  minute5: "5 minutes" 
+  minute10: "10 minutes"
+  minute30: "30 minutes"
+  hour1: "1 hour"
+  hour6: "6 hours"
+  hour12: "12 hours"
+
+forecasts:
+  daily: "Daily"
+  hourly: "Hourly"
+
+weather:
+  clear-night: "Clear, night"
+  cloudy: "Cloudy"
+  exceptional: "Exceptional"
+  fog: "Fog"
+  hail: "Hail"
+  lightning: "Lightning"
+  lightning-rainy: "Lightning, rainy"
+  partlycloudy: "Partly cloudy"
+  pouring: "Pouring"
+  rainy: "Rainy"
+  snowy: "Snowy"
+  snowy-rainy: "Snowy, rainy"
+  sunny: "Sunny"
+  windy: "Windy"
+  windy-variant: "Windy, cloudy"
+
+day_of_week:
+  monday: "Monday"
+  tuesday: "Tuesday"
+  wednesday: "Wednesday"
+  thursday: "Thursday"
+  friday: "Friday"
+  saturday: "Saturday"
+  sunday: "Sunday"
+
+day_of_week_short:
+  monday: "MON"
+  tuesday: "TUE"
+  wednesday: "WED"
+  thursday: "THU"
+  friday: "FRI"
+  saturday: "SAT"
+  sunday: "SUN"
+
+month:
+  january: "January"
+  february: "February"
+  march: "March"
+  april: "April"
+  may: "May"
+  june: "June"
+  july: "July"
+  august: "August"
+  september: "September"
+  october: "October"
+  november: "November"
+  december: "December"

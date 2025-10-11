@@ -9,13 +9,13 @@ lvgl:
       - button:
           id: loading_page
           bg_color: color_slate_blue_gray
-          shadow_opa: TRANSP
-          width: 100%
-          height: 100%
+          shadow_opa: transp
+          width: 480
+          height: 480
           widgets:
             - image:
                 y: 30
-                align: TOP_MID
+                align: top_mid
                 src: ha_img
 
             - obj:
@@ -24,24 +24,24 @@ lvgl:
                 width: 300
                 height: 100
                 pad_all: 0
-                align: TOP_MID
-                bg_opa: TRANSP
-                shadow_opa: TRANSP
-                border_opa: TRANSP
+                align: top_mid
+                bg_opa: transp
+                shadow_opa: transp
+                border_opa: transp
                 border_width: 0
                 radius: 10
                 widgets:
                   - label:
                       id: boot_homeassistant_label
-                      align: LEFT_MID
+                      align: left_mid
                       text_font: nunito_20
                       text_color: color_misty_blue
-                      text: "Connecting to API..."
+                      text: " "
                   - spinner:
                       id: boot_homeassistant_spiner
                       width: 50
                       height: 50
-                      align: RIGHT_MID
+                      align: right_mid
                       spin_time: 2s
                       arc_length: 60deg
                       arc_width: 5
@@ -55,27 +55,28 @@ lvgl:
                 width: 300
                 height: 60
                 pad_all: 0
-                align: TOP_MID
-                bg_opa: TRANSP
-                shadow_opa: TRANSP
-                border_opa: TRANSP
+                align: top_mid
+                bg_opa: transp
+                shadow_opa: transp
+                border_opa: transp
                 border_width: 0
                 radius: 10
                 hidden: true
                 widgets:
                   - label:
                       id: boot_synchronization_label
-                      align: TOP_MID
+                      align: top_mid
                       y: 0
                       text_font: nunito_20
                       text_color: color_misty_blue
-                      text: "Synchronization..."
+                      text: " "
+
                   - bar:
                       id: boot_synchronization_bar
                       y: 0
                       width: 300
                       value: 0
-                      align: BOTTOM_MID
+                      align: bottom_mid
                       min_value: 0
                       max_value: 100
                       animated: true
@@ -84,11 +85,23 @@ lvgl:
                         bg_color: color_misty_blue
             - image:
                 y: -30
-                align: BOTTOM_MID
+                align: bottom_mid
                 src: esphome_img
 
 
 script:
+
+  - id: update_loading_page
+    then:
+      - lvgl.label.update:
+          id: boot_synchronization_label
+          text: !lambda |-
+            return id(i18n_translations).translate("loading.synchronization");
+      - lvgl.label.update:
+          id: boot_homeassistant_label
+          text: !lambda |-
+            return id(i18n_translations).translate("loading.connection_api");
+
   - id: check_boot_status
     then:
       - lambda: |-
@@ -128,12 +141,31 @@ script:
 
 api:
   on_client_connected:
-    - lambda: |-
-        if (0 == client_info.find("Home Assistant ")) {
-          id(on_ha_connected).execute();
-        }
+    - if:
+        condition:
+          lambda: 'return (0 == client_info.find("Home Assistant "));'
+        then:
+          - script.execute: update_loading_page
+          - lvgl.label.update: 
+              id: ha_status
+              text_color: color_blue
+          - script.execute: on_ha_connected
+          - delay: 5000ms
+          - lambda: |-
+              ESP_LOGW("TEST", "OUR CURRENT GLOBAL FOR SWITCH: %s", id(display_lock) ? "true" : "false");
+          - lambda: |-
+              ESP_LOGW("TEST", "OCC Current locale i18n: %s", id(i18n_translations).get_current_locale().c_str());
+              ESP_LOGW("TEST", "OCC Current locale global: %s", id(current_language).c_str());
+              ESP_LOGI("TEST", "Current DT global: %d", id(display_timeout));
+
   on_client_disconnected:
-    - lambda: |-
-        if (0 == client_info.find("Home Assistant ")) {
-          id(ha_connected) = false;
-        }
+    - if:
+        condition:
+          lambda: 'return (0 == client_info.find("Home Assistant "));'
+        then:
+          - globals.set:
+              id: ha_connected
+              value: 'false'
+          - lvgl.label.update: 
+              id: ha_status
+              text_color: color_steel_blue

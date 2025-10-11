@@ -1,0 +1,529 @@
+globals:
+  # - id: ${widget_name}_light_is_on
+  #   type: bool
+  #   initial_value: 'false'
+
+  - id: ${widget_name}_current_hue
+    type: float
+    initial_value: '0.0'
+
+  - id: ${widget_name}_current_saturation
+    type: float
+    initial_value: '0.0'
+
+  - id: ${widget_name}_current_brightness
+    type: int
+    initial_value: '100'
+
+  - id: ${widget_name}_current_color_temp
+    type: float
+    initial_value: '3000.0'
+
+  - id: ${widget_name}_is_temp_mode
+    type: bool
+    initial_value: 'true'
+
+
+sensor:
+  # Brightness sensor
+  - platform: homeassistant
+    id: ${widget_name}_light_rgb_sensor_brightness
+    entity_id: "${light_entity}"
+    attribute: brightness
+    on_value:
+      - if:
+          condition:
+            lambda: 'return !std::isnan(x);'
+          then:
+            - globals.set:
+                id: ${widget_name}_current_brightness
+                value: !lambda return x;
+            - lvgl.slider.update:
+                id: ${widget_name}_light_brightness_slider
+                value: !lambda return int(x);
+
+  # Color temp sensor
+  - platform: homeassistant
+    id: ${widget_name}_light_sensor_color_temp
+    entity_id: "${light_entity}"
+    attribute: color_temp_kelvin
+    on_value:
+      - if:
+          condition:
+            lambda: 'return !std::isnan(x);'
+          then:
+            - globals.set:
+                id: ${widget_name}_current_color_temp
+                value: !lambda return x;
+            - lvgl.arc.update:
+                id: ${widget_name}_light_arc_color_temp
+                value: !lambda return int(x);
+
+
+text_sensor:
+  - platform: homeassistant
+    id: ${widget_name}_light_sensor_hs
+    entity_id: "${light_entity}"
+    attribute: hs_color
+    on_value:
+      - if:
+          condition:
+            lambda: "return x != \"None\" && !x.empty();"
+          then:
+            - lambda: |-
+                std::string s = x;
+                size_t start = s.find('(') + 1;
+                size_t comma = s.find(',');
+                size_t end = s.find(')');
+                float hue = 0.0f, sat = 0.0f;
+                if (start < comma && comma < end) {
+                  hue = atof(s.substr(start, comma - start).c_str());
+                  sat = atof(s.substr(comma + 1, end - comma - 1).c_str());
+                }
+                id(${widget_name}_current_hue) = hue;
+                id(${widget_name}_current_saturation) = sat;
+            - lvgl.arc.update:
+                id: ${widget_name}_light_arc_hue
+                value: !lambda return id(${widget_name}_current_hue);
+            - lvgl.slider.update:
+                id: ${widget_name}_light_saturation_slider
+                value: !lambda return id(${widget_name}_current_saturation);
+
+lvgl:
+
+  gradients:
+    - id: ${widget_name}_hue_gradient
+      direction: ver
+      dither: none
+      stops:
+        - color: 0xFF0000
+          position: 0
+        - color: 0xFF00FF
+          position: 42
+        - color: 0x0000FF
+          position: 84
+        - color: 0x00FFFF
+          position: 127
+        - color: 0x00FF00
+          position: 169
+        - color: 0xFFFF00
+          position: 212
+        - color: 0xFF0000
+          position: 255
+
+    - id: ${widget_name}_color_temp_gradient
+      direction: ver
+      dither: none
+      stops:
+        - color: 0xA0C8FF
+          position: 0
+        - color: 0xE0F7FF
+          position: 80
+        - color: 0xFFFFFF
+          position: 128
+        - color: 0xFFFFE0
+          position: 175
+        - color: 0xFFD6A0
+          position: 255
+
+
+  pages:
+    - id: ${widget_name}_light_page
+      bg_color: color_slate_blue_gray
+      widgets:
+        # BRIGHTNESS SLIDER
+        - obj:
+            id: ${widget_name}_light_brightness_background
+            x: -160
+            y: 20
+            radius: 20
+            width: 80
+            height: 300
+            align: center
+            bg_color: color_slate_blue_gray
+            pad_all: 0
+            # border_color: color_black
+            border_opa: transp
+            border_width: 0
+            shadow_color: color_black
+            shadow_spread: 2
+            shadow_width: 8
+            widgets:
+              - slider:
+                  id: ${widget_name}_light_brightness_slider
+                  # x: -160
+                  radius: 16
+                  width: 60
+                  height: 280
+                  align: center
+                  bg_color: color_steel_blue
+                  shadow_color: color_black
+                  shadow_spread: 4
+                  shadow_width: 6
+                  shadow_opa: transp
+                  min_value: 2
+                  max_value: 255
+                  indicator:
+                    bg_color: color_deep_orange
+                    radius: 10
+                  knob:
+                    bg_opa: transp
+                  on_release:
+                    - globals.set:
+                        id: ${widget_name}_current_brightness
+                        value: !lambda return int(x);
+                    - homeassistant.action:
+                        action: light.turn_on
+                        data:
+                          entity_id: "${light_entity}"
+                          brightness: !lambda return int(x);
+
+        # SATURATION SLIDER
+        - obj:
+            id: ${widget_name}_light_saturation_background
+            x: -60
+            y: 20
+            radius: 20
+            width: 80
+            height: 300
+            align: center
+            bg_color: color_slate_blue_gray
+            pad_all: 0
+            # border_color: color_black
+            border_opa: transp
+            border_width: 0
+            shadow_color: color_black
+            shadow_spread: 2
+            shadow_width: 8
+            widgets:
+              - slider:
+                  id: ${widget_name}_light_saturation_slider
+                  # x: -60
+                  radius: 16
+                  width: 60
+                  height: 280
+                  align: center
+                  bg_color: color_steel_blue
+                  shadow_color: color_black
+                  shadow_spread: 4
+                  shadow_width: 6
+                  shadow_opa: transp
+                  min_value: 0
+                  max_value: 100
+                  indicator:
+                    bg_color: color_red
+                    radius: 10
+                  knob:
+                    bg_opa: transp
+                  on_release:
+                    - globals.set:
+                        id: ${widget_name}_current_saturation
+                        value: !lambda return x;
+                    - homeassistant.action:
+                        action: light.turn_on
+                        data:
+                          entity_id: "${light_entity}"
+                        data_template:
+                          hs_color: "{{ (hue|float, sat|float)|list }}"
+                        variables:
+                          hue: !lambda return id(${widget_name}_current_hue);
+                          sat: !lambda return x;
+
+        # LIGHT ARC
+        - obj:
+            id: ${widget_name}_light_bg_main_temperature
+            hidden: false
+            width: 240
+            height: 480
+            align: right_mid
+            pad_all: 0
+            bg_opa: transp
+            clickable: false
+            scrollable: false
+            border_opa: transp 
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+
+              - obj:
+                  x: 240
+                  width: 480
+                  height: 480
+                  scrollable: false
+                  align: right_mid
+                  pad_all: 0
+                  bg_opa: transp
+                  shadow_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  widgets:
+                    - obj:
+                        width: 460
+                        height: 460
+                        align: center
+                        clickable: true
+                        radius: 260
+                        bg_opa: transp
+                        bg_color: color_slate_blue_gray
+                        border_color: color_black
+                        border_opa: 40%
+                        border_width: 3
+                        # border_opa: transp
+                        # border_width: 0
+                        # shadow_color: color_black
+                        # shadow_spread: 2
+                        # shadow_width: 8
+              - obj:
+                  id: ${widget_name}_hue_gradient_obj
+                  hidden: true
+                  x: 222
+                  width: 444
+                  height: 444
+                  radius: 222
+                  align: right_mid
+                  pad_all: 0
+                  # bg_opa: transp
+                  bg_grad: ${widget_name}_hue_gradient
+                  bg_grad_dir: ver
+                  shadow_opa: transp
+                  border_opa: transp
+                  border_width: 0
+
+              - obj:
+                  id: ${widget_name}_color_temp_gradient_obj
+                  x: 222
+                  width: 444
+                  height: 444
+                  radius: 222
+                  align: right_mid
+                  pad_all: 0
+                  # bg_opa: transp
+                  bg_grad: ${widget_name}_color_temp_gradient
+                  bg_grad_dir: ver
+                  shadow_opa: transp
+                  border_opa: transp
+                  border_width: 0
+
+              - obj:
+                  x: 188
+                  width: 376
+                  height: 376
+                  align: right_mid
+                  clickable: false
+                  radius: 230
+                  bg_color: color_slate_blue_gray
+                  border_width: 0
+                  border_opa: transp
+
+              - obj:
+                  x: 183
+                  width: 366
+                  height: 366
+                  align: right_mid
+                  radius: 230
+                  bg_color: color_slate_blue_gray
+                  border_color: color_white
+                  border_width: 3
+                  border_opa: 15%
+                  widgets:
+                    - obj:
+                        id: ${widget_name}_lightbulb_color
+                        x: 67
+                        y: -53
+                        width: 70
+                        height: 70
+                        radius: 35
+                        align: left_mid
+                        bg_color: color_white
+                        border_opa: transp
+                        shadow_opa: transp
+                        
+                    - image:
+                        id: ${widget_name}_lightbulb_image
+                        x: 70
+                        y: 0
+                        align: left_mid
+                        src: lightbulb_image
+
+              # BACKGROUND ARC
+              - obj:
+                  x: 222
+                  width: 444
+                  height: 444
+                  radius: 222
+                  align: right_mid
+                  pad_all: 0
+                  bg_opa: transp
+                  shadow_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  widgets:
+                    - arc:
+                        id: ${widget_name}_light_arc_hue
+                        hidden: true
+                        clickable: true
+                        adjustable: true
+                        adv_hittest: true
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        min_value: 0
+                        max_value: 360
+                        value: 265
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_opa: transp
+                          arc_width: 34
+                        knob:
+                          pad_all: 0
+                          bg_opa: transp
+                          border_color: color_steel_blue
+                          border_width: 4
+                          # shadow_color: color_black
+                          # shadow_spread: 2
+                          # shadow_width: 13
+                          shadow_opa: transp
+                        # on_value:
+
+
+                        on_release:
+                          - globals.set:
+                              id: ${widget_name}_current_hue
+                              value: !lambda return x;
+                          - homeassistant.action:
+                              action: light.turn_on
+                              data:
+                                entity_id: "${light_entity}"
+                              data_template:
+                                hs_color: "{{ (hue|float, sat|float)|list }}"
+                              variables:
+                                hue: !lambda return x;
+                                sat: !lambda return id(${widget_name}_current_saturation);
+
+                    - arc:
+                        id: ${widget_name}_light_arc_color_temp
+                        hidden: false
+                        clickable: true
+                        adjustable: true
+                        adv_hittest: true
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        min_value: 2000
+                        max_value: 6500
+                        value: 3000
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_opa: transp
+                          arc_width: 34
+                        knob:
+                          pad_all: 0
+                          bg_opa: transp
+                          border_color: color_steel_blue
+                          border_width: 4
+                          # shadow_color: color_black
+                          # shadow_spread: 2
+                          # shadow_width: 13
+                          shadow_opa: transp
+                        # on_value:
+
+
+                        on_release:
+                          - homeassistant.action:
+                              action: light.turn_on
+                              data:
+                                entity_id: "${light_entity}"
+                                color_temp_kelvin: !lambda return int(x);
+
+
+                    - obj:
+                        id: ${widget_name}_mode_select_btn
+                        clickable: true
+                        x: 127
+                        y: 100
+                        width: 60
+                        height: 60
+                        radius: 30
+                        align: left_mid
+                        bg_opa: transp
+                        pad_all: 0
+                        border_opa: transp
+                        border_width: 0
+                        shadow_color: color_black
+                        shadow_spread: 2
+                        shadow_width: 8
+                        widgets:
+                          - label:
+                              id: ${widget_name}_mode_select_icon
+                              align: center
+                              text_font: mdi_icons_28
+                              text_color: color_misty_blue
+                              text: "${palette_icon}"
+                        on_click:
+                          - lambda: |-
+                              id(${widget_name}_is_temp_mode) = !id(${widget_name}_is_temp_mode);
+                          - script.execute: ${widget_name}_toggle_gradient
+
+        # BACK
+        - obj:
+            x: 150
+            y: 0
+            width: 80
+            height: 70
+            align: bottom_left
+            bg_opa: transp
+            pad_all: 0
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            radius: 0
+            widgets:
+              - obj:
+                  y: -20
+                  width: 80
+                  height: 5
+                  align: bottom_mid
+                  bg_color: color_steel_blue
+                  pad_all: 0
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  radius: 15 
+            on_click:
+              - lvgl.widget.hide: light_select_widget
+              - delay: 100ms
+              - lvgl.page.show: home_page
+
+
+script:
+  - id: ${widget_name}_toggle_gradient
+    then:
+      - if:
+          condition:
+            lambda: return id(${widget_name}_is_temp_mode);
+          then:
+            - lvgl.widget.hide: ${widget_name}_hue_gradient_obj
+            - lvgl.widget.hide: ${widget_name}_light_arc_hue
+            - lvgl.widget.show: ${widget_name}_color_temp_gradient_obj
+            - lvgl.widget.show: ${widget_name}_light_arc_color_temp
+            - lvgl.label.update:
+                id: ${widget_name}_mode_select_icon
+                text_font: mdi_icons_28
+                text: "${palette_icon}"
+          else:
+            - lvgl.widget.hide: ${widget_name}_color_temp_gradient_obj
+            - lvgl.widget.hide: ${widget_name}_light_arc_color_temp
+            - lvgl.widget.show: ${widget_name}_hue_gradient_obj
+            - lvgl.widget.show: ${widget_name}_light_arc_hue
+            - lvgl.label.update:
+                id: ${widget_name}_mode_select_icon
+                text_font: icons_28
+                text: "${temperature_icon}"

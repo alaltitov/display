@@ -1,34 +1,67 @@
 packages:
+  # home: !include widgets/home/home.yaml
+  # lights_config: !include widgets/light/lights_config.yaml
+  # devices: !include widgets/devices.yaml
+
   home: !include widgets/home/home.yaml
-  lights_config: !include widgets/light/lights_config.yaml
-  devices: !include widgets/devices.yaml
-  settings: !include widgets/settings.yaml
-  menu_controls_main: !include widgets/menu_controls_main.yaml
-  loading_page: !include widgets/loading_page.yaml
+  climate: !include widgets/climate/climate.yaml
+  light: !include widgets/light/config.yaml
+
+  # settings: !include widgets/settings.yaml
+  # menu_controls_main: !include widgets/menu_controls_main.yaml
+  loading_page: !include common/widgets/loading.yaml
 
 
-image: !include widgets/image.yaml
-font: !include widgets/fonts.yaml
-color: !include widgets/colors.yaml
+substitutions: !include common/substitutions.yaml
+image: !include common/image.yaml
+font: !include common/fonts.yaml
+color: !include common/colors.yaml
 
 
 http_request:
   verify_ssl: false
 
 external_components:
-  - source: github://pr#9972
-    components: [mapping]
-    refresh: 1h
+  - source: github://alaltitov/esphome@main
+    components: [i18n]
+
+i18n:
+  id: i18n_translations
+  sources:
+    - translations/ru.yaml
+    - translations/en.yaml
+  default_locale: ru
 
 esphome:
-  name: display
-  friendly_name: display
+  name: ${display_name}
+  friendly_name: ${display_friendly_name}
   includes:
     - <sstream>
     - <algorithm>
   platformio_options:
     board_build.flash_mode: dio
-
+  on_boot:
+    - priority: 400
+      then:
+        - lambda: |-
+            id(i18n_translations).set_current_locale(id(current_language));
+        - script.execute: update_loading_page
+    - priority: -100
+      then:
+        - lvgl.roller.update:
+            id: backlight_settings_sleep_time_roller
+            selected_index: !lambda return id(display_timeout);
+        - lambda: |-
+            ESP_LOGI("TEST", "Current locale i18n: %s", id(i18n_translations).get_current_locale().c_str());
+            ESP_LOGI("TEST", "Current locale global: %s", id(current_language).c_str());
+            ESP_LOGI("TEST", "Current DT global: %d", id(display_timeout));
+        - delay: 5s
+        - script.execute: test_timezone
+        - lambda: |-
+            ESP_LOGW("TEST", "OUR GLOBAL ON BOOT: %s", id(display_lock) ? "true" : "false");
+            ESP_LOGW("TEST", "Current locale i18n: %s", id(i18n_translations).get_current_locale().c_str());
+            ESP_LOGW("TEST", "Current locale global: %s", id(current_language).c_str());
+            ESP_LOGI("TEST", "Current DT global: %d", id(display_timeout));
 esp32:
   board: esp32-s3-devkitc-1
   variant: esp32s3
@@ -37,11 +70,11 @@ esp32:
     type: esp-idf
     sdkconfig_options:
       CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: "y"
-      CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: y
-      # CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
-      # CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
-      # CONFIG_SPIRAM_FETCH_INSTRUCTIONS: y
-      # CONFIG_SPIRAM_RODATA: y
+      # CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: y
+      CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
+      CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
+      CONFIG_SPIRAM_FETCH_INSTRUCTIONS: y
+      CONFIG_SPIRAM_RODATA: y
       # CONFIG_FREERTOS_USE_TRACE_FACILITY: "y"
       # CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS: "y"
 
@@ -60,24 +93,140 @@ api:
 
 ota:
   - platform: esphome
+    id: ota_state
     password: !secret display_ota
+    on_begin: 
+      - logger.log: "OTA Start"
+      - light.turn_on: display_backlight
+      - lambda: "id(display_backlight).loop();"
+      - lvgl.resume:
+      - lvgl.widget.redraw:
+      - lvgl.label.update:
+          id: ota_label_primary
+          text: !lambda |-
+            return id(i18n_translations).translate("ota.start.primary");
+      - lvgl.label.update:
+          id: ota_label_secondary
+          text: !lambda |-
+            return id(i18n_translations).translate("ota.start.secondary");
+      - lvgl.widget.show: ota_widget
+      - lvgl.resume:
+      - lvgl.widget.redraw:
+      - lambda: "id(lvgl_component).loop();"
+      - lambda: "id(lvgl_component).loop();"
+      - logger.log: "OTA widget shown"
+
+    on_progress: 
+      - lvgl.bar.update:
+          id: ota_bar_value
+          value: !lambda return (int)x;
+      - lvgl.label.update:
+          id: ota_label_primary
+          text: " "
+      - lvgl.label.update:
+          id: ota_label_secondary
+          text: !lambda |-
+            static char buffer[64];
+            snprintf(buffer, sizeof(buffer), id(i18n_translations).translate("ota.progress").c_str(), x);
+            return buffer;
+      - lambda: "id(lvgl_component).loop();"
+
+    on_end:
+      - logger.log: "OTA End"
+      - lvgl.bar.update:
+          id: ota_bar_value
+          value: 100
+      - lvgl.label.update:
+          id: ota_label_primary
+          text: !lambda |-
+            return id(i18n_translations).translate("ota.end.primary");
+      - lvgl.label.update:
+          id: ota_label_secondary
+          text: !lambda |-
+            return id(i18n_translations).translate("ota.end.secondary");
+      - lambda: |-
+          id(lvgl_component).loop();
+
+    on_error:
+      - logger.log:
+            format: "OTA update error %d"
+            args: ["x"]
+      - lvgl.label.update:
+          id: ota_label_primary
+          text: !lambda |-
+            return id(i18n_translations).translate("ota.error.primary");
+      - lvgl.label.update:
+          id: ota_label_secondary
+          text: !lambda |-
+            return id(i18n_translations).translate("ota.error.secondary");
+      - lambda: |-
+          id(lvgl_component).loop();
+
 
 wifi:
   networks:
     - ssid: !secret wifi_ssid
       password: !secret wifi_password
+  on_connect:
+    - lvgl.label.update:
+        id: wifi_status
+        text_color: color_green
+  on_disconnect:
+    - lvgl.label.update:
+        id: wifi_status
+        text_color: color_steel_blue
 
 
 lvgl:
+  id: lvgl_component
   color_depth: 16
   byte_order: big_endian
-  displays: my_display
+  displays: ${display_name}
   touchscreens:
-    - touchscreen_id: my_touchscreen
+    - touchscreen_id: touchscreen_id
       long_press_time: 5000ms
       long_press_repeat_time: 400ms
   page_wrap: false
-
+  top_layer:
+    widgets:
+      - obj:
+          id: ota_widget
+          hidden: true
+          width: 480
+          height: 480
+          align: center
+          clickable: false
+          bg_color: color_slate_blue_gray
+          border_opa: transp
+          shadow_opa: transp
+          radius: 0
+          widgets:
+            - label:
+                id: ota_label_primary
+                y: -50
+                align: center
+                text_font: nunito_20
+                text_color: color_misty_blue
+                text: "Starting OTA!"
+            - label:
+                id: ota_label_secondary
+                y: -20
+                align: center
+                text_font: nunito_18
+                text_color: color_misty_blue
+                text: "Wait..."
+            - bar:
+                id: ota_bar_value
+                y: 20
+                width: 300
+                value: 0
+                align: center
+                min_value: 0
+                max_value: 100
+                animated: true
+                bg_color: color_steel_blue
+                indicator:
+                  bg_color: color_misty_blue
 
 light:
   # Backlight
@@ -96,7 +245,7 @@ light:
     on_turn_off:
       - if:
           condition:
-            lambda: 'return id(display_timeout_number).state >= 0;'
+            lambda: 'return id(display_timeout_backlight).state >= 0;'
           then:
             - logger.log: "Backlight off, pausing LVGL"
             - lvgl.pause:
@@ -119,11 +268,11 @@ i2c:
 
 touchscreen:
   platform: gt911
-  id: my_touchscreen
+  id: touchscreen_id
   transform:
     mirror_x: false
     mirror_y: false
-  display: my_display
+  display: ${display_name}
   on_release:
       - if:
           condition: lvgl.is_paused
@@ -146,10 +295,16 @@ spi:
   - id: lcd_spi
     clk_pin: GPIO48
     mosi_pin: GPIO47
-    
+
+# display:
+#   - platform: mipi_rgb
+#     id: ${display_name}
+#     model: GUITION-4848S040
+#     rotation: 180
+
 display:
   - platform: st7701s
-    id: my_display
+    id: ${display_name}
     update_interval: never
     auto_clear_enabled: false
     data_rate: 2MHz
@@ -194,44 +349,3 @@ display:
         - 6          # B3
         - 7          # B4
         - 15         # B5
-
-
-# interval:
-#   - interval: 60s
-#     then:
-#       - lambda: |-
-#           // Общая информация о памяти
-#           ESP_LOGI("memory", "Free heap: %d bytes", esp_get_free_heap_size());
-#           ESP_LOGI("memory", "Free internal heap: %d bytes", esp_get_free_internal_heap_size());
-#           ESP_LOGI("memory", "Min free heap: %d bytes", esp_get_minimum_free_heap_size());
-          
-#           // Детальная статистика кучи
-#           multi_heap_info_t info;
-#           heap_caps_get_info(&info, MALLOC_CAP_INTERNAL);
-#           ESP_LOGI("memory", "SRAM total: %d, free: %d, largest_free: %d", 
-#                    info.total_free_bytes + info.total_allocated_bytes,
-#                    info.total_free_bytes, 
-#                    info.largest_free_block);
-          
-#           // Статистика по PSRAM
-#           heap_caps_get_info(&info, MALLOC_CAP_SPIRAM);
-#           ESP_LOGI("memory", "PSRAM total: %d, free: %d, largest_free: %d", 
-#                    info.total_free_bytes + info.total_allocated_bytes,
-#                    info.total_free_bytes, 
-#                    info.largest_free_block);
-
-#       - lambda: |-
-#           ESP_LOGI("stack", "Main task free: %d bytes", 
-#                    uxTaskGetStackHighWaterMark(xTaskGetHandle("loopTask")));
-#           ESP_LOGI("stack", "System event free: %d bytes", 
-#                    uxTaskGetStackHighWaterMark(xTaskGetHandle("sys_evt")));
-#           ESP_LOGI("stack", "Timer task free: %d bytes", 
-#                    uxTaskGetStackHighWaterMark(xTaskGetHandle("esp_timer")));
-
-#       - lambda: |-
-#           char* buf = (char*)malloc(1024);
-#           if (buf) {
-#             vTaskList(buf);
-#             ESP_LOGI("stack", "\nTask Name\tState\tPrio\tStack\tNum\n%s", buf);
-#             free(buf);
-#           }

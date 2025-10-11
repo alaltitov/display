@@ -11,36 +11,34 @@ substitutions:
   light_widget_name_4: "light4"
 
 
-  light_label_name_1: "spotlights 1"
-  light_label_name_2: "ceiling lamp"
-  light_label_name_3: "night lamp"
-  light_label_name_4: "pendant lamp"
+  light_icon_1: "\U000F0914"
+  light_icon_2: "\U000F18DD"
+  light_icon_3: "\U000F08DD"
+  light_icon_4: "\U000F11E1"
 
 packages:
-  light_panel: !include lights_panel.yaml
+  select: !include select.yaml
 
   light_1: !include
-    file: light_rgb_widget.yaml
+    file: light.yaml
     vars:
       light_entity: "${light_entity_1}"
       widget_name: "${light_widget_name_1}"
       
   light_2: !include
-    file: light_rgb_widget_slider.yaml
+    file: light.yaml
     vars:
       light_entity: "${light_entity_2}"
       widget_name: "${light_widget_name_2}"
       
   light_3: !include
-    file: light_temp_color_widget.yaml
+    file: light.yaml
     vars:
       light_entity: "${light_entity_3}"
       widget_name: "${light_widget_name_3}"
 
   light_4: !include
-    file: light_brightness_widget.yaml
+    file: light.yaml
     vars:
       light_entity: "${light_entity_4}"
       widget_name: "${light_widget_name_4}"
-
-

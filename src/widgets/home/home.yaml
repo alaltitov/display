@@ -1,3 +1,2565 @@
 packages:
-  home: !include home_widget.yaml
-  info: !include info_page.yaml
+  animations: !include animations_dev.yaml
+
+globals:
+
+  - id: display_lock
+    type: bool
+    restore_value: yes
+    initial_value: 'false'
+
+  - id: display_timeout
+    type: int
+    restore_value: yes
+    initial_value: '2'
+
+  # Данные daily прогноза
+  - id: forecast_daily_count
+    type: int
+    initial_value: '0'
+  
+  - id: forecast_daily_timestamps
+    type: time_t[10]
+  
+  - id: forecast_daily_temps
+    type: float[10]
+  
+  - id: forecast_daily_conditions
+    type: std::string[10]
+  
+  # Данные hourly прогноза
+  - id: forecast_hourly_count
+    type: int
+    initial_value: '0'
+  
+  - id: forecast_hourly_timestamps
+    type: time_t[15]
+  
+  - id: forecast_hourly_temps
+    type: float[15]
+  
+  - id: forecast_hourly_conditions
+    type: std::string[15]
+
+
+  - id: current_language
+    type: std::string
+    initial_value: '"${secondary_language}"'
+    restore_value: yes
+
+  - id: current_mode
+    type: int
+    initial_value: '0'  # 0=HOME, 1=WEATHER, 2=INFO, 3=SETTINGS
+
+  - id: is_animating
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+
+number:
+  - platform: template
+    id: display_timeout_backlight
+    name: Backlight timeout
+    optimistic: true
+    unit_of_measurement: "m"
+    initial_value: 10
+    restore_value: true
+    min_value: -1
+    max_value: 720
+    step: 1
+    mode: box
+
+
+switch:
+  - platform: lvgl
+    name: "Your language"
+    id: language_switch
+    widget: circle_settings_widget_lang_btn
+    restore_mode: RESTORE_DEFAULT_ON
+    on_turn_on:
+      - i18n.set_locale:
+          locale: "${secondary_language}"
+      - lambda: |-
+          id(current_language) = "${secondary_language}";
+          ESP_LOGI("TEST", "Current locale i18n: %s", id(i18n_translations).get_current_locale().c_str());
+          ESP_LOGI("TEST", "Current locale global: %s", id(current_language).c_str());
+      - lvgl.image.update:
+          id: circle_settings_widget_lang_flag
+          src: !lambda return id(flag_icon_mapping).get(id(i18n_translations).get_current_locale());
+      - script.execute: time_update
+      - script.execute: update_home_translations
+      - script.execute: update_loading_page
+    on_turn_off:
+      - i18n.set_locale:
+          locale: "en"
+      - lambda: |-
+          id(current_language) = "en";
+          ESP_LOGI("TEST", "Current locale i18n: %s", id(i18n_translations).get_current_locale().c_str());
+          ESP_LOGI("TEST", "Current locale global: %s", id(current_language).c_str());
+      - lvgl.image.update:
+          id: circle_settings_widget_lang_flag
+          src: !lambda return id(flag_icon_mapping).get(id(i18n_translations).get_current_locale());
+      - script.execute: time_update
+      - script.execute: update_home_translations
+      - script.execute: update_loading_page
+
+  - platform: lvgl
+    name: "LVGL lock"
+    id: display_lock_switch
+    widget: display_lock_btn
+    restore_mode: RESTORE_DEFAULT_OFF
+    on_turn_on:
+      - lambda: |-
+          id(display_lock) = true;
+      - script.execute: display_block_buttons
+    on_turn_off:
+      - lambda: |-
+          id(display_lock) = false;
+      - script.execute: display_block_buttons
+
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: "${timezone}"
+    servers:
+     - ntp0.ntp-servers.net
+     - ntp1.ntp-servers.net
+     - ntp2.ntp-servers.net
+    on_time_sync:
+      - script.execute: time_update
+    on_time:
+      - minutes: '*'
+        seconds: 0
+        then:
+          - script.execute: time_update
+
+
+sensor:
+
+  # Weather forecast daily count
+  - platform: homeassistant
+    id: weather_forecast_daily_count
+    entity_id: sensor.display_tools_forecasts_daily
+    internal: true
+  
+  # Weather forecast hourly count
+  - platform: homeassistant
+    id: weather_forecast_hourly_count
+    entity_id: sensor.display_tools_forecasts_hourly
+    internal: true
+
+  # Weather temperature sensor
+  - platform: homeassistant
+    id: weather_temperature_sensor
+    entity_id: "${weather_entity}"
+    attribute: temperature
+    on_value: 
+      then:
+        - lvgl.label.update:
+            id: weather_temperature_value
+            text:
+              format: "%.0f°"
+              args: [id(weather_temperature_sensor).state]
+
+  # Weather humidity sensor
+  - platform: homeassistant
+    id: weather_humidity_sensor
+    entity_id: "${weather_entity}"
+    attribute: humidity
+    on_value: 
+      then:
+        - lvgl.label.update:
+            id: weather_humidity_value
+            text:
+              format: "%.0f%%"
+              args: [id(weather_humidity_sensor).state]
+
+  # Weather wind speed sensor
+  - platform: homeassistant
+    id: weather_wind_speed_sensor
+    entity_id: "${weather_entity}"
+    attribute: wind_speed
+    on_value: 
+      then:
+        - if:
+            condition:
+              lambda: return id(weather_wind_speed_unit_sensor).state == "km/h";
+            then:
+              - lvgl.label.update:
+                  id: weather_wind_speed_value
+                  text:
+                    format: "%.1f "
+                    args: [id(weather_wind_speed_sensor).state]
+            else:
+              - lvgl.label.update:
+                  id: weather_wind_speed_value
+                  text:
+                    format: "%.0f "
+                    args: [id(weather_wind_speed_sensor).state]            
+
+  # Home temperature sensor
+  - platform: homeassistant
+    id: home_temperature_sensor
+    entity_id: "${temperature_entity}"
+    on_value: 
+      then:
+        - lvgl.label.update:
+            id: circle_home_widget_temp_value
+            text:
+              format: "%.1f°"
+              args: [id(home_temperature_sensor).state]
+
+  # Home humidity sensor
+  - platform: homeassistant
+    id: home_humidity_sensor
+    entity_id: "${humidity_entity}"
+    on_value: 
+      then:
+        - lvgl.label.update:
+            id: circle_home_widget_hum_value
+            text:
+              format: "%.0f%%"
+              args: [id(home_humidity_sensor).state]
+
+  # Chip temperature
+  - platform: internal_temperature
+    name: "ESP32 Internal Temperature"
+    id: esp32_temperature
+    update_interval: 30s
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: circle_info_widget_cpu_state_value
+            text:
+              format: "%.1f°"
+              args: [id(esp32_temperature).state]
+
+  # WiFi Signal Strength in dBm
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    id: wifi_signal_db
+    update_interval: 30s
+    unit_of_measurement: "dBm"
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: wifi_signal_info_state
+            text:
+              format: "%.1f dBm"
+              args: [id(wifi_signal_db).state]
+
+  # WI-FI Signal Strength in %
+  - platform: wifi_signal
+    id: wifi_signal_percent
+    update_interval: 30s
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "%"
+    on_value: 
+      then:
+        - lvgl.label.update:
+            id: wifi_status
+            text_color: !lambda |-
+              if (id(wifi_signal_percent).state > 0) {
+              return lv_color_hex(0x5CA848);
+              }
+              return lv_color_hex(0x5CA848);
+            text: !lambda |-
+              if (id(wifi_signal_percent).state > 0 && id(wifi_signal_percent).state < 26) {
+              return "${wifi_25_icon}";
+              } else if (id(wifi_signal_percent).state > 25 && id(wifi_signal_percent).state < 51) {
+              return "${wifi_50_icon}";
+              } else if (id(wifi_signal_percent).state > 50 && id(wifi_signal_percent).state < 76) {
+              return "${wifi_75_icon}";
+              } else if (id(wifi_signal_percent).state > 75) {
+              return "${wifi_100_icon}";
+              }
+              return "${wifi_100_icon}";
+
+text_sensor:
+
+  # Sun horizon sensor
+  - platform: homeassistant
+    id: sun_state_sensor
+    entity_id: sun.sun
+
+  # Weather state sensor
+  - platform: homeassistant
+    id: weather_state_sensor
+    entity_id: "${weather_entity}"
+    on_value: 
+      then:
+        - delay: 1s
+        - script.execute: update_weather_image
+        - script.execute: update_home_translations
+
+  # Weather forecast daily sensor
+  - platform: homeassistant
+    id: weather_forecast_daily_sensor
+    entity_id: sensor.display_tools_forecasts_daily
+    attribute: forecasts
+    internal: true
+    on_value:
+      then:
+        - script.execute: parse_daily_forecasts
+
+  # Weather forecast hourly sensor
+  - platform: homeassistant
+    id: weather_forecast_hourly_sensor
+    entity_id: sensor.display_tools_forecasts_hourly
+    attribute: forecasts
+    internal: true
+    on_value:
+      then:
+        - script.execute: parse_hourly_forecasts
+
+
+  # Weather wind speed unit sensor
+  - platform: homeassistant
+    id: weather_wind_speed_unit_sensor
+    entity_id: "${weather_entity}"
+    attribute: wind_speed_unit    
+    on_value: 
+      then:
+        - lvgl.label.update:
+            id: weather_wind_speed_unit
+            text: !lambda return x;
+
+  # IP address
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"
+      id: wifi_ip_address
+      on_value:
+        then:
+          - lvgl.label.update:
+              id: ip_address_info_state
+              text: !lambda return id(wifi_ip_address).state.c_str();
+
+  # MAC address
+  - platform: wifi_info
+    mac_address:
+      name: "WiFi MAC"
+      id: wifi_mac_address
+      on_value:
+        then:
+          - lvgl.label.update:
+              id: mac_address_info_state
+              text: !lambda return id(wifi_mac_address).state.c_str();
+
+  # ESPHome version with compilation date
+  - platform: template
+    name: "ESPHome Version"
+    id: esphome_version
+    lambda: |-
+      return {ESPHOME_VERSION};
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: esphome_version_info_state
+            text: !lambda 'return id(esphome_version).state;'
+
+lvgl:
+
+  on_idle:
+    timeout: !lambda "return (id(display_timeout_backlight).state * 60 * 1000);"
+    then:
+      - if:
+          condition:
+            lambda: 'return id(display_timeout_backlight).state >= 0;'
+          then:
+            - logger.log: "LVGL is idle"
+            - light.turn_off: display_backlight
+            - lvgl.pause:
+          else:
+            - logger.log: "LVGL idle, but backlight is on"
+
+  pages:
+    - id: home_page
+      bg_color: color_black
+      scrollable: false
+      widgets:
+        # indicators
+        - obj:
+            id: home_bg_indicators
+            y: 10
+            width: 460
+            height: 40
+            align: TOP_MID
+            pad_all: 0
+            bg_color: color_steel_blue
+            bg_opa: transp
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+
+              # Wi-Fi status
+              - label:
+                  id: wifi_status
+                  align: left_mid
+                  x: 20
+                  text: "${wifi_100_icon}"
+                  text_color: color_steel_blue
+                  text_font: icons_24
+
+              # Home Assistant status
+              - label:
+                  id: ha_status
+                  align: left_mid
+                  x: 60
+                  text: "${ha_icon}"
+                  text_color: color_steel_blue
+                  text_font: mdi_icons_24
+
+              # Lock status
+              - label:
+                  id: lock_status
+                  align: left_mid
+                  x: 100
+                  text: "${lock_icon}"
+                  text_color: color_steel_blue
+                  text_font: icons_24
+
+              # Heating status
+              - label:
+                  id: heating_status
+                  align: right_mid
+                  x: -20
+                  text: "${heating_icon}"
+                  text_color: color_steel_blue
+                  text_font: icons_24
+
+              # AC status
+              - label:
+                  id: ac_status
+                  align: right_mid
+                  x: -60
+                  y: 2
+                  text: "${air_conditioner_icon}"
+                  text_color: color_steel_blue
+                  text_font: icons_24
+
+              # Alarm panel status
+              - label:
+                  id: alarm_panel_status
+                  align: right_mid
+                  x: -100
+                  text: "${shield_arming_icon}"
+                  text_color: color_steel_blue
+                  text_font: mdi_icons_24
+
+        # weather
+
+        - obj:
+            id: main_widget_background
+            hidden: false
+            y: 60
+            width: 440
+            height: 220
+            align: top_mid
+            clickable: false
+            scrollable: false
+            radius: 20
+            pad_all: 0
+            bg_color: color_slate_blue_gray
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              - obj:
+                  id: weather_time_widget
+                  hidden: false
+                  width: 440
+                  height: 80
+                  align: top_mid
+                  clickable: false
+                  radius: 20
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: weather_temperature_value
+                        x: 30
+                        y: 10
+                        align: top_left
+                        text_font: nunito_48
+                        text_color: color_misty_blue
+                        text: "-25°"
+                        text_align: right
+
+                    - label:
+                        id: weather_humidity_value
+                        x: -60
+                        y: 10
+                        align: top_right
+                        text_font: nunito_18
+                        text_color: color_misty_blue
+                        text: " "
+                        text_align: right
+
+                    # - label:
+                    #     id: weather_humidity_measurement
+                    #     x: -60
+                    #     y: 10
+                    #     align: top_right
+                    #     text_font: nunito_20
+                    #     text_color: color_misty_blue
+                    #     text: "%"
+                    #     text_align: right
+                      
+                    - label:
+                        id: weather_humidity_icon
+                        x: -30
+                        y: 10
+                        align: top_right
+                        text_font: icons_24
+                        text_color: color_blue
+                        text: "${humidity_icon}"
+                        text_align: right
+
+                    - label:
+                        id: weather_wind_speed_value
+                        x: -90
+                        y: 40
+                        align: top_right
+                        text_font: nunito_18
+                        text_color: color_misty_blue
+                        text: " "
+                        text_align: right
+
+                    - label:
+                        id: weather_wind_speed_unit
+                        x: -60
+                        y: 40
+                        align: top_right
+                        text_font: nunito_18
+                        text_color: color_misty_blue
+                        text: " "
+                        text_align: right
+
+                    # - label:
+                    #     id: weather_wind_speed_icon
+                    #     x: -30
+                    #     y: 40
+                    #     align: top_right
+                    #     text_font: mdi_icons_24
+                    #     text_color: color_misty_blue
+                    #     text: "${windsock_icon}"
+                    #     text_align: right
+
+                    - image:
+                        id: weather_wind_speed_image
+                        y: 40
+                        x: -12
+                        align: top_right
+                        src: windsock_img
+
+                    - obj:
+                        id: weather_time_widget_line
+                        y: -5
+                        width: 400
+                        height: 2
+                        align: bottom_mid
+                        bg_color: color_misty_blue
+                        border_opa: transp
+                        shadow_opa: transp
+
+              - obj: 
+                  id: datetime_widget
+                  y: 80
+                  hidden: false
+                  width: 440
+                  height: 140
+                  align: top_mid
+                  clickable: false
+                  radius: 20
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: day_of_week_value
+                        x: 40
+                        y: 105
+                        align: top_left
+                        text_font: nunito_16
+                        text_color: color_misty_blue
+                        text: "Monday"
+
+                    - label:
+                        id: date_month_value
+                        x: -40
+                        y: 105
+                        align: top_right
+                        text_font: nunito_16
+                        text_color: color_misty_blue
+                        text: "31, December"
+
+                    - label:
+                        id: time_value
+                        y: 0
+                        align: top_mid
+                        text_font: nunito_64
+                        text_color: color_misty_blue
+                        text: "23:59"
+
+                    - obj:
+                        id: datetime_widget_line
+                        y: -50
+                        width: 400
+                        height: 2
+                        align: bottom_mid
+                        bg_color: color_misty_blue
+                        border_opa: transp
+                        shadow_opa: transp
+
+
+              - obj: 
+                  id: weather_widget
+                  y: 40
+                  hidden: true
+                  width: 440
+                  height: 80
+                  align: top_mid
+                  clickable: false
+                  radius: 20
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: weather_state_label
+                        y: -5
+                        width: 380
+                        height: 30
+                        align:  bottom_mid
+                        text_font: nunito_18
+                        text_color: color_misty_blue
+                        long_mode: SCROLL_CIRCULAR
+                        text: " "
+                        text_align: center
+
+              - obj:
+                  id: info_widget
+                  hidden: true
+                  width: 440
+                  height: 220
+                  align: top_mid
+                  clickable: false
+                  radius: 20
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    - label:  
+                        id: wifi_signal_info_label
+                        x: 20
+                        y: 30
+                        align: top_left
+                        text_font: nunito_18
+                        text_color: color_misty_blue
+                        text: "WiFi Signal:"
+                    - label:  
+                        id: wifi_signal_info_state
+                        x: -20
+                        y: 30
+                        align: top_right
+                        text_font: nunito_18
+                        text_color: color_misty_blue
+                        text: "-59 dBm"
+                    - label:  
+                        id: ip_address_info_label
+                        x: 20
+                        y: 70
+                        align: top_left
+                        text_font: nunito_18
+                        text_color: color_misty_blue
+                        text: "IP Address:"
+                    - label:  
+                        id: ip_address_info_state
+                        x: -20
+                        y: 70
+                        align: top_right
+                        text_font: nunito_18
+                        text_color: color_misty_blue
+                        text: "192.168.0.10"
+                    - label:  
+                        id: mac_address_info_label
+                        x: 20
+                        y: 110
+                        align: top_left
+                        text_font: nunito_18
+                        text_color: color_misty_blue
+                        text: "MAC Address:"
+                    - label:  
+                        id: mac_address_info_state
+                        x: -20
+                        y: 110
+                        align: top_right
+                        text_font: nunito_18
+                        text_color: color_misty_blue
+                        text: "12:34:56:78:90:AB"
+                    - label:  
+                        id: esphome_version_info_label
+                        x: 20
+                        y: 150
+                        align: top_left
+                        text_font: nunito_18
+                        text_color: color_misty_blue
+                        text: "ESPHome Version:"
+                    - label:  
+                        id: esphome_version_info_state
+                        x: -20
+                        y: 150
+                        align: top_right
+                        text_font: nunito_18
+                        text_color: color_misty_blue
+                        text: "2025.9.0"
+
+              - obj:
+                  id: settings_widget
+                  hidden: true
+                  width: 440
+                  height: 220
+                  align: top_mid
+                  clickable: false
+                  radius: 20
+                  pad_all: 0
+                  bg_color: color_slate_blue_gray
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    - obj:
+                        id: backlight_settings_brightness_background
+                        width: 220
+                        height: 220
+                        align: top_left
+                        clickable: false
+                        radius: 20
+                        pad_all: 0
+                        bg_color: color_slate_blue_gray
+                        border_opa: transp
+                        border_width: 0
+                        shadow_opa: transp
+                        widgets:
+                          - label:  
+                              id: backlight_settings_brightness_label
+                              y: 20
+                              align: top_mid
+                              text_font: nunito_18
+                              text_color: color_misty_blue
+                              text: "Backlight"
+
+                          - slider:
+                              id: backlight_settings_brightness_slider
+                              y: -20
+                              radius: 10
+                              bg_color: color_gray
+                              align: bottom_mid
+                              width: 40
+                              height: 140
+                              min_value: 35
+                              max_value: 100
+                              value: 100
+                              indicator:
+                                bg_color: color_misty_blue
+                                radius: 10
+                              knob:
+                                bg_opa: transp
+                              on_release:
+                                - light.turn_on:
+                                    id: display_backlight
+                                    brightness: !lambda return int(x)/ 100.0;
+
+                    - obj:
+                        id: backlight_settings_sleep_time_background
+                        width: 220
+                        height: 220
+                        align: top_right
+                        clickable: false
+                        radius: 20
+                        pad_all: 0
+                        bg_color: color_slate_blue_gray
+                        border_opa: transp
+                        border_width: 0
+                        shadow_opa: transp
+                        widgets:
+                          - label:  
+                              id: backlight_settings_sleep_time_label
+                              y: 20
+                              align: top_mid
+                              text_font: nunito_18
+                              text_color: color_misty_blue
+                              text: "Sleep time"
+                          - roller:
+                              id: backlight_settings_sleep_time_roller
+                              y: 10
+                              width: 140
+                              align: center
+                              bg_opa: transp
+                              border_opa: transp
+                              shadow_opa: transp
+                              text_font: nunito_20
+                              text_color: color_steel_blue
+                              text_line_space: 4
+                              selected:
+                                bg_opa: transp
+                                text_font: nunito_20
+                                text_color: color_misty_blue
+                              selected_index: !lambda return id(display_timeout);
+                              options:
+                                - Never
+                                - 1 minute
+                                - 5 minutes
+                                - 10 minutes
+                                - 30 minutes
+                                - 1 hour
+                                - 6 hours
+                                - 12 hours
+                              visible_row_count: 1
+                              on_value:
+                                  then:
+                                    - number.set:
+                                        id: display_timeout_backlight
+                                        value: !lambda |-
+                                          static const int backlight_time[] = {-1, 1, 5, 10, 30, 60, 360, 720};
+                                          return backlight_time[x];
+                                    - globals.set:
+                                        id: display_timeout
+                                        value: !lambda return x;
+                                    - delay: 300ms
+                                    - lambda: |-
+                                        ESP_LOGI("TEST", "Current DT global: %d", id(display_timeout));
+
+        - obj:
+            id: weather_state_images
+            hidden: false
+            y: 15
+            width: 110
+            height: 110
+            align: top_mid
+            clickable: true
+            radius: 0
+            pad_all: 0
+            bg_opa: transp
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              - image:
+                  id: weather_sunny_image
+                  hidden: true
+                  y: 5
+                  x: 0
+                  align: top_mid
+                  src: sunny_img
+              - image:
+                  id: weather_clear_night_image
+                  hidden: true
+                  y: 5
+                  x: 0
+                  align: top_mid
+                  src: clear_night_img
+              - image:
+                  id: weather_cloudy_image
+                  hidden: true
+                  y: 25
+                  x: 0
+                  align: top_mid
+                  src: cloudy_img
+              - image:
+                  id: weather_partlycloudy_sun_image
+                  hidden: false
+                  y: 15
+                  x: 0
+                  align: top_mid
+                  src: partlycloudy_sun_img
+              - image:
+                  id: weather_partlycloudy_moon_image
+                  hidden: true
+                  y: 15
+                  x: 0
+                  align: top_mid
+                  src: partlycloudy_moon_img
+              - image:
+                  id: weather_rainy_image
+                  hidden: true
+                  y: 15
+                  x: 0
+                  align: top_mid
+                  src: rainy_img
+              - image:
+                  id: weather_pouring_image
+                  hidden: true
+                  y: 15
+                  x: 0
+                  align: top_mid
+                  src: pouring_img
+              - image:
+                  id: weather_snowy_image
+                  hidden: true
+                  y: 15
+                  x: 0
+                  align: top_mid
+                  src: snowy_img
+              - image:
+                  id: weather_snowy_rainy_image
+                  hidden: true
+                  y: 15
+                  x: 0
+                  align: top_mid
+                  src: snowy_rainy_img
+              - image:
+                  id: weather_fog_image
+                  hidden: true
+                  y: 15
+                  x: 0
+                  align: top_mid
+                  src: fog_img
+              - image:
+                  id: weather_hail_image
+                  hidden: true
+                  y: 15
+                  x: 0
+                  align: top_mid
+                  src: hail_img
+              - image:
+                  id: weather_lightning_image
+                  hidden: true
+                  y: 15
+                  x: 0
+                  align: top_mid
+                  src: lightning_img
+              - image:
+                  id: weather_lightning_rainy_image
+                  hidden: true
+                  y: 15
+                  x: 0
+                  align: top_mid
+                  src: lightning_rainy_img
+              - image:
+                  id: weather_windy_image
+                  hidden: true
+                  y: 0
+                  x: 5
+                  align: top_mid
+                  src: windy_img
+              - image:
+                  id: weather_windy_variant_image
+                  hidden: true
+                  y: 15
+                  x: 0
+                  align: top_mid
+                  src: windy_variant_img
+
+        - obj:
+            id: middle_widget_background
+            y: 290
+            width: 440
+            height: 100
+            align: top_mid
+            clickable: false
+            scrollable: false
+            radius: 20
+            pad_all: 0
+            bg_color: color_slate_blue_gray
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              - obj:
+                  id: middle_home_controls
+                  width: 440
+                  height: 100
+                  align: center
+                  clickable: false
+                  scrollable: false
+                  radius: 20
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    # LIGHTS BUTTON
+                    - obj:
+                        id: home_lights_btn_bg
+                        x: 30
+                        width: 90
+                        height: 90
+                        align: left_mid
+                        pad_all: 0
+                        bg_opa: transp
+                        shadow_opa: transp
+                        border_opa: transp
+                        widgets:
+                          - button:
+                              id: home_lights_btn
+                              width: 70
+                              height: 70
+                              align: center
+                              clickable: true
+                              radius: 50
+                              pad_all: 0
+                              bg_opa: transp
+                              border_opa: transp
+                              border_width: 0
+                              shadow_width: 8
+                              shadow_spread: 2
+                              shadow_ofs_y: 0
+                              shadow_color: color_black
+                              shadow_opa: cover
+                              pressed:
+                                bg_color: color_steel_blue
+                                shadow_width: 4
+                              on_click:
+                                - lvgl.page.show: ${light_widget_name_1}_light_page
+                                - delay: 250ms
+                                - lambda: |-
+                                    int lights = ${lights_amount};
+                                    if (lights >= 2) {
+                                      lv_obj_clear_flag(id(light_select_widget), LV_OBJ_FLAG_HIDDEN);
+                                    }
+
+                          - obj:
+                              width: 60
+                              height: 60
+                              align: center
+                              clickable: false
+                              radius: 45
+                              pad_all: 0
+                              bg_opa: transp 
+                              border_opa: transp
+                              shadow_width: 4
+                              shadow_color: 0xFFFFFF
+                              shadow_ofs_x: -4
+                              shadow_ofs_y: -2
+                              shadow_opa: 30%
+
+                          - obj:
+                              width: 65
+                              height: 65
+                              pad_all: 0
+                              align: center
+                              clickable: false
+                              radius: 50
+                              border_opa: transp
+                              bg_color: color_slate_blue_gray
+                              widgets:
+                                - label:
+                                    align: center
+                                    text_font: mdi_icons_28
+                                    text_color: color_misty_blue
+                                    text: "${ceiling_lights_icon}"
+
+                    # DEVICES BUTTON
+                    - obj:
+                        id: home_devices_btn_bg
+                        x: -30
+                        width: 90
+                        height: 90
+                        align: right_mid
+                        pad_all: 0
+                        bg_opa: transp
+                        shadow_opa: transp
+                        border_opa: transp
+                        widgets:
+                          - button:
+                              id: home_devices_btn
+                              width: 70
+                              height: 70
+                              align: center
+                              clickable: true
+                              radius: 50
+                              pad_all: 0
+                              bg_opa: transp
+                              border_opa: transp
+                              border_width: 0
+                              shadow_width: 8
+                              shadow_spread: 2
+                              shadow_ofs_y: 0
+                              shadow_color: color_black
+                              shadow_opa: cover
+                              pressed:
+                                bg_color: color_steel_blue
+                                shadow_width: 4
+                              on_click:
+                                - lvgl.page.show: climate_page
+
+                          - obj:
+                              width: 60
+                              height: 60
+                              align: center
+                              clickable: false
+                              radius: 45
+                              pad_all: 0
+                              bg_opa: transp 
+                              border_opa: transp
+                              shadow_width: 4
+                              shadow_color: 0xFFFFFF
+                              shadow_ofs_x: -4
+                              shadow_ofs_y: -2
+                              shadow_opa: 30%
+
+                          - obj:
+                              width: 65
+                              height: 65
+                              pad_all: 0
+                              align: center
+                              clickable: false
+                              radius: 50
+                              border_opa: transp
+                              bg_color: color_slate_blue_gray
+                              widgets:
+                                - label:
+                                    align: center
+                                    text_font: mdi_icons_28
+                                    text_color: color_misty_blue
+                                    text: "${dashboard_icon}"
+
+              - obj:
+                  id: middle_weather_controls
+                  hidden: true
+                  width: 440
+                  height: 200
+                  align: center
+                  clickable: false
+                  radius: 20
+                  pad_all: 0
+                  bg_color: color_slate_blue_gray
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    - obj:
+                        id: weather_forecast_buttons
+                        width: 440
+                        height: 50
+                        align: top_mid
+                        clickable: false
+                        radius: 20
+                        pad_all: 0
+                        bg_opa: transp
+                        border_opa: transp
+                        border_width: 0
+                        shadow_opa: transp
+                        widgets:
+                          - button:
+                              id: weather_forecast_daily_btn
+                              width: 220
+                              height: 30
+                              align: left_mid
+                              clickable: true
+                              radius: 20
+                              pad_all: 0
+                              bg_opa: transp
+                              border_opa: transp
+                              border_width: 0
+                              shadow_opa: transp
+                              widgets:
+                                - label:
+                                    id: weather_forecast_daily_label
+                                    align: top_mid
+                                    text_font: nunito_16
+                                    text_color: color_misty_blue
+                                    text: "Daily"
+                              on_press:
+                                - lvgl.label.update:
+                                    id: weather_forecast_daily_label
+                                    text_color: color_misty_blue
+                                - lvgl.label.update:
+                                    id: weather_forecast_hourly_label
+                                    text_color: color_steel_blue
+                                - lvgl.widget.hide: weather_forecast_hourly
+                                - lvgl.widget.show: weather_forecast_daily
+                          - button:
+                              id: weather_forecast_hourly_btn
+                              width: 220
+                              height: 30
+                              align: right_mid
+                              clickable: true
+                              radius: 20
+                              pad_all: 0
+                              bg_opa: transp
+                              border_opa: transp
+                              border_width: 0
+                              shadow_opa: transp
+                              widgets:
+                                - label:
+                                    id: weather_forecast_hourly_label
+                                    align: top_mid
+                                    text_font: nunito_16
+                                    text_color: color_steel_blue
+                                    text: "Hourly"
+                              on_press:
+                                - lvgl.label.update:
+                                    id: weather_forecast_hourly_label
+                                    text_color: color_misty_blue
+                                - lvgl.label.update:
+                                    id: weather_forecast_daily_label
+                                    text_color: color_steel_blue
+                                - lvgl.widget.hide: weather_forecast_daily
+                                - lvgl.widget.show: weather_forecast_hourly
+
+
+                    - obj:
+                        id: weather_forecast_daily
+                        hidden: false
+                        width: 408
+                        height: 160
+                        align: bottom_mid
+                        clickable: false
+                        radius: 20
+                        pad_all: 0
+                        bg_opa: transp
+                        border_opa: transp
+                        border_width: 0
+                        shadow_opa: transp
+                        layout:
+                          type: flex
+                          flex_flow: column
+                          flex_align_main: center
+                          flex_align_cross: center
+
+                    - obj:
+                        id: weather_forecast_hourly
+                        hidden: true
+                        width: 408
+                        height: 160
+                        align: bottom_mid
+                        clickable: false
+                        radius: 20
+                        pad_all: 0
+                        bg_opa: transp
+                        border_opa: transp
+                        border_width: 0
+                        shadow_opa: transp
+                        layout:
+                          type: flex
+                          flex_flow: column
+                          flex_align_main: center
+                          flex_align_cross: center
+
+        # SYSTEM BUTTONS (DOWN) 
+        - obj:
+            id: menu_controls_background
+            x: 0
+            y: -20
+            width: 440
+            height: 60
+            pad_all: 0
+            align: bottom_mid
+            bg_color: color_slate_blue_gray
+            shadow_opa: transp
+            border_opa: transp
+            border_width: 0
+            radius: 20
+            widgets:
+              - button:
+                  id: display_lock_btn
+                  clickable: true
+                  x: 10
+                  width: 50
+                  height: 50
+                  align: left_mid
+                  bg_opa: transp
+                  shadow_opa: transp
+                  checked:
+                    bg_opa: transp
+                  widgets:
+                    - label:
+                        id: display_lock_indicator
+                        align: center
+                        text_color: color_misty_blue
+                        text_font: mdi_icons_28
+                        text: "${lock_variant_icon}"
+                  on_long_press:
+                    - switch.toggle: display_lock_switch
+
+              - button:
+                  id: backlight_brightness_off_btn
+                  clickable: true
+                  x: 60
+                  width: 50
+                  height: 50
+                  align: left_mid
+                  bg_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        align: center
+                        text_color: color_misty_blue
+                        text_font: mdi_icons_28
+                        text: "${brightness_icon}"
+                  on_click:
+                    - delay: 1s
+                    - light.turn_off: display_backlight
+                    - lvgl.pause:
+
+
+              - button:
+                  id: home_widget_btn
+                  clickable: true
+                  x: 110
+                  width: 50
+                  height: 50
+                  align: left_mid
+                  bg_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        align: center
+                        text_color: color_misty_blue
+                        text_font: mdi_icons_28
+                        text: "${home_icon}"
+                  on_click:
+                    - script.execute:
+                        id: switch_to_mode
+                        target_mode: 0
+
+              - button:
+                  id: weather_widget_btn
+                  clickable: true
+                  x: -110
+                  width: 50
+                  height: 50
+                  align: right_mid
+                  bg_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        align: center
+                        text_color: color_misty_blue
+                        text_font: mdi_icons_28
+                        text: "${weather_icon}"
+                  on_click:
+                    - homeassistant.action:
+                        action: display_tools.get_forecasts
+                        data:
+                          entity_id: "${weather_entity}"
+                          type: "daily"
+                    - homeassistant.action:
+                        action: display_tools.get_forecasts
+                        data:
+                          entity_id: "${weather_entity}"
+                          type: "hourly"
+                    - script.execute:
+                        id: switch_to_mode
+                        target_mode: 1
+
+              - button:
+                  id: info_widget_btn
+                  clickable: true
+                  x: -60
+                  width: 50
+                  height: 50
+                  align: right_mid
+                  bg_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        align: center
+                        text_color: color_misty_blue
+                        text_font: mdi_icons_28
+                        text: "${info_icon}"
+                  on_click:
+                    - script.execute:
+                        id: switch_to_mode
+                        target_mode: 2
+
+              - button:
+                  id: settings_widget_btn
+                  clickable: true
+                  x: -10
+                  width: 50
+                  height: 50
+                  align: right_mid
+                  bg_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        align: center
+                        text_color: color_misty_blue
+                        text_font: mdi_icons_28
+                        text: "${settings_icon}"
+                  on_click:
+                    - script.execute:
+                        id: switch_to_mode
+                        target_mode: 3
+
+        # CIRCLE
+        - obj:
+            id: circle_widget_background
+            y: 100
+            width: 150
+            height: 150
+            align: center
+            clickable: false
+            radius: 75
+            pad_all: 0
+            bg_color: color_black
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              - obj:
+                  width: 100
+                  height: 100
+                  pad_all: 0
+                  align: center
+                  clickable: false
+                  radius: 50
+                  border_opa: transp
+                  bg_color: color_slate_blue_gray
+
+
+              - obj:
+                  id: circle_home_widget
+                  hidden: false
+                  width: 150
+                  height: 150
+                  align: center
+                  clickable: false
+                  radius: 75
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    - arc:
+                        id: circle_home_widget_temp_arc
+                        clickable: false
+                        adjustable: false
+                        adv_hittest: false
+                        align: center
+                        width: 130
+                        height: 130
+                        start_angle: 180
+                        end_angle: 360
+                        arc_width: 5
+                        arc_color: color_red
+                        arc_rounded: false
+                    - arc:
+                        id: circle_home_widget_hum_arc
+                        clickable: false
+                        adjustable: false
+                        adv_hittest: false
+                        align: center
+                        width: 130
+                        height: 130
+                        start_angle: 0
+                        end_angle: 180
+                        arc_width: 5
+                        arc_color: color_blue
+                        arc_rounded: false
+
+                    - obj:
+                        width: 100
+                        height: 100
+                        pad_all: 0
+                        align: center
+                        clickable: false
+                        radius: 50
+                        border_opa: transp
+                        bg_opa: transp
+                        widgets:
+                          - label:
+                              y: 15
+                              id: circle_home_widget_temp_value
+                              align: top_mid
+                              text_font: nunito_20
+                              text_color: color_misty_blue
+                              text: "22.5°"
+                          - label:
+                              y: -15
+                              id: circle_home_widget_hum_value
+                              align: bottom_mid
+                              text_font: nunito_20
+                              text_color: color_misty_blue
+                              text: "62 %"
+                          - obj:
+                              id: circle_home_widget_line
+                              width: 74
+                              height: 2
+                              align: center
+                              bg_color: color_misty_blue
+                              border_opa: transp
+                              shadow_opa: transp
+
+              - obj:
+                  id: circle_info_widget
+                  hidden: true
+                  width: 150
+                  height: 150
+                  align: center
+                  clickable: false
+                  radius: 75
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    - arc:
+                        id: circle_info_widget_cpu_arc
+                        clickable: false
+                        adjustable: false
+                        adv_hittest: false
+                        align: center
+                        width: 130
+                        height: 130
+                        start_angle: 0
+                        end_angle: 360
+                        arc_width: 5
+                        arc_color: color_yellow
+                        arc_rounded: false
+
+                    - obj:
+                        width: 100
+                        height: 100
+                        pad_all: 0
+                        align: center
+                        clickable: false
+                        radius: 50
+                        border_opa: transp
+                        bg_opa: transp
+                        widgets:
+                          - label:
+                              y: 15
+                              id: circle_info_widget_cpu_label
+                              align: top_mid
+                              text_font: nunito_20
+                              text_color: color_misty_blue
+                              text: "CPU"
+                          - label:
+                              y: -15
+                              id: circle_info_widget_cpu_state_value
+                              align: bottom_mid
+                              text_font: nunito_20
+                              text_color: color_misty_blue
+                              text: "38.5°"
+                          - obj:
+                              id: circle_info_widget_line
+                              width: 74
+                              height: 2
+                              align: center
+                              bg_color: color_misty_blue
+                              border_opa: transp
+                              shadow_opa: transp
+
+              - obj:
+                  id: circle_settings_widget
+                  hidden: true
+                  width: 150
+                  height: 150
+                  align: center
+                  clickable: false
+                  radius: 75
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    - arc:
+                        id: circle_settings_widget_lang_arc
+                        clickable: false
+                        adjustable: false
+                        adv_hittest: false
+                        align: center
+                        width: 130
+                        height: 130
+                        start_angle: 0
+                        end_angle: 360
+                        arc_width: 5
+                        arc_color: color_misty_blue
+                        arc_rounded: false
+
+                    - button:
+                        id: circle_settings_widget_lang_btn
+                        width: 100
+                        height: 100
+                        pad_all: 0
+                        align: center
+                        clickable: true
+                        radius: 50
+                        border_opa: transp
+                        bg_opa: transp
+                        shadow_opa: transp
+                        checked:
+                          bg_opa: transp
+                        widgets:
+                          - image:
+                              id: circle_settings_widget_lang_flag
+                              align: center
+                              src: flags_ru_img
+                        on_click:
+                          - switch.toggle: language_switch
+
+mapping:
+  - id: flag_icon_mapping
+    from: string
+    to: image
+    entries:
+      de: flags_de_img
+      es: flags_es_img
+      fr: flags_fr_img
+      en: flags_gb_img
+      it: flags_it_img
+      pt: flags_pt_img
+      ru: flags_ru_img
+
+script:
+
+  - id: update_home_translations
+    then:
+      - lvgl.label.update:
+          id: weather_state_label
+          text: !lambda |-
+            return id(i18n_translations).translate(("weather." + id(weather_state_sensor).state));
+      - lvgl.label.update:
+          id: backlight_settings_brightness_label
+          text: !lambda |-
+            return id(i18n_translations).translate("settings.backlight");
+      - lvgl.label.update:
+          id: backlight_settings_sleep_time_label
+          text: !lambda |-
+            return id(i18n_translations).translate("settings.sleep_time");
+      - lvgl.label.update:
+          id: weather_forecast_daily_label
+          text: !lambda |-
+            return id(i18n_translations).translate("forecasts.daily");
+      - lvgl.label.update:
+          id: weather_forecast_hourly_label
+          text: !lambda |-
+            return id(i18n_translations).translate("forecasts.hourly");
+
+      - lambda: |-
+          lv_obj_t *roller_obj = id(backlight_settings_sleep_time_roller).obj;
+          if (roller_obj == nullptr) {
+            return;
+          }
+
+          uint16_t old_selection = lv_roller_get_selected(roller_obj);
+
+          std::string options = 
+            id(i18n_translations).translate("sleep_time.never") + "\n" +
+            id(i18n_translations).translate("sleep_time.minute1") + "\n" +
+            id(i18n_translations).translate("sleep_time.minute5") + "\n" +
+            id(i18n_translations).translate("sleep_time.minute10") + "\n" +
+            id(i18n_translations).translate("sleep_time.minute30") + "\n" +
+            id(i18n_translations).translate("sleep_time.hour1") + "\n" +
+            id(i18n_translations).translate("sleep_time.hour6") + "\n" +
+            id(i18n_translations).translate("sleep_time.hour12");
+
+          lv_roller_set_options(roller_obj, options.c_str(), LV_ROLLER_MODE_NORMAL);
+          lv_roller_set_selected(roller_obj, old_selection, LV_ANIM_OFF);
+
+  # - id: display_block_buttons
+  #   then:
+  #     if:
+  #       condition:
+  #         lambda: return !id(display_lock);
+  #       then:
+  #         - lvgl.label.update:
+  #             id: lock_status
+  #             text_color: color_steel_blue
+  #         - lvgl.button.update:
+  #             id: backlight_brightness_off_btn
+  #             clickable: true
+  #         - lvgl.button.update:
+  #             id: home_widget_btn 
+  #             clickable: true
+  #         - lvgl.button.update:
+  #             id: weather_widget_btn 
+  #             clickable: true
+  #         - lvgl.button.update:
+  #             id: info_widget_btn 
+  #             clickable: true
+  #         - lvgl.button.update:
+  #             id: settings_widget_btn 
+  #             clickable: true
+  #         - lvgl.button.update:
+  #             id: home_lights_btn
+  #             clickable: true
+  #         - lvgl.button.update:
+  #             id: home_devices_btn
+  #             clickable: true
+  #         - lvgl.button.update:
+  #             id: weather_forecast_daily_btn
+  #             clickable: true
+  #         - lvgl.button.update:
+  #             id: weather_forecast_hourly_btn
+  #             clickable: true
+  #       else:
+  #         - lvgl.label.update:
+  #             id: lock_status
+  #             text_color: color_red
+  #         - lvgl.button.update:
+  #             id: backlight_brightness_off_btn
+  #             clickable: false
+  #         - lvgl.button.update:
+  #             id: home_widget_btn 
+  #             clickable: false
+  #         - lvgl.button.update:
+  #             id: weather_widget_btn 
+  #             clickable: false
+  #         - lvgl.button.update:
+  #             id: info_widget_btn 
+  #             clickable: false
+  #         - lvgl.button.update:
+  #             id: settings_widget_btn 
+  #             clickable: false
+  #         - lvgl.button.update:
+  #             id: home_lights_btn
+  #             clickable: false
+  #         - lvgl.button.update:
+  #             id: home_devices_btn
+  #             clickable: false
+  #         - lvgl.button.update:
+  #             id: weather_forecast_daily_btn
+  #             clickable: false
+  #         - lvgl.button.update:
+  #             id: weather_forecast_hourly_btn
+  #             clickable: false
+
+  - id: display_block_buttons
+    mode: restart
+    then:
+      - if:
+          condition:
+            switch.is_off: display_lock_switch
+          then:
+            - lvgl.label.update:
+                id: lock_status
+                text_color: color_steel_blue
+            - lvgl.button.update: { id: backlight_brightness_off_btn, clickable: true }
+            - lvgl.button.update: { id: home_widget_btn, clickable: true }
+            - lvgl.button.update: { id: weather_widget_btn, clickable: true }
+            - lvgl.button.update: { id: info_widget_btn, clickable: true }
+            - lvgl.button.update: { id: settings_widget_btn, clickable: true }
+            - lvgl.button.update: { id: home_lights_btn, clickable: true }
+            - lvgl.button.update: { id: home_devices_btn, clickable: true }
+            - lvgl.button.update: { id: weather_forecast_daily_btn, clickable: true }
+            - lvgl.button.update: { id: weather_forecast_hourly_btn, clickable: true }
+            - lvgl.slider.update: { id: backlight_settings_brightness_slider, clickable: true }
+            - lvgl.roller.update: { id: backlight_settings_sleep_time_roller, clickable: true }
+            - lvgl.button.update: { id: circle_settings_widget_lang_btn, clickable: true }
+          else:
+            - lvgl.label.update:
+                id: lock_status
+                text_color: color_red
+            - lvgl.button.update: { id: backlight_brightness_off_btn, clickable: false }
+            - lvgl.button.update: { id: home_widget_btn, clickable: false }
+            - lvgl.button.update: { id: weather_widget_btn, clickable: false }
+            - lvgl.button.update: { id: info_widget_btn, clickable: false }
+            - lvgl.button.update: { id: settings_widget_btn, clickable: false }
+            - lvgl.button.update: { id: home_lights_btn, clickable: false }
+            - lvgl.button.update: { id: home_devices_btn, clickable: false }
+            - lvgl.button.update: { id: weather_forecast_daily_btn, clickable: false }
+            - lvgl.button.update: { id: weather_forecast_hourly_btn, clickable: false }
+            - lvgl.slider.update: { id: backlight_settings_brightness_slider, clickable: false }
+            - lvgl.roller.update: { id: backlight_settings_sleep_time_roller, clickable: false }
+            - lvgl.button.update: { id: circle_settings_widget_lang_btn, clickable: false }
+
+  - id: update_weather_image
+    then:
+      - lambda: |-
+          auto hide_all = [](){
+            lv_obj_add_flag(id(weather_sunny_image), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(weather_clear_night_image), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(weather_cloudy_image), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(weather_partlycloudy_sun_image), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(weather_partlycloudy_moon_image), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(weather_rainy_image), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(weather_pouring_image), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(weather_snowy_image), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(weather_snowy_rainy_image), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(weather_fog_image), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(weather_hail_image), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(weather_lightning_image), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(weather_lightning_rainy_image), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(weather_windy_image), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(weather_windy_variant_image), LV_OBJ_FLAG_HIDDEN);
+          };
+
+          std::string weather = id(weather_state_sensor).state;
+          bool is_night = (id(sun_state_sensor).state == "below_horizon");
+
+          hide_all();
+          auto show = [&](lv_obj_t * o){ lv_obj_clear_flag(o, LV_OBJ_FLAG_HIDDEN); };
+
+          if (weather == "cloudy") show(id(weather_cloudy_image));
+          else if (weather == "partlycloudy") {
+            if (is_night) show(id(weather_partlycloudy_moon_image));
+            else show(id(weather_partlycloudy_sun_image));
+          }
+          else if (weather == "sunny") show(id(weather_sunny_image));
+          else if (weather == "clear-night") show(id(weather_clear_night_image));
+          else if (weather == "rainy") show(id(weather_rainy_image));
+          else if (weather == "lightning-rainy") show(id(weather_lightning_rainy_image));
+          else if (weather == "lightning") show(id(weather_lightning_image));
+          else if (weather == "pouring") show(id(weather_pouring_image));
+          else if (weather == "snowy") show(id(weather_snowy_image));
+          else if (weather == "snowy-rainy") show(id(weather_snowy_rainy_image));
+          else if (weather == "fog") show(id(weather_fog_image));
+          else if (weather == "hail") show(id(weather_hail_image));
+          else if (weather == "windy") show(id(weather_windy_image));
+          else if (weather == "windy-variant") show(id(weather_windy_variant_image));
+          else {
+            if (is_night) show(id(weather_clear_night_image));
+            else show(id(weather_sunny_image));
+          }
+
+  - id: log_widgets_status
+    then:
+      - lambda: |-
+          // Создаем список пар: указатель на виджет и его имя
+          auto widget_list = {
+              std::make_pair(id(main_widget_background), "main_widget_background"),
+              std::make_pair(id(weather_time_widget), "weather_time_widget"),
+              std::make_pair(id(datetime_widget), "datetime_widget"),
+              std::make_pair(id(weather_widget), "weather_widget"),
+              std::make_pair(id(info_widget), "info_widget"),
+              std::make_pair(id(settings_widget), "settings_widget"),
+              std::make_pair(id(weather_state_images), "weather_state_images"),
+              std::make_pair(id(middle_weather_controls), "middle_weather_controls"),
+              std::make_pair(id(weather_forecast_daily), "weather_forecast_daily"),
+              std::make_pair(id(weather_forecast_hourly), "weather_forecast_hourly"),
+              std::make_pair(id(circle_home_widget), "circle_home_widget"),
+              std::make_pair(id(circle_info_widget), "circle_info_widget"),
+              std::make_pair(id(circle_settings_widget), "circle_settings_widget")
+          };
+
+          for (auto& item : widget_list) {
+              auto* widget = item.first;
+              const char* name = item.second;
+              if (widget != nullptr) {
+                  bool is_hidden = lv_obj_has_flag(widget, LV_OBJ_FLAG_HIDDEN);
+                  lv_style_value_t val = lv_obj_get_style_prop(widget, LV_PART_MAIN, LV_STYLE_OPA);
+                  lv_opa_t opa_value = val.num;
+
+                  ESP_LOGD("Widget Status", "ID: %s -> Hidden: %s, Opa: %d", 
+                          name, 
+                          is_hidden ? "true" : "false", 
+                          opa_value);
+              } else {
+                  ESP_LOGD("Widget Status", "Ошибка: виджет %s не найден (указатель nullptr).", name);
+              }
+          }
+
+
+
+
+
+
+
+
+##### TESTS #####
+  - id: run_random_mode_tests
+    then:
+      - lambda: |-
+          ESP_LOGI("TEST", "Random mode test started");
+      - repeat:
+          count: 30
+          then:
+            - lambda: |-
+                // Выбираем случайный целевой режим (0..3), не равный текущему
+                int current = id(current_mode);
+                int target = current;
+                int attempts = 0;
+                while (target == current && attempts < 10) {
+                  target = (int)(esp_random() % 4);
+                  attempts++;
+                }
+                ESP_LOGI("TEST", "Switch %d -> %d", current, target);
+                id(switch_to_mode)->execute(target);
+            - wait_until:
+                condition: 
+                  lambda: 'return !id(is_animating);'
+                timeout: 3s
+            # Небольшая пауза после окончания анимации, чтобы стили успели примениться
+            - delay: 60ms
+            - script.execute: validate_mode_state
+      - lambda: |-
+          ESP_LOGI("TEST", "Random mode test finished");
+
+  - id: validate_mode_state
+    then:
+      - lambda: |-
+          auto is_visible = [](lv_obj_t* w)->bool{
+            if (!w) return false;
+            bool hidden = lv_obj_has_flag(w, LV_OBJ_FLAG_HIDDEN);
+            if (hidden) return false;
+            lv_style_value_t val = lv_obj_get_style_prop(w, LV_PART_MAIN, LV_STYLE_OPA);
+            lv_opa_t opa_value = val.num;
+            return opa_value > 0; // считаем видимым при любой ненулевой непрозрачности
+          };
+
+          int m = id(current_mode);
+          bool ok = true;
+
+          // Если режим HOME, дайте стилистике чуть больше времени стабилизироваться
+          if (m == 0) {
+            // небольшой локальный sleep без блокировки LVGL (если доступно)
+            // иначе просто ничего: LVGL уже в основном потоке.
+          }
+
+          // Должны быть видимы
+          std::vector<std::pair<lv_obj_t*, const char*>> must;
+
+          if (m == 0) { // HOME
+            must = {
+              { id(main_widget_background), "main_widget_background" },
+              { id(weather_time_widget), "weather_time_widget" },
+              { id(datetime_widget), "datetime_widget" },
+              { id(weather_state_images), "weather_state_images" },
+              { id(circle_home_widget), "circle_home_widget" },
+            };
+          } else if (m == 1) { // WEATHER
+            must = {
+              { id(main_widget_background), "main_widget_background" },
+              { id(weather_time_widget), "weather_time_widget" },
+              { id(weather_widget), "weather_widget" },
+              { id(weather_state_images), "weather_state_images" },
+              { id(middle_weather_controls), "middle_weather_controls" },
+            };
+          } else if (m == 2) { // INFO
+            must = {
+              { id(main_widget_background), "main_widget_background" },
+              { id(info_widget), "info_widget" },
+              { id(circle_info_widget), "circle_info_widget" },
+            };
+          } else if (m == 3) { // SETTINGS
+            must = {
+              { id(main_widget_background), "main_widget_background" },
+              { id(settings_widget), "settings_widget" },
+              { id(circle_settings_widget), "circle_settings_widget" },
+            };
+          }
+
+          for (auto &p : must) {
+            bool vis = is_visible(p.first);
+            if (!vis) {
+              ok = false;
+              ESP_LOGE("VALIDATE", "VISIBLE expected but not: %s", p.second);
+            }
+          }
+
+          // Проверка «лишние» скрыты (или opa=0)
+          auto soft_hidden = [&](lv_obj_t* w)->bool{
+            if (!w) return true;
+            bool hidden = lv_obj_has_flag(w, LV_OBJ_FLAG_HIDDEN);
+            if (hidden) return true;
+            lv_style_value_t val = lv_obj_get_style_prop(w, LV_PART_MAIN, LV_STYLE_OPA);
+            lv_opa_t opa_value = val.num;
+            return opa_value == 0;
+          };
+
+          // Карта всех контролируемых
+          std::vector<std::pair<lv_obj_t*, const char*>> all = {
+            { id(main_widget_background), "main_widget_background" },
+            { id(weather_time_widget), "weather_time_widget" },
+            { id(datetime_widget), "datetime_widget" },
+            { id(weather_widget), "weather_widget" },
+            { id(info_widget), "info_widget" },
+            { id(settings_widget), "settings_widget" },
+            { id(weather_state_images), "weather_state_images" },
+            { id(middle_weather_controls), "middle_weather_controls" },
+            { id(circle_home_widget), "circle_home_widget" },
+            { id(circle_info_widget), "circle_info_widget" },
+            { id(circle_settings_widget), "circle_settings_widget" },
+          };
+
+          auto is_must = [&](lv_obj_t* w)->bool{
+            for (auto &p : must) if (p.first == w) return true;
+            return false;
+          };
+
+          for (auto &p : all) {
+            if (is_must(p.first)) continue; // уже проверен как видимый
+
+            // В режимах INFO (2) и SETTINGS (3) НЕ требуем скрывать weather_state_images — он может «уезжать»
+            if ((m == 2 || m == 3) && p.first == id(weather_state_images)) {
+              continue;
+            }
+
+            // В режиме WEATHER (1) не требуем скрывать circle_home_widget (он может быть видим как декоративный элемент)
+            if (m == 1 && p.first == id(circle_home_widget)) {
+              continue;
+            }
+
+            // остальное должно быть скрыто или прозрачно
+            if (!soft_hidden(p.first)) {
+              ok = false;
+              ESP_LOGE("VALIDATE", "Should be hidden/transparent: %s", p.second);
+            }
+          }
+
+          if (ok) ESP_LOGI("VALIDATE", "Mode %d: OK", m);
+          else    ESP_LOGE("VALIDATE", "Mode %d: FAILED", m);
+
+
+###########################
+######## DATE TIME ########
+###########################
+
+  - id: time_update
+    mode: queued
+    then:
+      - lvgl.label.update:
+          id: time_value
+          text: !lambda |-
+            static char time_buf[16];
+            auto now = id(sntp_time).now();            
+            snprintf(time_buf, sizeof(time_buf), "%02d:%02d", now.hour, now.minute);
+            return time_buf;
+
+      - lvgl.label.update:
+          id: day_of_week_value
+          text: !lambda |-
+            auto now = id(sntp_time).now();
+            const char* day_keys[] = {"day_of_week.sunday", "day_of_week.monday", "day_of_week.tuesday", "day_of_week.wednesday", 
+                                      "day_of_week.thursday", "day_of_week.friday", "day_of_week.saturday"};
+            const char* day_key = day_keys[now.day_of_week - 1];
+            
+            return id(i18n_translations).translate(day_key);
+
+      - lvgl.label.update:
+          id: date_month_value
+          text: !lambda |-
+            auto now = id(sntp_time).now();
+            const char* month_keys[] = {"month.january", "month.february", "month.march", "month.april", "month.may", "month.june", 
+                                        "month.july", "month.august", "month.september", "month.october", "month.november", "month.december"};
+            const char* month_key = month_keys[now.month - 1];
+            
+            static char buf[64];
+            snprintf(buf, sizeof(buf), "%02d %s", now.day_of_month, id(i18n_translations).translate(month_key).c_str());
+            return buf;
+
+
+####### FORECASTS ########
+
+  # ========================================
+  # 1️⃣ PARSE DAILY FORECASTS (БЕЗ ИЗМЕНЕНИЙ)
+  # ========================================
+  - id: parse_daily_forecasts
+    then:
+      - lambda: |-
+          ESP_LOGI("weather", "=== Parsing DAILY Forecasts ===");
+          
+          std::string json_str = id(weather_forecast_daily_sensor).state;
+          
+          if (json_str.empty() || json_str == "unknown") {
+            ESP_LOGW("weather", "No daily forecast data");
+            id(forecast_daily_count) = 0;
+            return;
+          }
+          
+          ESP_LOGI("weather", "Daily JSON: %d bytes", json_str.length());
+          
+          JsonDocument doc;
+          DeserializationError error = deserializeJson(doc, json_str);
+          
+          if (error) {
+            ESP_LOGE("weather", "Parse error: %s", error.c_str());
+            id(forecast_daily_count) = 0;
+            return;
+          }
+          
+          JsonArray forecasts = doc.as<JsonArray>();
+          if (forecasts.isNull()) {
+            ESP_LOGE("weather", "Not an array!");
+            id(forecast_daily_count) = 0;
+            return;
+          }
+          
+          int count = std::min((int)forecasts.size(), 6);
+          id(forecast_daily_count) = count;
+          
+          ESP_LOGI("weather", "Processing %d daily forecasts", count);
+          
+          // Вычисляем offset ОДИН РАЗ
+          auto local_now = id(sntp_time).now();
+          auto utc_now = id(sntp_time).utcnow();
+          
+          int32_t offset_hours = local_now.hour - utc_now.hour;
+          if (offset_hours > 12) offset_hours -= 24;
+          if (offset_hours < -12) offset_hours += 24;
+          
+          int32_t tz_offset = offset_hours * 3600 + 
+                            (local_now.minute - utc_now.minute) * 60 + 
+                            (local_now.second - utc_now.second);
+          
+          ESP_LOGI("parse_debug", "Detected TZ offset: %+d seconds (%+d hours)", 
+                  tz_offset, offset_hours);
+          
+          for (int i = 0; i < count; i++) {
+            JsonObject forecast = forecasts[i];
+            const char* dt_str = forecast["datetime"];
+            
+            if (dt_str) {
+              ESP_LOGI("parse_debug", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+              ESP_LOGI("parse_debug", "📅 Raw datetime: %s", dt_str);
+              
+              struct tm tm = {};
+              if (strptime(dt_str, "%Y-%m-%dT%H:%M:%S", &tm)) {
+                // mktime() интерпретирует как ЛОКАЛЬНОЕ время (MSK)
+                time_t local_ts = mktime(&tm);
+                
+                // ✅ ПРИБАВЛЯЕМ offset, чтобы получить правильный UTC timestamp
+                time_t utc_timestamp = local_ts + tz_offset;
+                
+                id(forecast_daily_timestamps)[i] = utc_timestamp;
+                
+                ESP_LOGI("parse_debug", "🕐 Parsed time: %04d-%02d-%02d %02d:%02d:%02d",
+                        tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                        tm.tm_hour, tm.tm_min, tm.tm_sec);
+                ESP_LOGI("parse_debug", "   mktime result (as MSK): %ld", local_ts);
+                ESP_LOGI("parse_debug", "✅ UTC Timestamp: %ld (offset: %+d)", 
+                        utc_timestamp, tz_offset);
+                
+                // Проверка: конвертируем обратно
+                struct tm check_utc;
+                gmtime_r(&utc_timestamp, &check_utc);
+                ESP_LOGI("parse_debug", "   Check UTC: %04d-%02d-%02d %02d:%02d:%02d (wday: %d)",
+                        check_utc.tm_year + 1900, check_utc.tm_mon + 1, check_utc.tm_mday,
+                        check_utc.tm_hour, check_utc.tm_min, check_utc.tm_sec,
+                        check_utc.tm_wday);
+                
+                time_t local_display = utc_timestamp + tz_offset;
+                struct tm check_local;
+                gmtime_r(&local_display, &check_local);
+                ESP_LOGI("parse_debug", "   Check Local: %04d-%02d-%02d %02d:%02d:%02d (wday: %d)",
+                        check_local.tm_year + 1900, check_local.tm_mon + 1, check_local.tm_mday,
+                        check_local.tm_hour, check_local.tm_min, check_local.tm_sec,
+                        check_local.tm_wday);
+                
+                ESP_LOGI("parse_debug", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+              } else {
+                ESP_LOGE("parse_debug", "❌ Failed to parse: %s", dt_str);
+                id(forecast_daily_timestamps)[i] = 0;
+              }
+            } else {
+              ESP_LOGW("parse_debug", "⚠️ No datetime for forecast %d", i);
+              id(forecast_daily_timestamps)[i] = 0;
+            }
+            
+            id(forecast_daily_temps)[i] = forecast["temperature"] | 0.0f;
+            id(forecast_daily_conditions)[i] = forecast["condition"] | "sunny";
+            
+            ESP_LOGD("weather", "[%d] %.1f°C, %s", 
+                    i, id(forecast_daily_temps)[i], 
+                    id(forecast_daily_conditions)[i].c_str());
+          }
+          
+          ESP_LOGI("weather", "✅ Daily parsing complete");
+          
+      - script.execute: update_daily_display
+
+
+
+  # ========================================
+  # 2️⃣ PARSE HOURLY FORECASTS (ИСПРАВЛЕН)
+  # ========================================
+  - id: parse_hourly_forecasts
+    then:
+      - lambda: |-
+          ESP_LOGI("weather", "=== Parsing HOURLY Forecasts ===");
+          
+          std::string json_str = id(weather_forecast_hourly_sensor).state;
+          
+          if (json_str.empty() || json_str == "unknown") {
+            ESP_LOGW("weather", "No hourly forecast data");
+            id(forecast_hourly_count) = 0;
+            return;
+          }
+          
+          ESP_LOGI("weather", "Hourly JSON: %d bytes", json_str.length());
+          
+          JsonDocument doc;
+          DeserializationError error = deserializeJson(doc, json_str);
+          
+          if (error) {
+            ESP_LOGE("weather", "Parse error: %s", error.c_str());
+            id(forecast_hourly_count) = 0;
+            return;
+          }
+          
+          JsonArray forecasts = doc.as<JsonArray>();
+          if (forecasts.isNull()) {
+            ESP_LOGE("weather", "Not an array!");
+            id(forecast_hourly_count) = 0;
+            return;
+          }
+          
+          int count = forecasts.size();
+          id(forecast_hourly_count) = count;
+          
+          ESP_LOGI("weather", "Processing %d hourly forecasts", count);
+          
+          // Вычисляем offset ОДИН РАЗ
+          auto local_now = id(sntp_time).now();
+          auto utc_now = id(sntp_time).utcnow();
+          
+          int32_t offset_hours = local_now.hour - utc_now.hour;
+          if (offset_hours > 12) offset_hours -= 24;
+          if (offset_hours < -12) offset_hours += 24;
+          
+          int32_t tz_offset = offset_hours * 3600 + 
+                            (local_now.minute - utc_now.minute) * 60 + 
+                            (local_now.second - utc_now.second);
+          
+          ESP_LOGI("parse_debug", "Detected TZ offset: %+d seconds (%+d hours)", 
+                  tz_offset, offset_hours);
+          
+          for (int i = 0; i < count; i++) {
+            JsonObject forecast = forecasts[i];
+            const char* dt_str = forecast["datetime"];
+            
+            if (dt_str) {
+              ESP_LOGI("parse_debug", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+              ESP_LOGI("parse_debug", "📅 Raw datetime: %s", dt_str);
+              
+              struct tm tm = {};
+              if (strptime(dt_str, "%Y-%m-%dT%H:%M:%S", &tm)) {
+                // mktime() интерпретирует как ЛОКАЛЬНОЕ время (MSK)
+                time_t local_ts = mktime(&tm);
+                
+                // ✅ ПРИБАВЛЯЕМ offset, чтобы получить правильный UTC timestamp
+                // Потому что строка содержала UTC время, а mktime подумал что это MSK
+                time_t utc_timestamp = local_ts + tz_offset;
+                
+                id(forecast_hourly_timestamps)[i] = utc_timestamp;
+                
+                ESP_LOGI("parse_debug", "🕐 Parsed time: %04d-%02d-%02d %02d:%02d:%02d",
+                        tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                        tm.tm_hour, tm.tm_min, tm.tm_sec);
+                ESP_LOGI("parse_debug", "   mktime result (as MSK): %ld", local_ts);
+                ESP_LOGI("parse_debug", "✅ UTC Timestamp: %ld (offset: %+d)", 
+                        utc_timestamp, tz_offset);
+                
+                // Проверка: конвертируем обратно
+                struct tm check_utc;
+                gmtime_r(&utc_timestamp, &check_utc);
+                ESP_LOGI("parse_debug", "   Check UTC: %04d-%02d-%02d %02d:%02d:%02d",
+                        check_utc.tm_year + 1900, check_utc.tm_mon + 1, check_utc.tm_mday,
+                        check_utc.tm_hour, check_utc.tm_min, check_utc.tm_sec);
+                
+                time_t local_display = utc_timestamp + tz_offset;
+                struct tm check_local;
+                gmtime_r(&local_display, &check_local);
+                ESP_LOGI("parse_debug", "   Check Local: %04d-%02d-%02d %02d:%02d:%02d",
+                        check_local.tm_year + 1900, check_local.tm_mon + 1, check_local.tm_mday,
+                        check_local.tm_hour, check_local.tm_min, check_local.tm_sec);
+                
+                ESP_LOGI("parse_debug", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+              } else {
+                ESP_LOGE("parse_debug", "❌ Failed to parse: %s", dt_str);
+                id(forecast_hourly_timestamps)[i] = 0;
+              }
+            } else {
+              ESP_LOGW("parse_debug", "⚠️ No datetime for forecast %d", i);
+              id(forecast_hourly_timestamps)[i] = 0;
+            }
+            
+            id(forecast_hourly_temps)[i] = forecast["temperature"] | 0.0f;
+            id(forecast_hourly_conditions)[i] = forecast["condition"] | "sunny";
+            
+            ESP_LOGD("weather", "[%d] %s: %.1f°C, %s", 
+                    i, dt_str ? dt_str : "unknown",
+                    id(forecast_hourly_temps)[i], 
+                    id(forecast_hourly_conditions)[i].c_str());
+          }
+          
+          ESP_LOGI("weather", "✅ Hourly parsing complete");
+          
+      - script.execute: update_hourly_display
+
+
+
+
+
+  # ========================================
+  # 3️⃣ UPDATE DAILY DISPLAY (ИСПРАВЛЕН)
+  # ========================================
+  - id: update_daily_display
+    then:
+      - lambda: |-
+          ESP_LOGI("weather", "=== Updating DAILY Display ===");
+          
+          if (id(forecast_daily_count) == 0) return;
+          if (!id(weather_forecast_daily)) return;
+          
+          static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
+          
+          lv_obj_clean(id(weather_forecast_daily));
+          
+          auto get_icon = [](const std::string& c) -> esphome::image::Image* {
+            if (c == "clear-night") return id(clear_night_small_img);
+            if (c == "cloudy") return id(cloudy_small_img);
+            if (c == "fog") return id(fog_small_img);
+            if (c == "hail") return id(hail_small_img);
+            if (c == "lightning") return id(lightning_small_img);
+            if (c == "lightning-rainy") return id(lightning_rainy_small_img);
+            if (c == "partlycloudy") return id(partlycloudy_sun_small_img);
+            if (c == "pouring") return id(pouring_small_img);
+            if (c == "rainy") return id(rainy_small_img);
+            if (c == "snowy") return id(snowy_small_img);
+            if (c == "snowy-rainy") return id(snowy_rainy_small_img);
+            if (c == "sunny") return id(sunny_small_img);
+            if (c == "windy") return id(windy_small_img);
+            if (c == "windy-variant") return id(windy_variant_small_img);
+            return id(sunny_small_img);
+          };
+          
+          auto get_day_name = [](int index) -> const char* {
+            auto time_now = id(sntp_time).now();
+            int today_wday = time_now.day_of_week;
+            int forecast_wday = (today_wday + index - 1) % 7 + 1;
+            
+            const char* day_keys[] = {
+              "", "day_of_week_short.sunday", "day_of_week_short.monday",
+              "day_of_week_short.tuesday", "day_of_week_short.wednesday",
+              "day_of_week_short.thursday", "day_of_week_short.friday",
+              "day_of_week_short.saturday"
+            };
+            
+            if (forecast_wday < 1 || forecast_wday > 7) return "???";
+            static std::string result;
+            result = id(i18n_translations).translate(day_keys[forecast_wday]);
+            return result.c_str();
+          };
+          
+          lv_obj_t* cont = lv_obj_create(id(weather_forecast_daily));
+          if (!cont) return;
+          
+          lv_obj_set_size(cont, 408, 150);
+          lv_obj_align(cont, LV_ALIGN_CENTER, 0, 5);
+          lv_obj_set_style_bg_opa(cont, LV_OPA_TRANSP, 0);
+          lv_obj_set_style_border_width(cont, 0, 0);
+          lv_obj_set_style_pad_all(cont, 0, 0);
+          lv_obj_set_style_pad_column(cont, 0, 0);
+          lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW);
+          
+          for (int i = 0; i < id(forecast_daily_count); i++) {
+            lv_obj_t* item = lv_obj_create(cont);
+            if (!item) continue;
+            
+            lv_obj_set_size(item, 68, 120);
+            lv_obj_set_style_bg_opa(item, LV_OPA_TRANSP, 0);
+            lv_obj_set_style_border_width(item, 0, 0);
+            lv_obj_set_style_pad_all(item, 0, 0);
+            
+            // День недели
+            lv_obj_t* day_label = lv_label_create(item);
+            if (day_label) {
+              lv_label_set_text(day_label, get_day_name(i));
+              lv_obj_align(day_label, LV_ALIGN_TOP_MID, 0, 0);
+              lv_obj_set_style_text_font(day_label, fe_nunito_16.get_lv_font(), 0);
+              lv_obj_set_style_text_color(day_label, lv_color_hex(0x9BA2BC), 0);
+            }
+            
+            // Иконка
+            lv_obj_t* icon = lv_img_create(item);
+            if (icon) {
+              lv_img_set_src(icon, get_icon(id(forecast_daily_conditions)[i]));
+              lv_obj_align(icon, LV_ALIGN_CENTER, 0, 0);
+            }
+            
+            // Температура
+            lv_obj_t* temp_label = lv_label_create(item);
+            if (temp_label) {
+              char temp_str[10];
+              snprintf(temp_str, sizeof(temp_str), "%.0f°", id(forecast_daily_temps)[i]);
+              lv_label_set_text(temp_label, temp_str);
+              lv_obj_align(temp_label, LV_ALIGN_BOTTOM_MID, 0, 0);
+              lv_obj_set_style_text_font(temp_label, fe_nunito_16.get_lv_font(), 0);
+              lv_obj_set_style_text_color(temp_label, lv_color_hex(0x9BA2BC), 0);
+            }
+          }
+          
+          ESP_LOGI("weather", "✅ Created %d daily items", id(forecast_daily_count));
+
+
+  # ========================================
+  # 4️⃣ UPDATE HOURLY DISPLAY (ИСПРАВЛЕН)
+  # ========================================
+  - id: update_hourly_display
+    then:
+      - lambda: |-
+          ESP_LOGI("weather", "=== Updating HOURLY Display ===");
+          
+          if (id(forecast_hourly_count) == 0) return;
+          if (!id(weather_forecast_hourly)) return;
+          
+          static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
+          
+          lv_obj_clean(id(weather_forecast_hourly));
+          
+          auto get_icon = [](const std::string& c) -> esphome::image::Image* {
+            if (c == "clear-night") return id(clear_night_small_img);
+            if (c == "cloudy") return id(cloudy_small_img);
+            if (c == "fog") return id(fog_small_img);
+            if (c == "hail") return id(hail_small_img);
+            if (c == "lightning") return id(lightning_small_img);
+            if (c == "lightning-rainy") return id(lightning_rainy_small_img);
+            if (c == "partlycloudy") return id(partlycloudy_sun_small_img);
+            if (c == "pouring") return id(pouring_small_img);
+            if (c == "rainy") return id(rainy_small_img);
+            if (c == "snowy") return id(snowy_small_img);
+            if (c == "snowy-rainy") return id(snowy_rainy_small_img);
+            if (c == "sunny") return id(sunny_small_img);
+            if (c == "windy") return id(windy_small_img);
+            if (c == "windy-variant") return id(windy_variant_small_img);
+            return id(sunny_small_img);
+          };
+          
+          // ✅ ПРАВИЛЬНАЯ КОНВЕРТАЦИЯ UTC → LOCAL
+          auto get_time_str = [](time_t utc_timestamp) -> std::string {
+            if (utc_timestamp == 0) return "--:--";
+            
+            // Получаем offset
+            auto local_now = id(sntp_time).now();
+            auto utc_now = id(sntp_time).utcnow();
+            
+            int32_t offset_hours = local_now.hour - utc_now.hour;
+            if (offset_hours > 12) offset_hours -= 24;
+            if (offset_hours < -12) offset_hours += 24;
+            
+            int32_t tz_offset = offset_hours * 3600 + 
+                              (local_now.minute - utc_now.minute) * 60 + 
+                              (local_now.second - utc_now.second);
+            
+            // Применяем offset
+            time_t local_timestamp = utc_timestamp + tz_offset;
+            
+            // Конвертируем в структуру времени
+            struct tm local_tm;
+            gmtime_r(&local_timestamp, &local_tm);
+            
+            char buf[10];
+            snprintf(buf, sizeof(buf), "%02d:%02d", local_tm.tm_hour, local_tm.tm_min);
+            return std::string(buf);
+          };
+
+          // Создаем scrollable контейнер
+          lv_obj_t* cont = lv_obj_create(id(weather_forecast_hourly));
+          if (!cont) return;
+          
+          lv_obj_set_size(cont, LV_SIZE_CONTENT, 150);
+          lv_obj_set_style_bg_opa(cont, LV_OPA_TRANSP, 0);
+          lv_obj_set_style_border_width(cont, 0, 0);
+          lv_obj_set_style_pad_all(cont, 0, 0);
+          lv_obj_set_style_pad_column(cont, 0, 0);
+          
+          lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW);
+          
+          lv_obj_set_scrollbar_mode(cont, LV_SCROLLBAR_MODE_AUTO);
+          lv_obj_set_scroll_dir(cont, LV_DIR_HOR);
+
+          
+          for (int i = 0; i < id(forecast_hourly_count); i++) {
+            lv_obj_t* item = lv_obj_create(cont);
+            if (!item) continue;
+            
+            lv_obj_set_size(item, 68, 120);
+            lv_obj_set_style_bg_opa(item, LV_OPA_TRANSP, 0);
+            lv_obj_set_style_border_width(item, 0, 0);
+            lv_obj_set_style_pad_all(item, 2, 0);
+            
+            lv_obj_clear_flag(item, LV_OBJ_FLAG_SCROLLABLE);
+            
+            // Время
+            lv_obj_t* time_label = lv_label_create(item);
+            if (time_label) {
+              std::string time_str = get_time_str(id(forecast_hourly_timestamps)[i]);
+              lv_label_set_text(time_label, time_str.c_str());
+              lv_obj_align(time_label, LV_ALIGN_TOP_MID, 0, 0);
+              lv_obj_set_style_text_font(time_label, fe_nunito_16.get_lv_font(), 0);
+              lv_obj_set_style_text_color(time_label, lv_color_hex(0x9BA2BC), 0);
+            }
+            
+            // Иконка
+            lv_obj_t* icon = lv_img_create(item);
+            if (icon) {
+              lv_img_set_src(icon, get_icon(id(forecast_hourly_conditions)[i]));
+              lv_obj_align(icon, LV_ALIGN_CENTER, 0, 0);
+            }
+            
+            // Температура
+            lv_obj_t* temp_label = lv_label_create(item);
+            if (temp_label) {
+              char temp_str[10];
+              snprintf(temp_str, sizeof(temp_str), "%.0f°", id(forecast_hourly_temps)[i]);
+              lv_label_set_text(temp_label, temp_str);
+              lv_obj_align(temp_label, LV_ALIGN_BOTTOM_MID, 0, 0);
+              lv_obj_set_style_text_font(temp_label, fe_nunito_16.get_lv_font(), 0);
+              lv_obj_set_style_text_color(temp_label, lv_color_hex(0x9BA2BC), 0);
+            }
+          }
+          
+          ESP_LOGI("weather", "✅ Created %d hourly items with scroll", id(forecast_hourly_count));
+
+
+
+
+
+  - id: test_timezone
+    then:
+      - lambda: |-
+          ESP_LOGI("TZ_TEST", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+          
+          // System timezone
+          char* tz_env = getenv("TZ");
+          ESP_LOGI("TZ_TEST", "System TZ env: %s", tz_env ? tz_env : "NOT SET");
+          
+          // ESPHome timezone
+          ESP_LOGI("TZ_TEST", "ESPHome timezone: %s", id(sntp_time).get_timezone().c_str());
+          
+          // Time valid?
+          ESP_LOGI("TZ_TEST", "Time valid: %s", id(sntp_time).now().is_valid() ? "YES" : "NO");
+          ESP_LOGI("TZ_TEST", "Timestamp: %ld", id(sntp_time).now().timestamp);
+          
+          // Local time
+          auto local = id(sntp_time).now();
+          ESP_LOGI("TZ_TEST", "Local: %04d-%02d-%02d %02d:%02d:%02d (ts: %ld)",
+                  local.year, local.month, local.day_of_month,
+                  local.hour, local.minute, local.second,
+                  local.timestamp);
+          
+          // UTC time
+          auto utc = id(sntp_time).utcnow();
+          ESP_LOGI("TZ_TEST", "UTC:   %04d-%02d-%02d %02d:%02d:%02d (ts: %ld)",
+                  utc.year, utc.month, utc.day_of_month,
+                  utc.hour, utc.minute, utc.second,
+                  utc.timestamp);
+          
+          // ✅ ПРАВИЛЬНЫЙ РАСЧЁТ OFFSET
+          int32_t offset_hours = local.hour - utc.hour;
+          int32_t offset_minutes = local.minute - utc.minute;
+          int32_t offset_seconds = local.second - utc.second;
+          
+          // Учитываем переход через полночь
+          if (offset_hours > 12) offset_hours -= 24;
+          if (offset_hours < -12) offset_hours += 24;
+          
+          int32_t total_offset = offset_hours * 3600 + offset_minutes * 60 + offset_seconds;
+          
+          ESP_LOGI("TZ_TEST", "Offset: %+d seconds (%+d hours)", 
+                  total_offset, offset_hours);
+          ESP_LOGI("TZ_TEST", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");

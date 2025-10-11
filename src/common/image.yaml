@@ -1,0 +1,509 @@
+  #############################
+  ########### LOGO ############
+  #############################
+
+- file: 'assets/images/loading/homeassistant.png'
+  id: ha_img
+  type: rgb565
+  resize: 400x82
+  transparency: alpha_channel
+
+- file: 'assets/images/loading/esphome.png'
+  id: esphome_img
+  type: rgb565
+  resize: 320x95
+  transparency: alpha_channel
+
+  #############################
+  ########## LIGHT ############
+  ############################# 
+
+- file: 'assets/images/light/lightbulb.png'
+  id: lightbulb_image
+  type: rgb565
+  transparency: alpha_channel
+
+# - file: 'assets/images/light/rgb_ring.png'
+#   id: rgb_img
+#   type: rgb565
+#   transparency: alpha_channel
+
+  #############################
+  ########## VACUUM ###########
+  #############################
+
+# - file: 'img/vacuum/vacuum.png'
+#   id: vacuum_img
+#   type: rgb565
+#   resize: 200x200
+#   transparency: alpha_channel
+
+# - file: 'img/vacuum/vacuum_0_10.png'
+#   id: vacuum_0_10_img
+#   type: rgb565
+#   resize: 200x200
+#   transparency: alpha_channel
+
+# - file: 'img/vacuum/vacuum_0_20.png'
+#   id: vacuum_0_20_img
+#   type: rgb565
+#   resize: 200x200
+#   transparency: alpha_channel
+
+# - file: 'img/vacuum/vacuum_0_30.png'
+#   id: vacuum_0_30_img
+#   type: rgb565
+#   resize: 200x200
+#   transparency: alpha_channel
+
+# - file: 'img/vacuum/vacuum_5.png'
+#   id: vacuum_5_img
+#   type: rgb565
+#   resize: 200x200
+#   transparency: alpha_channel
+
+# - file: 'img/vacuum/vacuum_10.png'
+#   id: vacuum_10_img
+#   type: rgb565
+#   resize: 200x200
+#   transparency: alpha_channel
+
+# - file: 'img/vacuum/vacuum_15.png'
+#   id: vacuum_15_img
+#   type: rgb565
+#   resize: 200x200
+#   transparency: alpha_channel
+
+# - file: 'img/vacuum/vacuum_20.png'
+#   id: vacuum_20_img
+#   type: rgb565
+#   resize: 200x200
+#   transparency: alpha_channel
+
+# - file: 'img/vacuum/vacuum_20_10.png'
+#   id: vacuum_20_10_img
+#   type: rgb565
+#   resize: 200x200
+#   transparency: alpha_channel
+
+# - file: 'img/vacuum/vacuum_20_20.png'
+#   id: vacuum_20_20_img
+#   type: rgb565
+#   resize: 200x200
+#   transparency: alpha_channel
+
+# - file: 'img/vacuum/vacuum_20_30.png'
+#   id: vacuum_20_30_img
+#   type: rgb565
+#   resize: 200x200
+#   transparency: alpha_channel
+
+# - file: 'img/vacuum/vacuum_355.png'
+#   id: vacuum_355_img
+#   type: rgb565
+#   resize: 200x200
+#   transparency: alpha_channel
+
+# - file: 'img/vacuum/vacuum_350.png'
+#   id: vacuum_350_img
+#   type: rgb565
+#   resize: 200x200
+#   transparency: alpha_channel
+
+# - file: 'img/vacuum/vacuum_345.png'
+#   id: vacuum_345_img
+#   type: rgb565
+#   resize: 200x200
+#   transparency: alpha_channel
+
+# - file: 'img/vacuum/vacuum_340.png'
+#   id: vacuum_340_img
+#   type: rgb565
+#   resize: 200x200
+#   transparency: alpha_channel
+
+# - file: 'img/vacuum/vacuum_340_10.png'
+#   id: vacuum_340_10_img
+#   type: rgb565
+#   resize: 200x200
+#   transparency: alpha_channel
+
+# - file: 'img/vacuum/vacuum_340_20.png'
+#   id: vacuum_340_20_img
+#   type: rgb565
+#   resize: 200x200
+#   transparency: alpha_channel
+
+# - file: 'img/vacuum/vacuum_340_30.png'
+#   id: vacuum_340_30_img
+#   type: rgb565
+#   resize: 200x200
+#   transparency: alpha_channel
+
+  #############################
+  ########## WEATHER ##########
+  #############################
+
+
+- file: 'assets/images/weather/windsock.png'
+  id: windsock_img
+  type: rgb565
+  resize: 56x25
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/sunny.png'
+  id: sunny_img
+  type: rgb565
+  resize: 100x100
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/sunny.png'
+  id: sunny_small_img
+  type: rgb565
+  resize: 50x50
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/clear_night.png'
+  id: clear_night_img
+  type: rgb565
+  resize: 100x100
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/clear_night.png'
+  id: clear_night_small_img
+  type: rgb565
+  resize: 50x50
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/cloudy.png'
+  id: cloudy_img
+  type: rgb565
+  resize: 100x100
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/cloudy.png'
+  id: cloudy_small_img
+  type: rgb565
+  resize: 50x50
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/partlycloudy_sun.png'
+  id: partlycloudy_sun_img
+  type: rgb565
+  resize: 100x100
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/partlycloudy_sun.png'
+  id: partlycloudy_sun_small_img
+  type: rgb565
+  resize: 50x50
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/partlycloudy_moon.png'
+  id: partlycloudy_moon_img
+  type: rgb565
+  resize: 100x100
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/partlycloudy_moon.png'
+  id: partlycloudy_moon_small_img
+  type: rgb565
+  resize: 50x50
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/rainy.png'
+  id: rainy_img
+  type: rgb565
+  resize: 100x100
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/rainy.png'
+  id: rainy_small_img
+  type: rgb565
+  resize: 50x50
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/pouring.png'
+  id: pouring_img
+  type: rgb565
+  resize: 100x100
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/pouring.png'
+  id: pouring_small_img
+  type: rgb565
+  resize: 50x50
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/snowy.png'
+  id: snowy_img
+  type: rgb565
+  resize: 100x100
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/snowy.png'
+  id: snowy_small_img
+  type: rgb565
+  resize: 50x50
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/snowy_rainy.png'
+  id: snowy_rainy_img
+  type: rgb565
+  resize: 100x100
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/snowy_rainy.png'
+  id: snowy_rainy_small_img
+  type: rgb565
+  resize: 50x50
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/fog.png'
+  id: fog_img
+  type: rgb565
+  resize: 80x80
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/fog.png'
+  id: fog_small_img
+  type: rgb565
+  resize: 40x40
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/hail.png'
+  id: hail_img
+  type: rgb565
+  resize: 100x100
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/hail.png'
+  id: hail_small_img
+  type: rgb565
+  resize: 50x50
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/lightning.png'
+  id: lightning_img
+  type: rgb565
+  resize: 100x100
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/lightning.png'
+  id: lightning_small_img
+  type: rgb565
+  resize: 50x50
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/lightning_rainy.png'
+  id: lightning_rainy_img
+  type: rgb565
+  resize: 100x100
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/lightning_rainy.png'
+  id: lightning_rainy_small_img
+  type: rgb565
+  resize: 50x50
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/windy.png'
+  id: windy_img
+  type: rgb565
+  resize: 90x90
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/windy.png'
+  id: windy_small_img
+  type: rgb565
+  resize: 45x45
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/windy_variant.png'
+  id: windy_variant_img
+  type: rgb565
+  resize: 100x100
+  transparency: alpha_channel
+
+- file: 'assets/images/weather/windy_variant.png'
+  id: windy_variant_small_img
+  type: rgb565
+  resize: 50x50
+  transparency: alpha_channel
+
+  #############################
+  ########## FLAGS ############
+  #############################
+
+- file: 'assets/images/flags/de.png'
+  id: flags_de_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+- file: 'assets/images/flags/es.png'
+  id: flags_es_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+- file: 'assets/images/flags/fr.png'
+  id: flags_fr_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+- file: 'assets/images/flags/gb.png'
+  id: flags_gb_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+- file: 'assets/images/flags/it.png'
+  id: flags_it_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+- file: 'assets/images/flags/kr.png'
+  id: flags_kr_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+- file: 'assets/images/flags/pt.png'
+  id: flags_pt_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+- file: 'assets/images/flags/ru.png'
+  id: flags_ru_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+- file: 'assets/images/flags/us.png'
+  id: flags_us_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+- file: 'assets/images/flags/pl.png'
+  id: flags_pl_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+- file: 'assets/images/flags/tr.png'
+  id: flags_tr_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+- file: 'assets/images/flags/sv.png'
+  id: flags_sv_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+- file: 'assets/images/flags/id.png'
+  id: flags_id_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+- file: 'assets/images/flags/vi.png'
+  id: flags_vi_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+- file: 'assets/images/flags/ro.png'
+  id: flags_ro_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+- file: 'assets/images/flags/nl.png'
+  id: flags_nl_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+- file: 'assets/images/flags/hu.png'
+  id: flags_hu_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+- file: 'assets/images/flags/cs.png'
+  id: flags_cs_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+- file: 'assets/images/flags/fi.png'
+  id: flags_fi_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
+  #############################
+  ########## BATTERY ##########
+  #############################
+
+- file: 'assets/images/battery/battery_very_high.png'
+  id: battery_very_high_img
+  type: rgb565
+  transparency: alpha_channel
+
+- file: 'assets/images/battery/battery_high.png'
+  id: battery_high_img
+  type: rgb565
+  transparency: alpha_channel
+
+- file: 'assets/images/battery/battery_middle.png'
+  id: battery_middle_img
+  type: rgb565
+  transparency: alpha_channel
+
+- file: 'assets/images/battery/battery_low.png'
+  id: battery_low_img
+  type: rgb565
+  transparency: alpha_channel
+
+- file: 'assets/images/battery/battery_very_low.png'
+  id: battery_very_low_img
+  type: rgb565
+  transparency: alpha_channel
+
+- file: 'assets/images/battery/battery_empty.png'
+  id: battery_empty_img
+  type: rgb565
+  transparency: alpha_channel
+
+- file: 'assets/images/battery/battery_80.png'
+  id: battery_80_img
+  type: rgb565
+  transparency: alpha_channel
+
+- file: 'assets/images/battery/battery_60.png'
+  id: battery_60_img
+  type: rgb565
+  transparency: alpha_channel
+
+- file: 'assets/images/battery/battery_40.png'
+  id: battery_40_img
+  type: rgb565
+  transparency: alpha_channel
+
+- file: 'assets/images/battery/battery_20.png'
+  id: battery_20_img
+  type: rgb565
+  transparency: alpha_channel
+
+- file: 'assets/images/battery/battery_0.png'
+  id: battery_0_img
+  type: rgb565
+  transparency: alpha_channel

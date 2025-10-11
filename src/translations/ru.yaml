@@ -1,0 +1,82 @@
+loading:
+  synchronization: "Синхронизация..."
+  connection_api: "Подключение к API..."
+
+ota:
+  start:
+    primary: "Запускается OTA!"
+    secondary: "Подождите..."
+  end: 
+    primary: "Обновление завершено!"
+    secondary: "Перезагрузка..."
+  error: 
+    primary: "ОШИБКА обновления!"
+    secondary: "Перезагрузка..."
+  progress: "Прогресс прошивки %0.1f%%"
+
+settings:
+  backlight: "Подсветка"
+  sleep_time: "Время сна экрана"
+
+sleep_time:
+  never: "Никогда"
+  minute1: "1 минута"
+  minute5: "5 минут"
+  minute10: "10 минут"
+  minute30: "30 минут"
+  hour1: "1 час"
+  hour6: "6 часов"
+  hour12: "12 часов"
+
+forecasts:
+  daily: "По дням"
+  hourly: "По часам"
+
+weather:
+  clear-night: "Ясная ночь"
+  cloudy: "Облачно"
+  exceptional: "Экстремальные условия"
+  fog: "Туман"
+  hail: "Град"
+  lightning: "Гроза"
+  lightning-rainy: "Дождь с грозой"
+  partlycloudy: "Переменная облачность"
+  pouring: "Ливень"
+  rainy: "Дождь"
+  snowy: "Снег"
+  snowy-rainy: "Снег с дождем"
+  sunny: "Ясно"
+  windy: "Ветрено"
+  windy-variant: "Ветрено, облачно"
+
+day_of_week:
+  monday: "Понедельник"
+  tuesday: "Вторник"
+  wednesday: "Среда"
+  thursday: "Четверг"
+  friday: "Пятница"
+  saturday: "Суббота"
+  sunday: "Воскресенье"
+
+day_of_week_short:
+  monday: "ПН"
+  tuesday: "ВТ"
+  wednesday: "СР"
+  thursday: "ЧТ"
+  friday: "ПТ"
+  saturday: "СБ"
+  sunday: "ВС"
+
+month:
+  january: "Января"
+  february: "Февраля"
+  march: "Марта"
+  april: "Апреля"
+  may: "Мая"
+  june: "Июня"
+  july: "Июля"
+  august: "Августа"
+  september: "Сентября"
+  october: "Октября"
+  november: "Ноября"
+  december: "Декабря"

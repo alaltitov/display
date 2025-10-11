@@ -15,6 +15,26 @@
         "\U0000B8E8",
         "\U0000B9C8",        
       ]
+    - file: "fonts/materialdesignicons-webfont.ttf"
+      glyphs: [
+        "\U000F0210", # fan on
+        "\U000F081D", # fan off
+        "\U000F171D", # fan auto
+        "\U000F1472", # fan speed 1
+        "\U000F1473", # fan speed 2
+        "\U000F1474", # fan speed 3
+        "\U000F0F86", # fan low
+        "\U000F0F85", # fan medium/middle
+        "\U000F04C5", # fan high
+        "\U000F04FE", # fan focus
+        "\U000F059D", # fan diffuse
+        "\U000F09DF", # fan custom
+        "\U000F1C91", # swing on
+        "\U000F1C92", # swing off
+        "\U000F0041", # swing both
+        "\U000F0E79", # swing vertical
+        "\U000F0E73", # swing horizontal
+      ]
 
 # - file: "fonts/MPLUSRounded1c-Regular.ttf"
 #   id: mplus_16
@@ -75,6 +95,16 @@
 - file: "fonts/Nunito-SemiBold.ttf"
   id: nunito_48
   size: 48
+  bpp: 4
+  glyphsets:
+    - GF_Latin_Core
+    # - GF_Greek_Core
+    - GF_Cyrillic_Core
+    - GF_Latin_Vietnamese
+
+- file: "fonts/Nunito-SemiBold.ttf"
+  id: nunito_56
+  size: 56
   bpp: 4
   glyphsets:
     - GF_Latin_Core
@@ -280,6 +310,31 @@
     "\U000F06BB", # shield plane
     "\U000F099E", # shield off
     "\U000F0498", # shield
+    "\U000F0493", # settings
+    "\U000F032A", # preset eco
+    "\U000F0F9B", # preset away
+    "\U000F14DE", # preset boost     
+    "\U000F04B9", # preset comfort
+    "\U000F02DC", # preset home
+    "\U000F0904", # preset sleep
+    "\U000F046E", # preset activity
+    "\U000F0210", # fan on
+    "\U000F081D", # fan off
+    "\U000F171D", # fan auto
+    "\U000F1472", # fan speed 1
+    "\U000F1473", # fan speed 2
+    "\U000F1474", # fan speed 3
+    "\U000F0F86", # fan low
+    "\U000F0F85", # fan medium/middle
+    "\U000F04C5", # fan high
+    "\U000F04FE", # fan focus
+    "\U000F059D", # fan diffuse
+    "\U000F09DF", # fan custom
+    "\U000F1C91", # swing on
+    "\U000F1C92", # swing off
+    "\U000F0041", # swing both
+    "\U000F0E79", # swing vertical
+    "\U000F0E73", # swing horizontal
   ]
 
 
@@ -290,6 +345,7 @@
   glyphs: [
     "\U000F0238", # heat
     "\U000F0717", # cool
+    "\U000F1A79", # heat_cool
     "\U000F0210", # fan
     "\U000F1B18", # auto
     "\U000F0425", # off
@@ -301,6 +357,12 @@
   size: 40
   bpp: 4
   glyphs: [
+    "\U000F0415", # plus
+    "\U000F0374", # minus
+    "\U000F1107", # socket
+    "\U000F1480", # current
+    "\U000F095B", # voltage
+    "\U000F0241", # power
     "\U000F068A", # shield home
     "\U000F1828", # shield moon
     "\U000F099D", # shield lock
@@ -343,4 +405,12 @@
   bpp: 4
   glyphs: [
     "\U000F099D", # shield lock
+  ]
+
+- file: "fonts/materialdesignicons-webfont.ttf"
+  id: mdi_icons_160
+  size: 160
+  bpp: 4
+  glyphs: [
+    "\U000F1107", # socket
   ]

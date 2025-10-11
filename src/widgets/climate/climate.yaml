@@ -1,0 +1,4019 @@
+# https://esphome.io/components/climate/climate.html
+
+substitutions:
+
+  # climate_entity:     "climate.demo_climate_air"
+  # climate_entity:     "climate.display_thermostat"
+  # climate_entity:     "climate.hvac"
+  # climate_entity:     "climate.ecobee"
+
+  climate_icon:               "\U0000e93b"
+  temperature_icon:           "\U0000e939"
+  humidity_icon:              "\U0000e938"
+  heat_icon:                  "\U000F0238"
+  cool_icon:                  "\U000F0717"
+  heat_cool_icon:             "\U000F1A79"
+  fan_icon:                   "\U000F0210"
+  auto_icon:                  "\U000F1B18"
+  off_icon:                   "\U000F0425"
+  plus_icon:                  "\U000F0415"
+  minus_icon:                 "\U000F0374"
+
+  none_preset_icon:           "\U000F043D"
+  eco_preset_icon:            "\U000F032A"
+  away_preset_icon:           "\U000F0F9B"
+  boost_preset_icon:          "\U000F14DE"     
+  comfort_preset_icon:        "\U000F04B9"
+  home_preset_icon:           "\U000F02DC"
+  sleep_preset_icon:          "\U000F0904"
+  activity_preset_icon:       "\U000F046E"
+
+  fan_on_icon:                "\U000F0210"
+  fan_off_icon:               "\U000F081D"
+  fan_auto_icon:              "\U000F171D"
+  fan_low_icon:               "\U000F0F86"
+  fan_medium_icon:            "\U000F0F85"
+  fan_middle_icon:            "\U000F0F85"
+  fan_high_icon:              "\U000F04C5"
+  fan_focus_icon:             "\U000F04FE"
+  fan_diffuse_icon:           "\U000F059D"
+  fan_custom_icon:            "\U000F09DF"
+  
+  swing_on_icon:              "\U000F1C91"
+  swing_off_icon:             "\U000F1C92"
+  swing_both_icon:            "\U000F0041"
+  swing_vertical_icon:        "\U000F0E79"
+  swing_horizontal_icon:      "\U000F0E73"
+
+  settings_icon:              "\U000F0493"
+
+globals:
+
+  - id: climate_arc_range_initialized
+    type: bool
+    initial_value: "false"
+    restore_value: no
+
+  - id: climate_arc_hum_range_initialized
+    type: bool
+    initial_value: "false"
+    restore_value: no
+
+  - id: climate_ui_user_adjusting_target
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: climate_is_active_cool
+    type: bool
+    initial_value: 'false'   # false = heat active, true = cool active
+    restore_value: no
+
+  - id: climate_temp_hum_mode
+    type: bool
+    initial_value: "false"
+    restore_value: no
+
+  # Список доступных fan_mode
+  - id: climate_fan_mode_list
+    type: std::vector<std::string>
+    restore_value: no
+
+  # Текущий выбранный индекс fan_mode
+  - id: climate_selected_fan_mode_index
+    type: int
+    restore_value: no
+    initial_value: '0'
+
+  # Список доступных swing_mode
+  - id: climate_swing_mode_list
+    type: std::vector<std::string>
+    restore_value: no
+
+  # Текущий выбранный индекс swing_mode
+  - id: climate_selected_swing_mode_index
+    type: int
+    restore_value: no
+    initial_value: '0'
+
+  - id: climate_fan_panel_open
+    type: bool
+    initial_value: "false"
+    restore_value: no
+
+  - id: climate_swing_panel_open
+    type: bool
+    initial_value: "false"
+    restore_value: no
+
+  - id: climate_temp_step
+    type: float
+    initial_value: "0.1"
+    restore_value: no
+
+  - id: climate_temp_step_multiplier
+    type: int
+    initial_value: '10'
+    restore_value: no
+
+
+sensor:
+  # CLIMATE TARGET TEMPERATURE STEP
+  - platform: homeassistant
+    id: climate_sensor_target_temp_step
+    entity_id: "${climate_entity}"
+    attribute: target_temp_step
+    on_value:
+      - lambda: |-
+          float raw = x;
+          float chosen = 0.5f;
+          int m = 2;
+          auto near = [](float a, float b)->bool { return fabsf(a-b) < 0.049f; };
+          if (near(raw,0.1f)) { chosen = 0.1f; m = 10; }
+          else if (near(raw,0.5f)) { chosen = 0.5f; m = 2; }
+          else if (near(raw,1.0f)) { chosen = 1.0f; m = 1; }
+          else { chosen = 0.5f; m = 2; }
+          id(climate_temp_step) = chosen;
+          id(climate_temp_step_multiplier) = m;
+          ESP_LOGI("ARC_STEP","target_temp_step=%.3f -> multiplier=%d", chosen, m);
+          if (id(climate_arc_range_initialized)) {
+            id(climate_arc_range_initialized) = false;
+            id(climate_update_arc_temp_range).execute();
+          }
+
+  # CLIMATE TARGET TEMPERATURE
+  - platform: homeassistant
+    id: climate_sensor_target_temp
+    entity_id: "${climate_entity}"
+    attribute: temperature
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(climate_arc_range_initialized);'
+          timeout: 15s
+
+      - if:
+          condition:
+            lambda: 'return id(climate_sensor_state).state == "heat";'
+          then:
+            - lvgl.arc.update:
+                id: climate_arc_base_heat
+                value: !lambda return (int)(x * id(climate_temp_step_multiplier) + 0.5f);
+            - script.execute: climate_update_segments
+
+      - if:
+          condition:
+            lambda: 'return id(climate_sensor_state).state == "cool";'
+          then:
+            - lambda: |-
+                int logical = (int)(x * id(climate_temp_step_multiplier) + 0.5f);
+                int minv = lv_arc_get_min_value(id(climate_arc_base_cool));
+                int maxv = lv_arc_get_max_value(id(climate_arc_base_cool));
+                if (logical < minv) logical = minv;
+                if (logical > maxv) logical = maxv;
+                int raw = minv + maxv - logical;
+                lv_arc_set_value(id(climate_arc_base_cool), raw);
+                lv_arc_set_value(id(climate_arc_adjust_cool), logical);
+            - script.execute: climate_update_segments
+
+      - lvgl.label.update:
+          id: climate_target_temperature_whole
+          text: !lambda |-
+            static char buf[10];
+            float t = id(climate_sensor_target_temp).state;
+            int m = id(climate_temp_step_multiplier);
+            int scaled = (int)(t * m + 0.5f);
+            int whole = scaled / m;
+            snprintf(buf, sizeof(buf), "%d", whole);
+            return buf;
+
+      - lvgl.label.update:
+          id: climate_target_temperature_fraction
+          text: !lambda |-
+            static char buf[10];
+            float t = id(climate_sensor_target_temp).state;
+            int m = id(climate_temp_step_multiplier);
+            int scaled = (int)(t * m + 0.5f);
+            int frac_digit = ((scaled * 10) / m) % 10;
+            snprintf(buf, sizeof(buf), ".%01d", frac_digit);
+            return buf;
+
+
+  # CLIMATE CURRENT TEMPERATURE
+  - platform: homeassistant
+    id: climate_sensor_current_temp
+    entity_id: "${climate_entity}"
+    attribute: current_temperature
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(climate_arc_range_initialized);'
+          timeout: 15s
+
+      - script.execute: climate_update_segments
+
+      - lvgl.arc.update:
+          id: climate_arc_current_temperature
+          value: !lambda return (int)(x * id(climate_temp_step_multiplier) + 0.5f);
+
+      - lvgl.label.update:
+          id: climate_current_temperature_label
+          text: !lambda |-
+            char buf[8]; 
+            snprintf(buf, sizeof(buf), "%.1f", x);
+            return std::string(buf);
+
+  # CLIMATE TARGET HUMIDITY
+  - platform: homeassistant
+    id: climate_sensor_target_hum
+    entity_id: "${climate_entity}"
+    attribute: humidity
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(climate_arc_hum_range_initialized);'
+          timeout: 5s
+      - lambda: |-
+          if (!id(climate_sensor_target_hum).has_state()) return;
+          int t = (int)id(climate_sensor_target_hum).state;
+          int minv = lv_arc_get_min_value(id(climate_arc_base_humidity));
+          int maxv = lv_arc_get_max_value(id(climate_arc_base_humidity));
+          if (t < minv) t = minv;
+          if (t > maxv) t = maxv;
+          lv_arc_set_value(id(climate_arc_base_humidity), t);
+          lv_arc_set_value(id(climate_arc_knob_humidity), t);
+          char wbuf[8];
+          snprintf(wbuf, sizeof(wbuf), "%d", t);
+          lv_label_set_text(id(climate_target_humidity_whole), wbuf);
+          lv_label_set_text(id(climate_target_humidity_fraction), "");
+          id(climate_update_humidity_segments).execute();
+
+  # CLIMATE CURRENT HUMIDITY
+  - platform: homeassistant
+    id: climate_sensor_current_hum
+    entity_id: "${climate_entity}"
+    attribute: current_humidity
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(climate_arc_hum_range_initialized);'
+          timeout: 5s
+      - lambda: |-
+          if (!id(climate_sensor_current_hum).has_state()) return;
+          int c = (int)id(climate_sensor_current_hum).state;
+          int minv = lv_arc_get_min_value(id(climate_arc_dot_humidity));
+          int maxv = lv_arc_get_max_value(id(climate_arc_dot_humidity));
+          if (c < minv) c = minv;
+          if (c > maxv) c = maxv;
+          lv_arc_set_value(id(climate_arc_dot_humidity), c);
+      - lvgl.label.update:
+          id: climate_current_humidity_label
+          text: !lambda |-
+            if (!id(climate_sensor_current_hum).has_state()) return std::string(" ");
+            char buf[10];
+            snprintf(buf, sizeof(buf), "%d%%", (int)id(climate_sensor_current_hum).state);
+            return std::string(buf);
+      - script.execute: climate_update_humidity_segments
+
+  # CLIMATE HUMIDITY MINIMUM VALUE
+  - platform: homeassistant
+    id: climate_sensor_min_hum
+    entity_id: "${climate_entity}"
+    attribute: min_humidity
+    on_value:
+      - script.execute: climate_update_arc_hum_range
+
+  # CLIMATE HUMIDITY MAXIMUM VALUE
+  - platform: homeassistant
+    id: climate_sensor_max_hum
+    entity_id: "${climate_entity}"
+    attribute: max_humidity
+    on_value:
+      - script.execute: climate_update_arc_hum_range
+
+  # CLIMATE TEMPERATURE MINIMUM VALUE
+  - platform: homeassistant
+    id: climate_sensor_min_temp
+    entity_id: "${climate_entity}"
+    attribute: min_temp
+    on_value:
+      - script.execute: climate_update_arc_temp_range
+    
+  # CLIMATE TEMPERATURE MAXIMUM VALUE
+  - platform: homeassistant
+    id: climate_sensor_max_temp
+    entity_id: "${climate_entity}"
+    attribute: max_temp
+    on_value:
+      - script.execute: climate_update_arc_temp_range
+
+  # CLIMATE TARGET TEMPERATURE HIGH
+  - platform: homeassistant
+    id: climate_sensor_target_temp_high
+    entity_id: "${climate_entity}"
+    attribute: target_temp_high
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(climate_arc_range_initialized);'
+          timeout: 15s
+      - if:
+          condition:
+            lambda: 'return id(climate_sensor_state).state == "heat_cool";'
+          then:
+            - lambda: |-
+                if (id(climate_ui_user_adjusting_target)) return;
+                if (!id(climate_sensor_target_temp_high).has_state()) return;
+                int logical = (int)(id(climate_sensor_target_temp_high).state * id(climate_temp_step_multiplier) + 0.5f);
+                int minv = lv_arc_get_min_value(id(climate_arc_base_cool));
+                int maxv = lv_arc_get_max_value(id(climate_arc_base_cool));
+                if (logical < minv) logical = minv;
+                if (logical > maxv) logical = maxv;
+                int raw = minv + maxv - logical;
+                lv_arc_set_value(id(climate_arc_base_cool), raw);
+                lv_arc_set_value(id(climate_arc_adjust_cool), logical);
+                
+                id(climate_update_segments).execute();
+
+  # CLIMATE TARGET TEMPERATURE LOW
+  - platform: homeassistant
+    id: climate_sensor_target_temp_low
+    entity_id: "${climate_entity}"
+    attribute: target_temp_low
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(climate_arc_range_initialized);'
+          timeout: 15s
+      - if:
+          condition:
+            lambda: 'return id(climate_sensor_state).state == "heat_cool";'
+          then:
+            - lambda: |-
+                if (id(climate_ui_user_adjusting_target)) return;
+                if (!id(climate_sensor_target_temp_low).has_state()) return;
+                int m = id(climate_temp_step_multiplier);
+                int low_scaled = (int)(id(climate_sensor_target_temp_low).state * m + 0.5f);
+                int minv = lv_arc_get_min_value(id(climate_arc_base_heat));
+                int maxv = lv_arc_get_max_value(id(climate_arc_base_heat));
+                if (low_scaled < minv) low_scaled = minv;
+                if (low_scaled > maxv) low_scaled = maxv;
+                lv_arc_set_value(id(climate_arc_base_heat), low_scaled);
+                lv_arc_set_value(id(climate_arc_knob_heat), low_scaled);
+                id(climate_update_segments).execute();
+
+text_sensor:
+  # CLIMATE STATE
+  - platform: homeassistant
+    id: climate_sensor_state
+    entity_id: "${climate_entity}"
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(climate_arc_range_initialized);'
+          timeout: 15s
+
+      - if:
+          condition:
+            lambda: 'return id(climate_sensor_state).state == "heat";'
+          then:
+            - lvgl.widget.show: climate_target_temperature_single
+            - lvgl.widget.hide: climate_target_temperature_dual
+
+            - lvgl.widget.hide: climate_arc_background
+            - lvgl.widget.hide: climate_arc_knob
+            - lvgl.widget.hide: climate_arc_base_cool
+            - lvgl.widget.hide: climate_arc_segment_cool
+            - lvgl.widget.hide: climate_arc_adjust_cool
+            - lvgl.widget.show: climate_arc_base_heat
+            - lvgl.widget.show: climate_arc_segment_heat
+            - lvgl.widget.show: climate_arc_dot_heat
+            - lvgl.widget.show: climate_arc_knob_heat
+            
+            - lambda: |-
+                id(climate_ui_user_adjusting_target) = false;
+                id(climate_is_active_cool) = false;
+
+            - lvgl.label.update:
+                id: climate_target_temperature_whole
+                text_color: color_deep_orange    
+            - lvgl.label.update:
+                id: climate_target_temperature_fraction
+                text_color: color_deep_orange
+            - lvgl.label.update:
+                id: climate_target_temperature_measurement
+                text_color: color_deep_orange
+
+            - lvgl.arc.update:
+                id: climate_arc_base_heat
+                value: !lambda return (int)(id(climate_sensor_target_temp).state * id(climate_temp_step_multiplier) + 0.5f);
+            - lvgl.arc.update:
+                id: climate_arc_knob_heat
+                value: !lambda return (int)(id(climate_sensor_target_temp).state * id(climate_temp_step_multiplier) + 0.5f);
+            
+            - lvgl.label.update:
+                id: climate_heat_mode_label
+                text_color: color_deep_orange
+            - lvgl.label.update:
+                id: climate_cool_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_heat_cool_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_dry_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_fan_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_auto_mode_label
+                text_color: color_misty_blue
+
+            - script.execute: climate_update_active_arc_layer
+            - script.execute: climate_update_segments
+            - script.execute: climate_update_adjust_buttons_color
+
+      - if:
+          condition:
+            lambda: 'return id(climate_sensor_state).state == "cool";'
+          then:
+            - lvgl.widget.show: climate_target_temperature_single
+            - lvgl.widget.hide: climate_target_temperature_dual
+            
+            - lvgl.widget.hide: climate_arc_background
+            - lvgl.widget.hide: climate_arc_knob
+            - lvgl.widget.hide: climate_arc_base_heat
+            - lvgl.widget.hide: climate_arc_segment_heat
+            - lvgl.widget.hide: climate_arc_dot_heat
+            - lvgl.widget.hide: climate_arc_knob_heat
+            - lvgl.widget.show: climate_arc_base_cool
+            - lvgl.widget.show: climate_arc_segment_cool
+            - lvgl.widget.show: climate_arc_adjust_cool
+
+            - lambda: |-
+                id(climate_ui_user_adjusting_target) = false;
+                id(climate_is_active_cool) = true;
+
+            - lvgl.label.update:
+                id: climate_target_temperature_whole
+                text_color: color_blue    
+            - lvgl.label.update:
+                id: climate_target_temperature_fraction
+                text_color: color_blue
+            - lvgl.label.update:
+                id: climate_target_temperature_measurement
+                text_color: color_blue
+
+            - lambda: |-
+                int logical = (int)(id(climate_sensor_target_temp).state * id(climate_temp_step_multiplier) + 0.5f);
+                int minv = lv_arc_get_min_value(id(climate_arc_base_cool));
+                int maxv = lv_arc_get_max_value(id(climate_arc_base_cool));
+                if (logical < minv) logical = minv;
+                if (logical > maxv) logical = maxv;
+                int raw = minv + maxv - logical;
+                lv_arc_set_value(id(climate_arc_base_cool), raw);
+                lv_arc_set_value(id(climate_arc_adjust_cool), logical);
+
+            - lvgl.label.update:
+                id: climate_heat_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_cool_mode_label
+                text_color: color_blue
+            - lvgl.label.update:
+                id: climate_heat_cool_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_dry_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_fan_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_auto_mode_label
+                text_color: color_misty_blue
+
+            - script.execute: climate_update_active_arc_layer
+            - script.execute: climate_update_segments
+            - script.execute: climate_update_adjust_buttons_color
+
+      - if:
+          condition:
+            lambda: 'return id(climate_sensor_state).state == "heat_cool";'
+          then:
+            - lvgl.widget.hide: climate_target_temperature_single
+            - lvgl.widget.show: climate_target_temperature_dual
+
+            - lvgl.widget.hide: climate_arc_background
+            - lvgl.widget.hide: climate_arc_knob
+            - lvgl.widget.show: climate_arc_base_heat
+            - lvgl.widget.show: climate_arc_segment_heat
+            - lvgl.widget.show: climate_arc_dot_heat
+            - lvgl.widget.show: climate_arc_knob_heat
+            - lvgl.widget.show: climate_arc_base_cool
+            - lvgl.widget.show: climate_arc_segment_cool
+            - lvgl.widget.show: climate_arc_adjust_cool
+
+            - lambda: |-
+                id(climate_is_active_cool) = true;
+
+            - if:
+                condition:
+                  lambda: 'return id(climate_sensor_target_temp_high).has_state();'
+                then:
+                  - lambda: |-
+                      int high_scaled = (int)(id(climate_sensor_target_temp_high).state * id(climate_temp_step_multiplier) + 0.5f);
+                      int minv = lv_arc_get_min_value(id(climate_arc_base_cool));
+                      int maxv = lv_arc_get_max_value(id(climate_arc_base_cool));
+                      if (high_scaled < minv) high_scaled = minv;
+                      if (high_scaled > maxv) high_scaled = maxv;
+                      int raw = minv + maxv - high_scaled;
+                      lv_arc_set_value(id(climate_arc_base_cool), raw);
+                      lv_arc_set_value(id(climate_arc_adjust_cool), high_scaled);
+
+            - if:
+                condition:
+                  lambda: 'return id(climate_sensor_target_temp_low).has_state();'
+                then:
+                  - lambda: |-
+                      int low_scaled = (int)(id(climate_sensor_target_temp_low).state * id(climate_temp_step_multiplier) + 0.5f);
+                      int minv = lv_arc_get_min_value(id(climate_arc_base_heat));
+                      int maxv = lv_arc_get_max_value(id(climate_arc_base_heat));
+                      if (low_scaled < minv) low_scaled = minv;
+                      if (low_scaled > maxv) low_scaled = maxv;
+                      lv_arc_set_value(id(climate_arc_base_heat), low_scaled);
+                      lv_arc_set_value(id(climate_arc_knob_heat), low_scaled);
+
+            - script.execute: climate_update_active_arc_layer
+
+            - lambda: |-
+                if (id(climate_sensor_target_temp_high).has_state()) {
+                  float temp_value = id(climate_sensor_target_temp_high).state;
+                  int whole_part = (int)temp_value;
+                  int m = id(climate_temp_step_multiplier);
+                  int scaled = (int)(temp_value * m + 0.5f);
+                  int frac_part = ((scaled * 10) / m) % 10;
+                  
+                  static char whole_buf[10], frac_buf[10];
+                  snprintf(whole_buf, sizeof(whole_buf), "%d", whole_part);
+                  snprintf(frac_buf, sizeof(frac_buf), ".%01d", frac_part);
+                  
+                  lv_label_set_text(id(climate_target_temperature_whole_cool), whole_buf);
+                  lv_label_set_text(id(climate_target_temperature_fraction_cool), frac_buf);
+                }
+                
+                if (id(climate_sensor_target_temp_low).has_state()) {
+                  float temp_value = id(climate_sensor_target_temp_low).state;
+                  int whole_part = (int)temp_value;
+                  int m = id(climate_temp_step_multiplier);
+                  int scaled = (int)(temp_value * m + 0.5f);
+                  int frac_part = ((scaled * 10) / m) % 10;
+                  
+                  static char whole_buf[10], frac_buf[10];
+                  snprintf(whole_buf, sizeof(whole_buf), "%d", whole_part);
+                  snprintf(frac_buf, sizeof(frac_buf), ".%01d", frac_part);
+                  
+                  lv_label_set_text(id(climate_target_temperature_whole_heat), whole_buf);
+                  lv_label_set_text(id(climate_target_temperature_fraction_heat), frac_buf);
+                }
+
+            - lambda: |-
+                if (id(climate_is_active_cool)) {
+                  lv_obj_set_style_text_color(id(climate_target_temperature_whole_cool), lv_color_hex(0x4C9FFF), 0);
+                  lv_obj_set_style_text_color(id(climate_target_temperature_fraction_cool), lv_color_hex(0x4C9FFF), 0);
+                  lv_obj_set_style_text_color(id(climate_target_temperature_measurement_cool), lv_color_hex(0x4C9FFF), 0);
+                  lv_obj_set_style_text_color(id(climate_target_temperature_whole_heat), lv_color_hex(0x606682), 0);
+                  lv_obj_set_style_text_color(id(climate_target_temperature_fraction_heat), lv_color_hex(0x606682), 0);
+                  lv_obj_set_style_text_color(id(climate_target_temperature_measurement_heat), lv_color_hex(0x606682), 0);
+                } else {
+                  lv_obj_set_style_text_color(id(climate_target_temperature_whole_cool), lv_color_hex(0x606682), 0);
+                  lv_obj_set_style_text_color(id(climate_target_temperature_fraction_cool), lv_color_hex(0x606682), 0);
+                  lv_obj_set_style_text_color(id(climate_target_temperature_measurement_cool), lv_color_hex(0x606682), 0);
+                  lv_obj_set_style_text_color(id(climate_target_temperature_whole_heat), lv_color_hex(0xFF6600), 0);
+                  lv_obj_set_style_text_color(id(climate_target_temperature_fraction_heat), lv_color_hex(0xFF6600), 0);
+                  lv_obj_set_style_text_color(id(climate_target_temperature_measurement_heat), lv_color_hex(0xFF6600), 0);
+                }
+                
+                lv_obj_set_style_text_color(id(climate_heat_mode_label), lv_color_hex(0x9BA2BC), 0);
+                lv_obj_set_style_text_color(id(climate_cool_mode_label), lv_color_hex(0x9BA2BC), 0);
+                lv_obj_set_style_text_color(id(climate_heat_cool_mode_label), lv_color_hex(0xf5075c), 0);
+                lv_obj_set_style_text_color(id(climate_dry_mode_label), lv_color_hex(0x9BA2BC), 0);
+                lv_obj_set_style_text_color(id(climate_fan_mode_label), lv_color_hex(0x9BA2BC), 0);
+                lv_obj_set_style_text_color(id(climate_auto_mode_label), lv_color_hex(0x9BA2BC), 0);
+
+            - script.execute: climate_update_segments
+            - script.execute: climate_update_adjust_buttons_color
+
+      - if:
+          condition:
+            lambda: |-
+              return id(climate_sensor_state).state != "heat" && 
+                     id(climate_sensor_state).state != "cool" && 
+                     id(climate_sensor_state).state != "heat_cool";
+          then:
+            - lvgl.widget.show: climate_target_temperature_single
+            - lvgl.widget.hide: climate_target_temperature_dual
+
+            - lvgl.widget.show: climate_arc_background
+            - lvgl.widget.show: climate_arc_knob
+            - lvgl.widget.hide: climate_arc_base_cool
+            - lvgl.widget.hide: climate_arc_segment_cool
+            - lvgl.widget.hide: climate_arc_adjust_cool
+            - lvgl.widget.hide: climate_arc_base_heat
+            - lvgl.widget.hide: climate_arc_segment_heat
+            - lvgl.widget.hide: climate_arc_dot_heat
+            - lvgl.widget.hide: climate_arc_knob_heat
+            
+            - lambda: |-
+                id(climate_ui_user_adjusting_target) = false;
+
+            - lvgl.arc.update:
+                id: climate_arc_background
+                value: !lambda |-
+                  return lv_arc_get_max_value(id(climate_arc_background));
+
+            - lvgl.arc.update:
+                id: climate_arc_knob
+                value: !lambda |-
+                  if (!id(climate_sensor_target_temp).has_state())
+                    return lv_arc_get_value(id(climate_arc_knob));
+                  int m = id(climate_temp_step_multiplier);
+                  return (int)(id(climate_sensor_target_temp).state * m + 0.5f);
+
+            - lvgl.arc.update:
+                id: climate_arc_current_temperature
+                value: !lambda |-
+                  if (!id(climate_sensor_current_temp).has_state())
+                    return lv_arc_get_value(id(climate_arc_current_temperature));
+                  int m = id(climate_temp_step_multiplier);
+                  return (int)(id(climate_sensor_current_temp).state * m + 0.5f);
+
+            - script.execute: climate_update_active_arc_layer
+            - script.execute: climate_update_adjust_buttons_color
+
+      - if:
+          condition:
+            lambda: 'return id(climate_sensor_state).state == "dry";'
+          then:            
+
+            - lvgl.arc.update:
+                id: climate_arc_background
+                arc_color: color_yellow
+            - lvgl.arc.update:
+                id: climate_arc_knob
+                knob:
+                  border_color: color_yellow
+
+            - lvgl.label.update:
+                id: climate_target_temperature_whole
+                text_color: color_yellow  
+            - lvgl.label.update:
+                id: climate_target_temperature_fraction
+                text_color: color_yellow
+            - lvgl.label.update:
+                id: climate_target_temperature_measurement
+                text_color: color_yellow
+
+            - lvgl.label.update:
+                id: climate_heat_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_cool_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_heat_cool_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_dry_mode_label
+                text_color: color_yellow
+            - lvgl.label.update:
+                id: climate_fan_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_auto_mode_label
+                text_color: color_misty_blue
+
+      - if:
+          condition:
+            lambda: 'return id(climate_sensor_state).state == "auto";'
+          then:            
+
+            - lvgl.arc.update:
+                id: climate_arc_background
+                arc_color: color_green
+            - lvgl.arc.update:
+                id: climate_arc_knob
+                knob:
+                  border_color: color_green
+
+            - lvgl.label.update:
+                id: climate_target_temperature_whole
+                text_color: color_green  
+            - lvgl.label.update:
+                id: climate_target_temperature_fraction
+                text_color: color_green
+            - lvgl.label.update:
+                id: climate_target_temperature_measurement
+                text_color: color_green
+
+            - lvgl.label.update:
+                id: climate_heat_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_cool_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_heat_cool_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_dry_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_fan_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_auto_mode_label
+                text_color: color_green
+
+      - if:
+          condition:
+            lambda: 'return id(climate_sensor_state).state == "fan_only";'
+          then:            
+
+            - lvgl.arc.update:
+                id: climate_arc_background
+                arc_color: color_mint
+            - lvgl.arc.update:
+                id: climate_arc_knob
+                knob:
+                  border_color: color_mint
+
+            - lvgl.label.update:
+                id: climate_target_temperature_whole
+                text_color: color_mint  
+            - lvgl.label.update:
+                id: climate_target_temperature_fraction
+                text_color: color_mint
+            - lvgl.label.update:
+                id: climate_target_temperature_measurement
+                text_color: color_mint
+
+            - lvgl.label.update:
+                id: climate_heat_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_cool_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_heat_cool_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_dry_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_fan_mode_label
+                text_color: color_mint
+            - lvgl.label.update:
+                id: climate_auto_mode_label
+                text_color: color_misty_blue
+
+      - if:
+          condition:
+            lambda: 'return id(climate_sensor_state).state == "off";'
+          then:            
+
+            - lvgl.arc.update:
+                id: climate_arc_background
+                arc_color: color_misty_blue
+            - lvgl.arc.update:
+                id: climate_arc_knob
+                knob:
+                  border_color: color_misty_blue
+
+            - lvgl.label.update:
+                id: climate_target_temperature_whole
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_target_temperature_fraction
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_target_temperature_measurement
+                text_color: color_misty_blue
+
+            - lvgl.label.update:
+                id: climate_heat_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_cool_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_heat_cool_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_dry_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_fan_mode_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_auto_mode_label
+                text_color: color_misty_blue
+                
+      - if:
+          condition:
+            lambda: 'return id(climate_temp_hum_mode);'
+          then:
+            - script.execute: climate_update_humidity_segments
+
+  # CLIMATE HVAC ACTION
+  - platform: homeassistant
+    id: climate_sensor_hvac_action
+    entity_id: "${climate_entity}"
+    attribute: hvac_action
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(climate_arc_range_initialized);'
+          timeout: 15s
+
+      - lvgl.label.update:
+          id: climate_state_label
+          text: !lambda |-
+            std::string s = x;
+            if (!s.empty()) {
+              s[0] = (char)toupper((unsigned char)s[0]);
+            }
+            return s;
+          text_color: !lambda |-
+            std::string a = x;
+            for (auto &c : a) c = (char)tolower((unsigned char)c);
+
+            if (a == "cooling")      return color_blue;
+            if (a == "defrosting")   return color_dark_blue;
+            if (a == "drying")       return color_yellow;
+            if (a == "fan")          return color_mint;
+            if (a == "heating")      return color_red;
+            if (a == "idle")         return color_misty_blue;
+            if (a == "off")          return color_steel_blue;
+            if (a == "preheating")   return color_deep_orange;
+
+            // fallback
+            return color_steel_blue;
+
+  # CLIMATE HVAC MODES
+  - platform: homeassistant
+    id: climate_hvac_modes
+    entity_id: "${climate_entity}"
+    attribute: hvac_modes
+    on_value:
+      - script.execute: climate_update_mode_buttons_visibility
+
+  # CLIMATE PRESET MODES
+  - platform: homeassistant
+    id: climate_preset_modes
+    entity_id: "${climate_entity}"
+    attribute: preset_modes
+    on_value:
+      - script.execute: climate_update_preset_buttons_visibility
+
+  # CLIMATE PRESET MODE
+  - platform: homeassistant
+    id: climate_preset_mode
+    entity_id: "${climate_entity}"
+    attribute: preset_mode
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(climate_arc_range_initialized);'
+          timeout: 15s
+      - if:
+          condition:
+            lambda: 'return x == "none";'
+          then:
+            - lvgl.label.update:
+                id: climate_eco_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_home_preset_label
+                text_color: color_misty_blue        
+            - lvgl.label.update:
+                id: climate_away_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_comfort_preset_label
+                text_color: color_misty_blue        
+            - lvgl.label.update:
+                id: climate_boost_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_sleep_preset_label
+                text_color: color_misty_blue        
+            - lvgl.label.update:
+                id: climate_activity_preset_label
+                text_color: color_misty_blue
+      - if:
+          condition:
+            lambda: 'return x == "eco";'
+          then:
+            - lvgl.label.update:
+                id: climate_eco_preset_label
+                text_color: color_green
+            - lvgl.label.update:
+                id: climate_home_preset_label
+                text_color: color_misty_blue        
+            - lvgl.label.update:
+                id: climate_away_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_comfort_preset_label
+                text_color: color_misty_blue        
+            - lvgl.label.update:
+                id: climate_boost_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_sleep_preset_label
+                text_color: color_misty_blue        
+            - lvgl.label.update:
+                id: climate_activity_preset_label
+                text_color: color_misty_blue
+      - if:
+          condition:
+            lambda: 'return x == "home";'
+          then:
+            - lvgl.label.update:
+                id: climate_eco_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_home_preset_label
+                text_color: color_blue        
+            - lvgl.label.update:
+                id: climate_away_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_comfort_preset_label
+                text_color: color_misty_blue        
+            - lvgl.label.update:
+                id: climate_boost_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_sleep_preset_label
+                text_color: color_misty_blue        
+            - lvgl.label.update:
+                id: climate_activity_preset_label
+                text_color: color_misty_blue
+      - if:
+          condition:
+            lambda: 'return x == "away";'
+          then:
+            - lvgl.label.update:
+                id: climate_eco_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_home_preset_label
+                text_color: color_misty_blue    
+            - lvgl.label.update:
+                id: climate_away_preset_label
+                text_color: color_orange
+            - lvgl.label.update:
+                id: climate_comfort_preset_label
+                text_color: color_misty_blue        
+            - lvgl.label.update:
+                id: climate_boost_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_sleep_preset_label
+                text_color: color_misty_blue        
+            - lvgl.label.update:
+                id: climate_activity_preset_label
+                text_color: color_misty_blue
+      - if:
+          condition:
+            lambda: 'return x == "comfort";'
+          then:
+            - lvgl.label.update:
+                id: climate_eco_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_home_preset_label
+                text_color: color_misty_blue    
+            - lvgl.label.update:
+                id: climate_away_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_comfort_preset_label
+                text_color: color_yellow        
+            - lvgl.label.update:
+                id: climate_boost_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_sleep_preset_label
+                text_color: color_misty_blue        
+            - lvgl.label.update:
+                id: climate_activity_preset_label
+                text_color: color_misty_blue
+      - if:
+          condition:
+            lambda: 'return x == "boost";'
+          then:
+            - lvgl.label.update:
+                id: climate_eco_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_home_preset_label
+                text_color: color_misty_blue    
+            - lvgl.label.update:
+                id: climate_away_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_comfort_preset_label
+                text_color: color_misty_blue        
+            - lvgl.label.update:
+                id: climate_boost_preset_label
+                text_color: color_red
+            - lvgl.label.update:
+                id: climate_sleep_preset_label
+                text_color: color_misty_blue        
+            - lvgl.label.update:
+                id: climate_activity_preset_label
+                text_color: color_misty_blue
+      - if:
+          condition:
+            lambda: 'return x == "sleep";'
+          then:
+            - lvgl.label.update:
+                id: climate_eco_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_home_preset_label
+                text_color: color_misty_blue    
+            - lvgl.label.update:
+                id: climate_away_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_comfort_preset_label
+                text_color: color_misty_blue        
+            - lvgl.label.update:
+                id: climate_boost_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_sleep_preset_label
+                text_color: color_dark_blue        
+            - lvgl.label.update:
+                id: climate_activity_preset_label
+                text_color: color_misty_blue
+      - if:
+          condition:
+            lambda: 'return x == "activity";'
+          then:
+            - lvgl.label.update:
+                id: climate_eco_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_home_preset_label
+                text_color: color_misty_blue    
+            - lvgl.label.update:
+                id: climate_away_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_comfort_preset_label
+                text_color: color_misty_blue        
+            - lvgl.label.update:
+                id: climate_boost_preset_label
+                text_color: color_misty_blue
+            - lvgl.label.update:
+                id: climate_sleep_preset_label
+                text_color: color_misty_blue        
+            - lvgl.label.update:
+                id: climate_activity_preset_label
+                text_color: color_crimson
+
+
+  # CLIMATE FAN MODES
+  - platform: homeassistant
+    id: climate_fan_modes
+    entity_id: "${climate_entity}"
+    attribute: fan_modes
+    on_value:
+      - lambda: |-
+          std::vector<std::string> modes;
+          std::string input = x;
+
+          if (!input.empty() && input != "unknown") {
+            input.erase(std::remove(input.begin(), input.end(), '['), input.end());
+            input.erase(std::remove(input.begin(), input.end(), ']'), input.end());
+            input.erase(std::remove(input.begin(), input.end(), '\''), input.end());
+            input.erase(std::remove(input.begin(), input.end(), '"'), input.end());
+            std::stringstream ss(input);
+            std::string item;
+              while (std::getline(ss, item, ',')) {
+                item.erase(0, item.find_first_not_of(" \t"));
+                if (!item.empty())
+                  item.erase(item.find_last_not_of(" \t") + 1);
+                if (!item.empty()) modes.push_back(item);
+              }
+          }
+          if (modes.empty()) modes = {"auto","low","medium","high"};
+
+          id(climate_fan_mode_list) = modes;
+          int sel = id(climate_selected_fan_mode_index);
+          if (sel < 0 || sel >= (int)modes.size()) sel = 0;
+          id(climate_selected_fan_mode_index) = sel;
+          ESP_LOGI("FAN_PANEL","Parsed %d fan modes (sel=%d)", (int)modes.size(), sel);
+          if (id(climate_fan_panel_open)) {
+            id(climate_build_fan_modes_panel).execute();
+          }
+
+  # CLIMATE FAN MODE
+  - platform: homeassistant
+    id: climate_fan_mode
+    entity_id: "${climate_entity}"
+    attribute: fan_mode
+    on_value:
+      - lambda: |-
+          if (!id(climate_fan_mode_list).empty() && !x.empty()) {
+            for (int i = 0; i < (int)id(climate_fan_mode_list).size(); ++i) {
+              if (id(climate_fan_mode_list)[i] == x) {
+                id(climate_selected_fan_mode_index) = i;
+                ESP_LOGD("FAN_PANEL","Sync fan_mode -> index %d (%s)", i, x.c_str());
+                break;
+              }
+            }
+          }
+
+          auto mode = x;
+          std::string icon = "${fan_custom_icon}";
+          if (mode == "auto") icon = "${fan_auto_icon}";
+          else if (mode == "on") icon = "${fan_on_icon}";
+          else if (mode == "off") icon = "${fan_off_icon}";
+          else if (mode == "low") icon = "${fan_low_icon}";
+          else if (mode == "medium" || mode == "middle") icon = "${fan_medium_icon}";
+          else if (mode == "high") icon = "${fan_high_icon}";
+          else if (mode == "focus") icon = "${fan_focus_icon}";
+          else if (mode == "diffuse") icon = "${fan_diffuse_icon}";
+          lv_label_set_text(id(climate_fan_speed_mode_label), icon.c_str());
+
+  # CLIMATE SWING MODES
+  - platform: homeassistant
+    id: climate_swing_modes
+    entity_id: "${climate_entity}"
+    attribute: swing_modes
+    on_value:
+      - lambda: |-
+          std::vector<std::string> modes;
+          std::string input = x;
+          if (!input.empty() && input != "unknown") {
+            input.erase(std::remove(input.begin(), input.end(), '['), input.end());
+            input.erase(std::remove(input.begin(), input.end(), ']'), input.end());
+            input.erase(std::remove(input.begin(), input.end(), '\''), input.end());
+            input.erase(std::remove(input.begin(), input.end(), '"'), input.end());
+            std::stringstream ss(input);
+            std::string item;
+            while (std::getline(ss, item, ',')) {
+              item.erase(0, item.find_first_not_of(" \t"));
+              if (!item.empty())
+                item.erase(item.find_last_not_of(" \t") + 1);
+              if (!item.empty()) modes.push_back(item);
+            }
+          }
+          if (modes.empty()) modes = {"off","vertical","horizontal","both"};
+          id(climate_swing_mode_list) = modes;
+          int sel = id(climate_selected_swing_mode_index);
+          if (sel < 0 || sel >= (int)modes.size()) sel = 0;
+          id(climate_selected_swing_mode_index) = sel;
+          ESP_LOGI("SWING_PANEL","Parsed %d swing modes (sel=%d)", (int)modes.size(), sel);
+          if (id(climate_swing_panel_open)) {
+            id(climate_build_swing_modes_panel).execute();
+          }
+
+  # CLIMATE SWING MODE
+  - platform: homeassistant
+    id: climate_swing_mode
+    entity_id: "${climate_entity}"
+    attribute: swing_mode
+    on_value:
+      - lambda: |-
+          if (!id(climate_swing_mode_list).empty() && !x.empty()) {
+            for (int i = 0; i < (int)id(climate_swing_mode_list).size(); ++i) {
+              if (id(climate_swing_mode_list)[i] == x) {
+                id(climate_selected_swing_mode_index) = i;
+                ESP_LOGD("SWING_PANEL","Sync swing_mode -> index %d (%s)", i, x.c_str());
+                break;
+              }
+            }
+          }
+          std::string mode = x;
+          std::string icon = "${swing_off_icon}";
+          if (mode == "on") icon = "${swing_on_icon}";
+          else if (mode == "off") icon = "${swing_off_icon}";
+          else if (mode == "both") icon = "${swing_both_icon}";
+          else if (mode == "vertical") icon = "${swing_vertical_icon}";
+          else if (mode == "horizontal") icon = "${swing_horizontal_icon}";
+          lv_label_set_text(id(climate_swing_mode_label), icon.c_str());
+
+
+lvgl:
+  top_layer:
+    widgets:
+
+      # FAN MODES PANEL
+      - obj:
+          id: climate_fan_modes_panel
+          hidden: true
+          width: 140
+          height: 480
+          align: left_mid
+          pad_all: 0
+          pad_left: 4
+          pad_top: 4
+          pad_bottom: 4
+          bg_color: color_slate_blue_gray
+          border_opa: transp
+          border_width: 0
+          shadow_color: color_black
+          shadow_ofs_x: 0
+          shadow_spread: 4
+          shadow_width: 8
+          radius: 0
+          layout:
+            type: flex
+            flex_flow: column
+            flex_align_main: center
+            flex_align_cross: center
+
+      # SWING MODES PANEL
+      - obj:
+          id: climate_swing_modes_panel
+          hidden: true
+          width: 140
+          height: 480
+          align: left_mid
+          pad_all: 0
+          pad_left: 4
+          pad_top: 4
+          pad_bottom: 4
+          bg_color: color_slate_blue_gray
+          border_opa: transp
+          border_width: 0
+          shadow_color: color_black
+          shadow_ofs_x: 0
+          shadow_spread: 4
+          shadow_width: 8
+          radius: 0
+          layout:
+            type: flex
+            flex_flow: column
+            pad_row: 0
+            flex_align_main: center
+            flex_align_cross: center
+
+  pages:
+    - id: climate_page
+      bg_color: color_slate_blue_gray
+      widgets:
+        # STATE
+        - label:
+            id: climate_state_label
+            x: 110
+            y: 40
+            align: top_left
+            text_font: nunito_20
+            text_color: color_misty_blue
+            text: " "
+
+        # HVAC MODES
+        - obj:
+            id: climate_controls_hvac_modes
+            x: 20
+            width: 80
+            height: 480
+            align: top_left
+            pad_all: 3
+            bg_opa: transp
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            layout:
+              type: flex
+              flex_align_cross: center
+              flex_align_track: center
+            widgets:
+
+              # AUTO
+              - obj:
+                  id: climate_auto_mode_btn
+                  width: 54
+                  height: 54
+                  pad_all: 0
+                  radius: 30
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 5
+                  shadow_spread: 1
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 4
+                  widgets:
+                    - label:
+                        id: climate_auto_mode_label
+                        align: center
+                        text_font: mdi_icons_28
+                        text_color: color_misty_blue
+                        text: "${auto_icon}"
+                  on_press:
+                    - homeassistant.action: 
+                        action: climate.set_hvac_mode
+                        data: 
+                          entity_id: "${climate_entity}"
+                          hvac_mode: auto
+
+              # HEAT
+              - obj:
+                  id: climate_heat_mode_btn
+                  width: 54
+                  height: 54
+                  pad_all: 0
+                  radius: 30
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 5
+                  shadow_spread: 1
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 4
+                  widgets:
+                    - label:
+                        id: climate_heat_mode_label
+                        align: center
+                        text_font: mdi_icons_28
+                        text_color: color_misty_blue
+                        text: "${heat_icon}"
+                  on_press:
+                    - homeassistant.action: 
+                        action: climate.set_hvac_mode
+                        data: 
+                          entity_id: "${climate_entity}"
+                          hvac_mode: heat
+
+              # COOL
+              - obj:
+                  id: climate_cool_mode_btn
+                  width: 54
+                  height: 54
+                  pad_all: 0
+                  radius: 30
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 5
+                  shadow_spread: 1
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 4
+                  widgets:
+                    - label:
+                        id: climate_cool_mode_label
+                        align: center
+                        text_font: mdi_icons_28
+                        text_color: color_misty_blue
+                        text: "${cool_icon}"
+                  on_press:
+                    - homeassistant.action: 
+                        action: climate.set_hvac_mode
+                        data: 
+                          entity_id: "${climate_entity}"
+                          hvac_mode: cool
+
+              # HEAT_COOL
+              - obj:
+                  id: climate_heat_cool_mode_btn
+                  width: 54
+                  height: 54
+                  pad_all: 0
+                  radius: 30
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 5
+                  shadow_spread: 1
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 4
+                  widgets:
+                    - label:
+                        id: climate_heat_cool_mode_label
+                        align: center
+                        text_font: mdi_icons_28
+                        text_color: color_misty_blue
+                        text: "${heat_cool_icon}"
+                  on_press:
+                    - homeassistant.action: 
+                        action: climate.set_hvac_mode
+                        data: 
+                          entity_id: "${climate_entity}"
+                          hvac_mode: heat_cool
+
+              # DRY
+              - obj:
+                  id: climate_dry_mode_btn
+                  width: 54
+                  height: 54
+                  pad_all: 0
+                  radius: 30
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 5
+                  shadow_spread: 1
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 4
+                  widgets:
+                    - label:
+                        id: climate_dry_mode_label
+                        align: center
+                        text_font: icons_28
+                        text_color: color_misty_blue
+                        text: "${humidity_icon}"
+                  on_press:
+                    - homeassistant.action: 
+                        action: climate.set_hvac_mode
+                        data: 
+                          entity_id: "${climate_entity}"
+                          hvac_mode: dry
+
+              # FAN
+              - obj:
+                  id: climate_fan_mode_btn
+                  width: 54
+                  height: 54
+                  pad_all: 0
+                  radius: 30
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 5
+                  shadow_spread: 1
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 4
+                  widgets:
+                    - label:
+                        id: climate_fan_mode_label
+                        align: center
+                        text_font: mdi_icons_28
+                        text_color: color_misty_blue
+                        text: "${fan_icon}"
+                  on_press:
+                    - homeassistant.action: 
+                        action: climate.set_hvac_mode
+                        data: 
+                          entity_id: "${climate_entity}"
+                          hvac_mode: fan_only
+
+              # OFF
+              - obj:
+                  id: climate_off_mode_btn
+                  width: 54
+                  height: 54
+                  pad_all: 0
+                  radius: 30
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 5
+                  shadow_spread: 1
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 4
+                  widgets:
+                    - label:
+                        id: climate_off_mode_label
+                        align: center
+                        text_font: mdi_icons_28
+                        text_color: color_misty_blue
+                        text: "${off_icon}"
+                  on_press:
+                    - homeassistant.action: 
+                        action: climate.set_hvac_mode
+                        data: 
+                          entity_id: "${climate_entity}"
+                          hvac_mode: "off"
+
+        # PRESETS
+        - obj:
+            id: climate_controls_presets
+            x: 100
+            y: 80
+            width: 80
+            height: 340
+            align: top_left
+            pad_all: 3
+            bg_opa: transp
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            layout:
+              type: flex
+              flex_align_cross: center
+              flex_align_track: center
+            widgets:
+
+              # ECO
+              - obj:
+                  id: climate_eco_preset_btn
+                  hidden: true
+                  width: 35
+                  height: 35
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: climate_eco_preset_label
+                        align: center
+                        text_font: mdi_icons_24
+                        text_color: color_misty_blue
+                        text: "${eco_preset_icon}"
+                  on_press:
+                    - homeassistant.action: 
+                        action: climate.set_preset_mode
+                        data: 
+                          entity_id: "${climate_entity}"
+                          preset_mode: eco
+
+              # AWAY
+              - obj:
+                  id: climate_away_preset_btn
+                  hidden: true
+                  width: 35
+                  height: 35
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: climate_away_preset_label
+                        align: center
+                        text_font: mdi_icons_24
+                        text_color: color_misty_blue
+                        text: "${away_preset_icon}"
+                  on_press:
+                    - homeassistant.action: 
+                        action: climate.set_preset_mode
+                        data: 
+                          entity_id: "${climate_entity}"
+                          preset_mode: away
+
+              # BOOST
+              - obj:
+                  id: climate_boost_preset_btn
+                  hidden: true
+                  width: 35
+                  height: 35
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: climate_boost_preset_label
+                        align: center
+                        text_font: mdi_icons_24
+                        text_color: color_misty_blue
+                        text: "${boost_preset_icon}"
+                  on_press:
+                    - homeassistant.action: 
+                        action: climate.set_preset_mode
+                        data: 
+                          entity_id: "${climate_entity}"
+                          preset_mode: boost
+
+              # COMFORT
+              - obj:
+                  id: climate_comfort_preset_btn
+                  hidden: true
+                  width: 35
+                  height: 35
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: climate_comfort_preset_label
+                        align: center
+                        text_font: mdi_icons_24
+                        text_color: color_misty_blue
+                        text: "${comfort_preset_icon}"
+                  on_press:
+                    - homeassistant.action: 
+                        action: climate.set_preset_mode
+                        data: 
+                          entity_id: "${climate_entity}"
+                          preset_mode: comfort
+
+              # HOME
+              - obj:
+                  id: climate_home_preset_btn
+                  hidden: true
+                  width: 35
+                  height: 35
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: climate_home_preset_label
+                        align: center
+                        text_font: mdi_icons_24
+                        text_color: color_misty_blue
+                        text: "${home_preset_icon}"
+                  on_press:
+                    - homeassistant.action: 
+                        action: climate.set_preset_mode
+                        data: 
+                          entity_id: "${climate_entity}"
+                          preset_mode: home
+
+              # SLEEP
+              - obj:
+                  id: climate_sleep_preset_btn
+                  hidden: true
+                  width: 35
+                  height: 35
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: climate_sleep_preset_label
+                        align: center
+                        text_font: mdi_icons_24
+                        text_color: color_misty_blue
+                        text: "${sleep_preset_icon}"
+                  on_press:
+                    - homeassistant.action: 
+                        action: climate.set_preset_mode
+                        data: 
+                          entity_id: "${climate_entity}"
+                          preset_mode: sleep
+
+              # ACTIVITY
+              - obj:
+                  id: climate_activity_preset_btn
+                  hidden: true
+                  width: 35
+                  height: 35
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: climate_activity_preset_label
+                        align: center
+                        text_font: mdi_icons_24
+                        text_color: color_misty_blue
+                        text: "${activity_preset_icon}"
+                  on_press:
+                    - homeassistant.action: 
+                        action: climate.set_preset_mode
+                        data: 
+                          entity_id: "${climate_entity}"
+                          preset_mode: activity
+
+        # TEMPERATURE WIDGET
+        - obj:
+            id: climate_bg_main_temperature
+            hidden: false
+            width: 240
+            height: 480
+            align: right_mid
+            pad_all: 0
+            bg_opa: transp
+            scrollable: false
+            border_opa: transp 
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              - obj:
+                  x: 240
+                  width: 480
+                  height: 480
+                  scrollable: false
+                  align: right_mid
+                  pad_all: 0
+                  bg_opa: transp
+                  shadow_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  widgets:
+                    - obj:
+                        width: 460
+                        height: 460
+                        align: center
+                        clickable: true
+                        radius: 260
+                        bg_color: color_slate_blue_gray
+                        border_color: color_black
+                        border_opa: 40%
+                        border_width: 3
+
+              - obj:
+                  x: 240
+                  width: 480
+                  height: 480
+                  align: right_mid
+                  pad_all: 0
+                  bg_opa: transp
+                  shadow_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  widgets:
+                    - obj:
+                        width: 366
+                        height: 366
+                        align: center
+                        clickable: false
+                        radius: 230
+                        bg_color: color_slate_blue_gray
+                        border_color: color_white
+                        border_width: 3
+                        border_opa: 15%
+
+                    # BACKGROUND ARC (OFF, DRY, AUTO, FAN)
+                    - arc:
+                        id: climate_arc_background
+                        clickable: false
+                        adjustable: false
+                        adv_hittest: false
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        min_value: 70
+                        max_value: 350
+                        value: 265
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_color: color_steel_blue
+                        indicator:
+                          arc_opa: transp
+                          arc_width: 34
+
+                    # CURRENT TEMP DOT (ALL)
+                    - arc:
+                        id: climate_arc_current_temperature
+                        clickable: false
+                        adjustable: true
+                        adv_hittest: true
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        min_value: 70
+                        max_value: 350
+                        value: 265
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_opa: transp
+                          arc_width: 34
+                        knob:
+                          pad_all: -12
+                          bg_color: color_steel_blue
+
+
+                    # KNOB (OFF, DRY, AUTO, FAN)
+                    - arc:
+                        id: climate_arc_knob
+                        clickable: true
+                        adjustable: true
+                        adv_hittest: true
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        min_value: 70
+                        max_value: 350
+                        value: 265
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_opa: transp
+                          arc_width: 34
+                        knob:
+                          pad_all: 0
+                          bg_color: color_white
+                          border_color: color_steel_blue
+                          border_width: 4
+                          shadow_color: color_black
+                          shadow_spread: 2
+                          shadow_width: 13
+                          shadow_opa: 30%
+                        on_value:
+                          - lambda: |-
+                              if (!id(climate_ui_user_adjusting_target))
+                                id(climate_ui_user_adjusting_target) = true;
+
+                              {
+                                int m = id(climate_temp_step_multiplier);
+                                float temp = x / (float)m;
+                                int scaled = (int)(temp * m + 0.5f);
+                                int whole = scaled / m;
+                                int frac = ((scaled * 10) / m) % 10;
+                                char wbuf[8], fbuf[8];
+                                snprintf(wbuf, sizeof(wbuf), "%d", whole);
+                                snprintf(fbuf, sizeof(fbuf), ".%d", frac);
+                                lv_label_set_text(id(climate_target_temperature_whole), wbuf);
+                                lv_label_set_text(id(climate_target_temperature_fraction), fbuf);
+                              }
+                              return;
+
+                        on_release:
+                          - homeassistant.action:
+                              action: climate.set_temperature
+                              data:
+                                entity_id: "${climate_entity}"
+                                temperature: !lambda return x / (float)id(climate_temp_step_multiplier);
+
+                    # HEAT ARC
+                    - arc:
+                        id: climate_arc_base_heat
+                        adjustable: true
+                        adv_hittest: true
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        min_value: 70
+                        max_value: 350
+                        value: 265
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_color: color_deep_orange
+                          arc_width: 34
+                        knob:
+                          pad_all: -1
+                          bg_color: color_white
+                          border_color: color_red
+                          border_width: 4
+                          shadow_color: color_black
+                        on_value:
+                          - lambda: |-
+                              std::string mode = id(climate_sensor_state).state;
+
+                              if (mode == "heat_cool") {
+                                if (!id(climate_is_active_cool) && !id(climate_ui_user_adjusting_target))
+                                  id(climate_ui_user_adjusting_target) = true;
+
+                                if (!id(climate_ui_user_adjusting_target) || id(climate_is_active_cool))
+                                  return;
+
+                                int low = lv_arc_get_value(id(climate_arc_base_heat));
+                                lv_arc_set_value(id(climate_arc_knob_heat), low);
+
+                                int minv_c = lv_arc_get_min_value(id(climate_arc_base_cool));
+                                int maxv_c = lv_arc_get_max_value(id(climate_arc_base_cool));
+                                int raw_cool = lv_arc_get_value(id(climate_arc_base_cool));
+                                int high = minv_c + maxv_c - raw_cool;
+
+                                if (low > high) {
+                                  low = high;
+                                  if (low < lv_arc_get_min_value(id(climate_arc_base_heat)))
+                                    low = lv_arc_get_min_value(id(climate_arc_base_heat));
+                                  lv_arc_set_value(id(climate_arc_base_heat), low);
+                                  lv_arc_set_value(id(climate_arc_knob_heat), low);
+                                }
+
+                                {
+                                  float temp = low / (float)id(climate_temp_step_multiplier);
+                                  int whole = (int)temp;
+                                  int m = id(climate_temp_step_multiplier);
+                                  int scaled = (int)(temp * m + 0.5f);
+                                  int frac = ((scaled * 10) / m) % 10;
+                                  char wbuf[8], fbuf[8];
+                                  snprintf(wbuf, sizeof(wbuf), "%d", whole);
+                                  snprintf(fbuf, sizeof(fbuf), ".%d", frac);
+                                  lv_label_set_text(id(climate_target_temperature_whole_heat), wbuf);
+                                  lv_label_set_text(id(climate_target_temperature_fraction_heat), fbuf);
+                                }
+
+                                id(climate_update_segments).execute();
+                                return;
+                              }
+
+                              if (mode == "heat") {
+                                if (!id(climate_ui_user_adjusting_target))
+                                  id(climate_ui_user_adjusting_target) = true;
+
+                                int low = lv_arc_get_value(id(climate_arc_base_heat));
+                                lv_arc_set_value(id(climate_arc_knob_heat), low);
+
+                                {
+                                  float temp = low / (float)id(climate_temp_step_multiplier);
+                                  int whole = (int)temp;
+                                  int m = id(climate_temp_step_multiplier);
+                                  int scaled = (int)(temp * m + 0.5f);
+                                  int frac = ((scaled * 10) / m) % 10;
+                                  char wbuf[8], fbuf[8];
+                                  snprintf(wbuf, sizeof(wbuf), "%d", whole);
+                                  snprintf(fbuf, sizeof(fbuf), ".%d", frac);
+                                  lv_label_set_text(id(climate_target_temperature_whole), wbuf);
+                                  lv_label_set_text(id(climate_target_temperature_fraction), fbuf);
+                                }
+
+                                id(climate_update_segments).execute();
+                                return;
+                              }
+                              return;
+
+                        on_release:
+                          - lambda: |-
+                              int minv_c = lv_arc_get_min_value(id(climate_arc_base_cool));
+                              int maxv_c = lv_arc_get_max_value(id(climate_arc_base_cool));
+                              int raw_c  = lv_arc_get_value(id(climate_arc_base_cool));
+                              int high_scaled = minv_c + maxv_c - raw_c;
+                              
+                              id(climate_ui_user_adjusting_target) = false;
+                          - if:
+                              condition:
+                                lambda: 'return id(climate_sensor_state).state == "heat";'
+                              then:
+                                - homeassistant.action:
+                                    action: climate.set_temperature
+                                    data:
+                                      entity_id: "${climate_entity}"
+                                      temperature: !lambda 'return lv_arc_get_value(id(climate_arc_base_heat)) / (float)id(climate_temp_step_multiplier);'
+                              else:
+                                - homeassistant.action:
+                                    action: climate.set_temperature
+                                    data:
+                                      entity_id: "${climate_entity}"
+                                      target_temp_low: !lambda 'return lv_arc_get_value(id(climate_arc_base_heat)) / (float)id(climate_temp_step_multiplier);'
+                                      target_temp_high: !lambda |-
+                                        int minv_c = lv_arc_get_min_value(id(climate_arc_base_cool));
+                                        int maxv_c = lv_arc_get_max_value(id(climate_arc_base_cool));
+                                        int raw_c  = lv_arc_get_value(id(climate_arc_base_cool));
+                                        int high_scaled = minv_c + maxv_c - raw_c;
+                                        return high_scaled / (float)id(climate_temp_step_multiplier);
+
+                    # HEAT SEGMENT ARC
+                    - arc:
+                        id: climate_arc_segment_heat
+                        clickable: false
+                        adjustable: false
+                        adv_hittest: false
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 90
+                        end_angle: 100
+                        min_value: 0
+                        max_value: 100
+                        value: 100
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_color: color_red
+                          arc_width: 34
+                        knob:
+                          bg_opa: transp
+
+                    # HEAT DOT ARC
+                    - arc:
+                        id: climate_arc_dot_heat
+                        clickable: false
+                        adjustable: true
+                        adv_hittest: true
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        min_value: 70
+                        max_value: 350
+                        value: 265
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_opa: transp
+                          arc_width: 34
+                        knob:
+                          pad_all: -12
+                          bg_color: color_deep_orange
+
+                    # HEAT KNOB ARC
+                    - arc:
+                        id: climate_arc_knob_heat
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        rotation: 90.0
+                        min_value: 70
+                        max_value: 350
+                        value: 265
+                        adjustable: true
+                        adv_hittest: true
+                        clickable: false
+                        arc_width: 34
+                        arc_opa: transp
+                        indicator:
+                          arc_opa: transp
+                          arc_width: 34
+                        knob:
+                          pad_all: 0
+                          bg_color: color_white
+                          border_color: color_red
+                          border_width: 4
+                          shadow_color: color_black
+
+
+                    # COOL BASE ARC
+                    - arc:
+                        id: climate_arc_base_cool
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        rotation: 90.0
+                        mode: reverse
+                        min_value: 70
+                        max_value: 350
+                        value: 290
+                        arc_width: 34
+                        adjustable: false
+                        adv_hittest: false
+                        clickable: false
+                        arc_opa: transp
+                        indicator:
+                          arc_color: color_blue
+                          arc_width: 34
+
+
+                    # COOL SEGMENT
+                    - arc:
+                        id: climate_arc_segment_cool
+                        adjustable: true
+                        adv_hittest: true
+                        clickable: false
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 80
+                        end_angle: 90
+                        rotation: 90.0
+                        min_value: 0
+                        max_value: 100
+                        value: 50
+                        arc_width: 34
+                        arc_opa: transp
+                        indicator:
+                          arc_color: color_dark_blue
+                          arc_width: 34
+                        knob:
+                          pad_all: -12
+                          bg_color: color_blue
+
+                    # COOL ADJUST ARC
+                    - arc:
+                        id: climate_arc_adjust_cool
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        rotation: 90.0
+                        min_value: 70
+                        max_value: 350
+                        value: 290
+                        adjustable: true
+                        adv_hittest: true
+                        clickable: true
+                        arc_width: 34
+                        arc_opa: transp
+                        indicator:
+                          arc_opa: transp
+                          arc_width: 34
+                        knob:
+                          pad_all: 0
+                          bg_color: color_white
+                          border_color: color_dark_blue
+                          border_width: 4
+                          shadow_color: color_black
+                        on_value:
+                          - lambda: |-
+                              std::string mode = id(climate_sensor_state).state;
+
+                              if (mode == "heat_cool") {
+                                if (id(climate_is_active_cool) && !id(climate_ui_user_adjusting_target))
+                                  id(climate_ui_user_adjusting_target) = true;
+
+                                if (!id(climate_ui_user_adjusting_target) || !id(climate_is_active_cool))
+                                  return;
+
+                                int high = lv_arc_get_value(id(climate_arc_adjust_cool));
+                                int low  = lv_arc_get_value(id(climate_arc_base_heat));
+
+                                int minv = lv_arc_get_min_value(id(climate_arc_base_heat));
+                                int maxv = lv_arc_get_max_value(id(climate_arc_base_heat));
+
+                                if (high < minv) high = minv;
+                                if (high > maxv) high = maxv;
+                                if (high < low) {
+                                  high = low;
+                                  if (high > maxv) high = maxv;
+                                  lv_arc_set_value(id(climate_arc_adjust_cool), high);
+                                }
+
+                                int minv_c = lv_arc_get_min_value(id(climate_arc_base_cool));
+                                int maxv_c = lv_arc_get_max_value(id(climate_arc_base_cool));
+                                int raw = minv_c + maxv_c - high;
+                                lv_arc_set_value(id(climate_arc_base_cool), raw);
+
+                                {
+                                  float temp = high / (float)id(climate_temp_step_multiplier);
+                                  int whole = (int)temp;
+                                  int m = id(climate_temp_step_multiplier);
+                                  int scaled = (int)(temp * m + 0.5f);
+                                  int frac = ((scaled * 10) / m) % 10;
+                                  char wbuf[8], fbuf[8];
+                                  snprintf(wbuf, sizeof(wbuf), "%d", whole);
+                                  snprintf(fbuf, sizeof(fbuf), ".%d", frac);
+                                  lv_label_set_text(id(climate_target_temperature_whole_cool), wbuf);
+                                  lv_label_set_text(id(climate_target_temperature_fraction_cool), fbuf);
+                                }
+
+                                id(climate_update_segments).execute();
+                                return;
+                              }
+
+                              if (mode == "cool") {
+                                if (!id(climate_ui_user_adjusting_target))
+                                  id(climate_ui_user_adjusting_target) = true;
+
+                                int high = lv_arc_get_value(id(climate_arc_adjust_cool));
+                                int minv = lv_arc_get_min_value(id(climate_arc_adjust_cool));
+                                int maxv = lv_arc_get_max_value(id(climate_arc_adjust_cool));
+                                if (high < minv) high = minv;
+                                if (high > maxv) high = maxv;
+
+                                int minv_c = lv_arc_get_min_value(id(climate_arc_base_cool));
+                                int maxv_c = lv_arc_get_max_value(id(climate_arc_base_cool));
+                                int raw = minv_c + maxv_c - high;
+                                lv_arc_set_value(id(climate_arc_base_cool), raw);
+
+                                {
+                                  float temp = high / (float)id(climate_temp_step_multiplier);
+                                  int whole = (int)temp;
+                                  int m = id(climate_temp_step_multiplier);
+                                  int scaled = (int)(temp * m + 0.5f);
+                                  int frac = ((scaled * 10) / m) % 10;
+                                  char wbuf[8], fbuf[8];
+                                  snprintf(wbuf, sizeof(wbuf), "%d", whole);
+                                  snprintf(fbuf, sizeof(fbuf), ".%d", frac);
+                                  lv_label_set_text(id(climate_target_temperature_whole), wbuf);
+                                  lv_label_set_text(id(climate_target_temperature_fraction), fbuf);
+                                }
+
+                                id(climate_update_segments).execute();
+                                return;
+                              }
+                              return;
+
+                        on_release:
+                          - lambda: |-
+                              id(climate_ui_user_adjusting_target) = false;
+                          - if:
+                              condition:
+                                lambda: 'return id(climate_sensor_state).state == "cool";'
+                              then:
+                                - homeassistant.action:
+                                    action: climate.set_temperature
+                                    data:
+                                      entity_id: "${climate_entity}"
+                                      temperature: !lambda 'return lv_arc_get_value(id(climate_arc_adjust_cool)) / (float)id(climate_temp_step_multiplier);'
+                              else:
+                                - homeassistant.action:
+                                    action: climate.set_temperature
+                                    data:
+                                      entity_id: "${climate_entity}"
+                                      target_temp_low: !lambda 'return lv_arc_get_value(id(climate_arc_base_heat)) / (float)id(climate_temp_step_multiplier);'
+                                      target_temp_high: !lambda |-
+                                        int minv_c = lv_arc_get_min_value(id(climate_arc_base_cool));
+                                        int maxv_c = lv_arc_get_max_value(id(climate_arc_base_cool));
+                                        int raw_c  = lv_arc_get_value(id(climate_arc_base_cool));
+                                        int high_scaled = minv_c + maxv_c - raw_c;
+                                        return high_scaled / (float)id(climate_temp_step_multiplier);
+
+              # TARGET TEMPERATURE LABEL (SINGLE)
+              - obj:
+                  id: climate_target_temperature_single
+                  width: 140
+                  height: 120
+                  align: RIGHT_MID
+                  bg_color: color_slate_blue_gray
+                  pad_all: 0
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+
+                    - label:
+                        id: climate_target_temperature_whole
+                        x: -40
+                        y: 0
+                        align: RIGHT_MID
+                        text_font: nunito_84
+                        text_color: color_steel_blue
+                        text: " "
+                
+                    - label:
+                        id: climate_target_temperature_fraction
+                        x: -10
+                        y: 15
+                        align: RIGHT_MID
+                        text_font: nunito_36
+                        text_color: color_steel_blue
+                        text: " "
+
+                    - label:
+                        id: climate_target_temperature_measurement
+                        x: -12
+                        y: -20
+                        align: RIGHT_MID
+                        text_font: nunito_30
+                        text_color: color_steel_blue
+                        text: "°C"
+
+              # TARGET TEMPERATURE LABELS (DUAL)
+              - obj:
+                  id: climate_target_temperature_dual
+                  hidden: true
+                  scrollable: false
+                  width: 140
+                  height: 140
+                  align: right_mid
+                  bg_color: color_slate_blue_gray
+                  pad_all: 0
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  layout:
+                    type: flex
+                    pad_row: 0
+                    flex_align_cross: center
+                    flex_align_track: center
+                  widgets:
+                    - obj:
+                        scrollable: false
+                        width: 140
+                        height: 70
+                        align: right_mid
+                        bg_color: color_slate_blue_gray
+                        pad_all: 0
+                        border_opa: transp
+                        border_width: 0
+                        shadow_opa: transp                        
+                        widgets:
+                          - label:
+                              id: climate_target_temperature_whole_cool
+                              x: -35
+                              y: 0
+                              align: right_mid
+                              text_font: nunito_56
+                              text_color: color_steel_blue
+                              text: " "
+                      
+                          - label:
+                              id: climate_target_temperature_fraction_cool
+                              x: -10
+                              y: 8
+                              align: right_mid
+                              text_font: nunito_30
+                              text_color: color_steel_blue
+                              text: " "
+
+                          - label:
+                              id: climate_target_temperature_measurement_cool
+                              x: -13
+                              y: -15
+                              align: right_mid
+                              text_font: nunito_20
+                              text_color: color_steel_blue
+                              text: "°C"
+                        on_click:
+                          - lambda: |-
+                              if (id(climate_sensor_state).state == "heat_cool") {
+                                id(climate_is_active_cool) = true;
+                              }
+
+                          - script.execute: climate_update_adjust_buttons_color
+                          - script.execute: climate_update_active_arc_layer
+                          - lvgl.label.update:
+                              id: climate_target_temperature_whole_cool
+                              text_color: color_blue
+                          - lvgl.label.update:
+                              id: climate_target_temperature_fraction_cool
+                              text_color: color_blue
+                          - lvgl.label.update:
+                              id: climate_target_temperature_measurement_cool
+                              text_color: color_blue
+                          - lvgl.label.update:
+                              id: climate_target_temperature_whole_heat
+                              text_color: color_steel_blue
+                          - lvgl.label.update:
+                              id: climate_target_temperature_fraction_heat
+                              text_color: color_steel_blue
+                          - lvgl.label.update:
+                              id: climate_target_temperature_measurement_heat
+                              text_color: color_steel_blue
+                    - obj:
+                        scrollable: false
+                        width: 140
+                        height: 70
+                        align: right_mid
+                        bg_color: color_slate_blue_gray
+                        pad_all: 0
+                        border_opa: transp
+                        border_width: 0
+                        shadow_opa: transp                        
+                        widgets:
+                          - label:
+                              id: climate_target_temperature_whole_heat
+                              x: -35
+                              y: 0
+                              align: right_mid
+                              text_font: nunito_56
+                              text_color: color_steel_blue
+                              text: " "
+                      
+                          - label:
+                              id: climate_target_temperature_fraction_heat
+                              x: -10
+                              y: 8
+                              align: right_mid
+                              text_font: nunito_30
+                              text_color: color_steel_blue
+                              text: " "
+
+                          - label:
+                              id: climate_target_temperature_measurement_heat
+                              x: -13
+                              y: -15
+                              align: right_mid
+                              text_font: nunito_20
+                              text_color: color_steel_blue
+                              text: "°C"
+                        on_click:
+                          - lambda: |-
+                              if (id(climate_sensor_state).state == "heat_cool") {
+                                id(climate_is_active_cool) = false;
+                              }
+                          - script.execute: climate_update_adjust_buttons_color
+                          - script.execute: climate_update_active_arc_layer
+                          - lvgl.label.update:
+                              id: climate_target_temperature_whole_cool
+                              text_color: color_steel_blue
+                          - lvgl.label.update:
+                              id: climate_target_temperature_fraction_cool
+                              text_color: color_steel_blue
+                          - lvgl.label.update:
+                              id: climate_target_temperature_measurement_cool
+                              text_color: color_steel_blue
+                          - lvgl.label.update:
+                              id: climate_target_temperature_whole_heat
+                              text_color: color_deep_orange
+                          - lvgl.label.update:
+                              id: climate_target_temperature_fraction_heat
+                              text_color: color_deep_orange
+                          - lvgl.label.update:
+                              id: climate_target_temperature_measurement_heat
+                              text_color: color_deep_orange
+
+              # CURRENT TEMPERATURE LABEL
+              - label:
+                  id: climate_current_temperature_label
+                  x: -10
+                  y: 100
+                  align: RIGHT_MID
+                  text_font: nunito_30
+                  text_color: color_steel_blue
+                  text: " "
+
+        # PLUS BUTTON
+        - obj:
+            x: 150
+            y: -100
+            width: 90
+            height: 90
+            align: left_mid
+            pad_all: 0
+            bg_opa: transp
+            shadow_opa: transp
+            border_opa: transp
+            widgets:
+              - obj:
+                  width: 70
+                  height: 70
+                  align: center
+                  clickable: true
+                  radius: 50
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_width: 8
+                  shadow_spread: 2
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 5
+                    shadow_spread: 2
+                  on_press:
+                    then:
+                      - if:
+                          condition:
+                            lambda: 'return id(climate_temp_hum_mode);'
+                          then:
+                            - lambda: |-
+                                auto current_hum = id(climate_sensor_target_hum).state;
+                                int minv = lv_arc_get_min_value(id(climate_arc_base_humidity));
+                                int maxv = lv_arc_get_max_value(id(climate_arc_base_humidity));
+                                int new_hum = (int)current_hum + 1;
+                                if (new_hum > maxv) new_hum = maxv;
+                                if (new_hum < minv) new_hum = minv;
+                                lv_arc_set_value(id(climate_arc_base_humidity), new_hum);
+                                lv_arc_set_value(id(climate_arc_knob_humidity), new_hum);
+                                id(climate_sensor_target_hum).publish_state(new_hum);
+                                id(climate_update_humidity_segments).execute();
+
+                            - homeassistant.action:
+                                action: climate.set_humidity
+                                data:
+                                  entity_id: "${climate_entity}"
+                                  humidity: !lambda return (int)(id(climate_sensor_target_hum).state);
+                          else:
+                            - lambda: |-
+                                std::string mode = id(climate_sensor_state).state;
+                                float step = id(climate_temp_step);
+                                int   m    = id(climate_temp_step_multiplier);
+
+                                float min_t = id(climate_sensor_min_temp).has_state() ? id(climate_sensor_min_temp).state : 7.0f;
+                                float max_t = id(climate_sensor_max_temp).has_state() ? id(climate_sensor_max_temp).state : 35.0f;
+
+                                if (mode == "heat_cool") {
+                                  float low = id(climate_sensor_target_temp_low).has_state()
+                                                ? id(climate_sensor_target_temp_low).state
+                                                : (lv_arc_get_value(id(climate_arc_base_heat)) / (float)m);
+                                  float high = id(climate_sensor_target_temp_high).has_state()
+                                                ? id(climate_sensor_target_temp_high).state
+                                                : (lv_arc_get_value(id(climate_arc_adjust_cool)) / (float)m);
+
+                                  if (id(climate_is_active_cool)) {
+                                    high += step;
+                                    if (high > max_t) high = max_t;
+                                    if (high < low) high = low;
+                                  } else {
+                                    low += step;
+                                    if (low > high) low = high;
+                                    if (low > max_t) low = max_t;
+                                  }
+
+                                  int low_scaled  = (int)roundf(low  * m);
+                                  int high_scaled = (int)roundf(high * m);
+
+                                  lv_arc_set_value(id(climate_arc_base_heat), low_scaled);
+                                  lv_arc_set_value(id(climate_arc_knob_heat), low_scaled);
+
+                                  int minv_c = lv_arc_get_min_value(id(climate_arc_base_cool));
+                                  int maxv_c = lv_arc_get_max_value(id(climate_arc_base_cool));
+                                  int raw = minv_c + maxv_c - high_scaled;
+                                  lv_arc_set_value(id(climate_arc_base_cool), raw);
+                                  lv_arc_set_value(id(climate_arc_adjust_cool), high_scaled);
+
+                                  id(climate_ui_user_adjusting_target) = true;
+                                  id(climate_update_segments).execute();
+                                } else if (mode == "heat") {
+                                  float cur = id(climate_sensor_target_temp).has_state()
+                                                ? id(climate_sensor_target_temp).state
+                                                : (lv_arc_get_value(id(climate_arc_base_heat)) / (float)m);
+                                  cur += step;
+                                  if (cur > max_t) cur = max_t;
+
+                                  int cur_scaled = (int)roundf(cur * m);
+                                  lv_arc_set_value(id(climate_arc_base_heat), cur_scaled);
+                                  lv_arc_set_value(id(climate_arc_knob_heat), cur_scaled);
+                                  id(climate_update_segments).execute();
+                                } else if (mode == "cool") {
+                                  float cur = id(climate_sensor_target_temp).has_state()
+                                                ? id(climate_sensor_target_temp).state
+                                                : (lv_arc_get_value(id(climate_arc_adjust_cool)) / (float)m);
+                                  cur += step;
+                                  if (cur > max_t) cur = max_t;
+
+                                  int cur_scaled = (int)roundf(cur * m);
+                                  int minv_c = lv_arc_get_min_value(id(climate_arc_base_cool));
+                                  int maxv_c = lv_arc_get_max_value(id(climate_arc_base_cool));
+                                  int raw = minv_c + maxv_c - cur_scaled;
+                                  lv_arc_set_value(id(climate_arc_base_cool), raw);
+                                  lv_arc_set_value(id(climate_arc_adjust_cool), cur_scaled);
+                                  id(climate_update_segments).execute();
+                                } else {
+                                  float cur = id(climate_sensor_target_temp).has_state()
+                                                ? id(climate_sensor_target_temp).state
+                                                : (lv_arc_get_value(id(climate_arc_knob)) / (float)m);
+                                  cur += step;
+                                  if (cur > max_t) cur = max_t;
+
+                                  int cur_scaled = (int)roundf(cur * m);
+                                  lv_arc_set_value(id(climate_arc_background), lv_arc_get_max_value(id(climate_arc_background)));
+                                  lv_arc_set_value(id(climate_arc_knob), cur_scaled);
+                                }
+
+                            - if:
+                                condition:
+                                  lambda: 'return id(climate_sensor_state).state == "heat_cool";'
+                                then:
+                                  - homeassistant.action:
+                                      action: climate.set_temperature
+                                      data:
+                                        entity_id: "${climate_entity}"
+                                        target_temp_low: !lambda 'return lv_arc_get_value(id(climate_arc_base_heat)) / (float)id(climate_temp_step_multiplier);'
+                                        target_temp_high: !lambda |-
+                                          int minv_c = lv_arc_get_min_value(id(climate_arc_base_cool));
+                                          int maxv_c = lv_arc_get_max_value(id(climate_arc_base_cool));
+                                          int raw_c  = lv_arc_get_value(id(climate_arc_base_cool));
+                                          int high_scaled = minv_c + maxv_c - raw_c;
+                                          return high_scaled / (float)id(climate_temp_step_multiplier);
+                                else:
+                                  - homeassistant.action:
+                                      action: climate.set_temperature
+                                      data:
+                                        entity_id: "${climate_entity}"
+                                        temperature: !lambda |-
+                                          std::string mode = id(climate_sensor_state).state;
+                                          if (mode == "cool") {
+                                            int minv_c = lv_arc_get_min_value(id(climate_arc_base_cool));
+                                            int maxv_c = lv_arc_get_max_value(id(climate_arc_base_cool));
+                                            int raw_c  = lv_arc_get_value(id(climate_arc_base_cool));
+                                            int high_scaled = minv_c + maxv_c - raw_c;
+                                            return high_scaled / (float)id(climate_temp_step_multiplier);
+                                          } else if (mode == "heat") {
+                                            return lv_arc_get_value(id(climate_arc_base_heat)) / (float)id(climate_temp_step_multiplier);
+                                          } else {
+                                            return lv_arc_get_value(id(climate_arc_knob)) / (float)id(climate_temp_step_multiplier);
+                                          }
+                            - lambda: 'id(climate_ui_user_adjusting_target) = false;'
+                            - script.execute: climate_update_segments
+                            - script.execute: climate_update_adjust_buttons_color
+
+              - obj:
+                  width: 60
+                  height: 60
+                  align: center
+                  clickable: false
+                  radius: 45
+                  pad_all: 0
+                  bg_opa: transp 
+                  border_opa: transp
+                  shadow_width: 4
+                  shadow_color: 0xFFFFFF
+                  shadow_ofs_x: -4
+                  shadow_ofs_y: -2
+                  shadow_opa: 30%
+
+              - obj:
+                  width: 65
+                  height: 65
+                  pad_all: 0
+                  align: center
+                  clickable: false
+                  radius: 50
+                  border_opa: transp
+                  bg_color: color_slate_blue_gray
+                  widgets:
+                    - label:
+                        id: climate_plus_label
+                        align: center
+                        text_font: mdi_icons_40
+                        text_color: color_misty_blue
+                        text: "${plus_icon}"
+
+
+        # MINUS BUTTON
+        - obj:
+            x: 150
+            y: 100
+            width: 90
+            height: 90
+            align: left_mid
+            pad_all: 0
+            bg_opa: transp
+            shadow_opa: transp
+            border_opa: transp
+            widgets:
+              - obj:
+                  width: 70
+                  height: 70
+                  align: center
+                  clickable: true
+                  radius: 50
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_width: 8
+                  shadow_spread: 2
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: 0x3A3A4C
+                    shadow_width: 5
+                  on_press:
+                    then:
+                      - if:
+                          condition:
+                            lambda: 'return id(climate_temp_hum_mode);'
+                          then:
+                            - lambda: |-
+                                auto current_hum = id(climate_sensor_target_hum).state;
+                                int minv = lv_arc_get_min_value(id(climate_arc_base_humidity));
+                                int maxv = lv_arc_get_max_value(id(climate_arc_base_humidity));
+                                int new_hum = (int)current_hum - 1;
+                                if (new_hum < minv) new_hum = minv;
+                                if (new_hum > maxv) new_hum = maxv;
+                                lv_arc_set_value(id(climate_arc_base_humidity), new_hum);
+                                lv_arc_set_value(id(climate_arc_knob_humidity), new_hum);
+                                id(climate_sensor_target_hum).publish_state(new_hum);
+                                id(climate_update_humidity_segments).execute();
+
+                            - homeassistant.action:
+                                action: climate.set_humidity
+                                data:
+                                  entity_id: "${climate_entity}"
+                                  humidity: !lambda return (int)(id(climate_sensor_target_hum).state);
+                          else:
+                            - lambda: |-
+                                std::string mode = id(climate_sensor_state).state;
+                                float step = id(climate_temp_step);
+                                int   m    = id(climate_temp_step_multiplier);
+
+                                float min_t = id(climate_sensor_min_temp).has_state() ? id(climate_sensor_min_temp).state : 5.0f;
+                                float max_t = id(climate_sensor_max_temp).has_state() ? id(climate_sensor_max_temp).state : 35.0f;
+
+                                if (mode == "heat_cool") {
+                                    float low = id(climate_sensor_target_temp_low).has_state()
+                                                  ? id(climate_sensor_target_temp_low).state
+                                                  : (lv_arc_get_value(id(climate_arc_base_heat)) / (float)m);
+                                    float high = id(climate_sensor_target_temp_high).has_state()
+                                                  ? id(climate_sensor_target_temp_high).state
+                                                  : (lv_arc_get_value(id(climate_arc_adjust_cool)) / (float)m);
+
+                                    if (id(climate_is_active_cool)) {
+                                      high -= step;
+                                      if (high < min_t) high = min_t;
+                                      if (high < low)   high = low;
+                                    } else {
+                                      low -= step;
+                                      if (low < min_t) low = min_t;
+                                      if (low > high)  low = high;
+                                    }
+
+                                    int low_scaled  = (int)roundf(low * m);
+                                    int high_scaled = (int)roundf(high * m);
+
+                                    lv_arc_set_value(id(climate_arc_base_heat), low_scaled);
+                                    lv_arc_set_value(id(climate_arc_knob_heat), low_scaled);
+
+                                    int minv_c = lv_arc_get_min_value(id(climate_arc_base_cool));
+                                    int maxv_c = lv_arc_get_max_value(id(climate_arc_base_cool));
+                                    int raw = minv_c + maxv_c - high_scaled;
+                                    lv_arc_set_value(id(climate_arc_base_cool), raw);
+                                    lv_arc_set_value(id(climate_arc_adjust_cool), high_scaled);
+
+                                    id(climate_ui_user_adjusting_target) = true;
+                                    id(climate_update_segments).execute();
+                                } else if (mode == "heat") {
+                                    float cur = id(climate_sensor_target_temp).has_state()
+                                                  ? id(climate_sensor_target_temp).state
+                                                  : (lv_arc_get_value(id(climate_arc_base_heat)) / (float)m);
+                                    cur -= step;
+                                    if (cur < min_t) cur = min_t;
+
+                                    int cur_scaled = (int)roundf(cur * m);
+                                    lv_arc_set_value(id(climate_arc_base_heat), cur_scaled);
+                                    lv_arc_set_value(id(climate_arc_knob_heat), cur_scaled);
+                                    id(climate_update_segments).execute();
+                                } else if (mode == "cool") {
+                                    float cur = id(climate_sensor_target_temp).has_state()
+                                                  ? id(climate_sensor_target_temp).state
+                                                  : (lv_arc_get_value(id(climate_arc_adjust_cool)) / (float)m);
+                                    cur -= step;
+                                    if (cur < min_t) cur = min_t;
+
+                                    int cur_scaled = (int)roundf(cur * m);
+                                    int minv_c = lv_arc_get_min_value(id(climate_arc_base_cool));
+                                    int maxv_c = lv_arc_get_max_value(id(climate_arc_base_cool));
+                                    int raw = minv_c + maxv_c - cur_scaled;
+                                    lv_arc_set_value(id(climate_arc_base_cool), raw);
+                                    lv_arc_set_value(id(climate_arc_adjust_cool), cur_scaled);
+                                    id(climate_update_segments).execute();
+                                } else {
+                                    float cur = id(climate_sensor_target_temp).has_state()
+                                                  ? id(climate_sensor_target_temp).state
+                                                  : (lv_arc_get_value(id(climate_arc_knob)) / (float)m);
+                                    
+                                    float new_temp = cur - step;
+                                    if (new_temp < min_t) new_temp = min_t;
+
+                                    int new_temp_scaled = (int)roundf(new_temp * m);
+                                    
+                                    lv_arc_set_value(id(climate_arc_background), lv_arc_get_max_value(id(climate_arc_background)));
+                                    lv_arc_set_value(id(climate_arc_knob), new_temp_scaled);
+                                    
+                                    int scaled = (int)(new_temp * m + 0.5f);
+                                    int whole_part = scaled / m;
+                                    int frac_digit = ((scaled * 10) / m) % 10;
+                                    
+                                    static char whole_buf[10], frac_buf[10];
+                                    snprintf(whole_buf, sizeof(whole_buf), "%d", whole_part);
+                                    snprintf(frac_buf, sizeof(frac_buf), ".%01d", frac_digit);
+                                    
+                                    lv_label_set_text(id(climate_target_temperature_whole), whole_buf);
+                                    lv_label_set_text(id(climate_target_temperature_fraction), frac_buf);
+                                }
+
+                            - if:
+                                condition:
+                                  lambda: 'return id(climate_sensor_state).state == "heat_cool";'
+                                then:
+                                  - homeassistant.action:
+                                      action: climate.set_temperature
+                                      data:
+                                        entity_id: "${climate_entity}"
+                                        target_temp_low: !lambda 'return lv_arc_get_value(id(climate_arc_base_heat)) / (float)id(climate_temp_step_multiplier);'
+                                        target_temp_high: !lambda |-
+                                          int minv_c = lv_arc_get_min_value(id(climate_arc_base_cool));
+                                          int maxv_c = lv_arc_get_max_value(id(climate_arc_base_cool));
+                                          int raw_c  = lv_arc_get_value(id(climate_arc_base_cool));
+                                          int high_scaled = minv_c + maxv_c - raw_c;
+                                          return high_scaled / (float)id(climate_temp_step_multiplier);
+                                else:
+                                  - homeassistant.action:
+                                      action: climate.set_temperature
+                                      data:
+                                        entity_id: "${climate_entity}"
+                                        temperature: !lambda |-
+                                          std::string mode = id(climate_sensor_state).state;
+                                          if (mode == "cool") {
+                                            int minv_c = lv_arc_get_min_value(id(climate_arc_base_cool));
+                                            int maxv_c = lv_arc_get_max_value(id(climate_arc_base_cool));
+                                            int raw_c  = lv_arc_get_value(id(climate_arc_base_cool));
+                                            int high_scaled = minv_c + maxv_c - raw_c;
+                                            return high_scaled / (float)id(climate_temp_step_multiplier);
+                                          } else if (mode == "heat") {
+                                            return lv_arc_get_value(id(climate_arc_base_heat)) / (float)id(climate_temp_step_multiplier);
+                                          } else {
+                                            return lv_arc_get_value(id(climate_arc_knob)) / (float)id(climate_temp_step_multiplier);
+                                          }
+
+                            - lambda: 'id(climate_ui_user_adjusting_target) = false;'
+                            - script.execute: climate_update_segments
+                            - script.execute: climate_update_adjust_buttons_color
+
+              - obj:
+                  width: 60
+                  height: 60
+                  align: center
+                  clickable: false
+                  radius: 45
+                  pad_all: 0
+                  bg_opa: transp 
+                  border_opa: transp
+                  shadow_width: 4
+                  shadow_color: 0xFFFFFF
+                  shadow_ofs_x: -4
+                  shadow_ofs_y: -2
+                  shadow_opa: 30%
+
+              - obj:
+                  width: 65
+                  height: 65
+                  pad_all: 0
+                  align: center
+                  clickable: false
+                  radius: 50
+                  border_opa: transp
+                  bg_color: color_slate_blue_gray
+                  widgets:
+                    - label:
+                        id: climate_minus_label
+                        align: CENTER
+                        text_font: mdi_icons_40
+                        text_color: color_misty_blue
+                        text: "${minus_icon}"
+
+
+        # FAN SPEED MODE BUTTON
+        - obj:
+            x: -45
+            y: -30
+            height: 50
+            width: 50
+            align: center
+            bg_opa: transp
+            border_opa: transp
+            clickable: true
+            scrollable: false
+            widgets:
+              - label:
+                  id: climate_fan_speed_mode_label
+                  align: center
+                  text_font: mdi_icons_24
+                  text_color: color_misty_blue
+                  text: "${fan_auto_icon}"
+            on_click:
+              - script.execute: climate_toggle_fan_panel
+
+        # SWING MODE BUTTON
+        - obj:
+            x: -45
+            y: 30
+            width: 50
+            height: 50
+            align: center
+            pad_all: 0
+            bg_opa: transp
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            clickable: true
+            scrollable: false
+            widgets:
+              - label:
+                  id: climate_swing_mode_label
+                  align: center
+                  text_font: mdi_icons_24
+                  text_color: color_misty_blue
+                  text: "${swing_on_icon}"
+            on_click:
+              - script.execute: climate_toggle_swing_panel
+
+
+        # HUMIDITY WIDGET
+        - obj:
+            id: climate_bg_main_humidity
+            hidden: true
+            width: 240
+            height: 480
+            align: right_mid
+            pad_all: 0
+            bg_opa: transp
+            scrollable: false
+            border_opa: transp 
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              - obj:
+                  x: 240
+                  width: 480
+                  height: 480
+                  scrollable: false
+                  align: right_mid
+                  pad_all: 0
+                  bg_opa: transp
+                  shadow_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  widgets:
+                    - obj:
+                        width: 460
+                        height: 460
+                        align: center
+                        clickable: true
+                        radius: 260
+                        bg_color: color_slate_blue_gray
+                        border_color: color_black
+                        border_opa: 40%
+                        border_width: 3
+
+              - obj:
+                  x: 240
+                  width: 480
+                  height: 480
+                  align: right_mid
+                  pad_all: 0
+                  bg_opa: transp
+                  shadow_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  widgets:
+                    - obj:
+                        width: 366
+                        height: 366
+                        align: center
+                        clickable: false
+                        radius: 230
+                        bg_color: color_slate_blue_gray
+                        border_color: color_white
+                        border_width: 3
+                        border_opa: 15%
+
+
+                    # HUMIDITY ARC
+                    - arc:
+                        id: climate_arc_base_humidity
+                        adjustable: true
+                        adv_hittest: true
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        min_value: 300
+                        max_value: 700
+                        value: 600
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_color: color_blue
+                          arc_width: 34
+                        knob:
+                          pad_all: -1
+                          bg_color: color_white
+                          border_color: color_dark_blue
+                          border_width: 4
+                          shadow_color: color_black
+                        on_value:
+                          - lambda: |-
+                              if (!id(climate_ui_user_adjusting_target))
+                                id(climate_ui_user_adjusting_target) = true;
+                              int val = lv_arc_get_value(id(climate_arc_base_humidity));
+                              lv_arc_set_value(id(climate_arc_knob_humidity), val);
+                              char w[8];
+                              snprintf(w, sizeof(w), "%d", val);
+                              lv_label_set_text(id(climate_target_humidity_whole), w);
+                              lv_label_set_text(id(climate_target_humidity_fraction), "");
+                              id(climate_update_humidity_segments).execute();
+                        on_release:
+                          - lambda: 'id(climate_ui_user_adjusting_target) = false;'
+                          - homeassistant.action:
+                              action: climate.set_humidity
+                              data:
+                                entity_id: "${climate_entity}"
+                                humidity: !lambda return lv_arc_get_value(id(climate_arc_base_humidity));
+
+
+                    # HUMIDITY SEGMENT ARC
+                    - arc:
+                        id: climate_arc_segment_humidity
+                        clickable: false
+                        adjustable: false
+                        adv_hittest: false
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 90
+                        end_angle: 100
+                        min_value: 0
+                        max_value: 100
+                        value: 100
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_color: color_dark_blue
+                          arc_width: 34
+                        knob:
+                          bg_opa: transp
+
+                    # HUMIDITY DOT ARC
+                    - arc:
+                        id: climate_arc_dot_humidity
+                        clickable: false
+                        adjustable: true
+                        adv_hittest: true
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        min_value: 300
+                        max_value: 700
+                        value: 600
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_opa: transp
+                          arc_width: 34
+                        knob:
+                          pad_all: -12
+                          bg_color: color_blue
+
+                    # HUMIDITY KNOB ARC
+                    - arc:
+                        id: climate_arc_knob_humidity
+                        align: center
+                        width: 444
+                        height: 444
+                        start_angle: 0
+                        end_angle: 180
+                        rotation: 90.0
+                        min_value: 300
+                        max_value: 700
+                        value: 600
+                        adjustable: true
+                        adv_hittest: true
+                        clickable: false
+                        arc_width: 34
+                        arc_opa: transp
+                        indicator:
+                          arc_opa: transp
+                          arc_width: 34
+                        knob:
+                          pad_all: 0
+                          bg_color: color_white
+                          border_color: color_dark_blue
+                          border_width: 4
+                          shadow_color: color_black
+
+              # HUMIDITY TARGET LABEL
+              - obj:
+                  width: 140
+                  height: 120
+                  align: RIGHT_MID
+                  bg_color: color_slate_blue_gray
+                  pad_all: 0
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+
+                    - label:
+                        id: climate_target_humidity_whole
+                        x: -40
+                        y: 0
+                        align: RIGHT_MID
+                        text_font: nunito_84
+                        text_color: color_steel_blue
+                        text: " "
+                
+                    - label:
+                        id: climate_target_humidity_fraction
+                        x: -10
+                        y: 15
+                        align: RIGHT_MID
+                        text_font: nunito_36
+                        text_color: color_steel_blue
+                        text: " "
+
+                    - label:
+                        id: climate_target_humidity_measurement
+                        x: -12
+                        y: -20
+                        align: RIGHT_MID
+                        text_font: nunito_30
+                        text_color: color_steel_blue
+                        text: "%"
+
+              # HUMIDITY CURRENT LABEL
+              - label:
+                  id: climate_current_humidity_label
+                  x: -10
+                  y: 80
+                  align: RIGHT_MID
+                  text_font: nunito_30
+                  text_color: color_steel_blue
+                  text: " "
+
+        # CLIMATE HUMIDITY/TEMPERATURE MODE SELECT BUTTON
+        - obj:
+            id: climate_select_hum_temp_mode_btn
+            x: -5
+            y: -110
+            width: 80
+            height: 80
+            align: RIGHT_MID
+            bg_color: color_slate_blue_gray
+            pad_all: 0
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            radius: 50
+            widgets:
+              - label:
+                  id: climate_state_icon
+                  align: center
+                  text_font: icons_48
+                  text_color: color_steel_blue
+                  text: "${temperature_icon}"
+            on_click:
+              - if:
+                  condition:
+                    lambda: return id(climate_sensor_target_hum).has_state();
+                  then:
+                    - lambda: |-
+                        id(climate_temp_hum_mode) = !id(climate_temp_hum_mode);
+                    - if:
+                        condition:
+                          lambda: 'return id(climate_temp_hum_mode);'
+                        then:
+                          - lvgl.label.update:
+                              id: climate_state_icon
+                              text: "${humidity_icon}"
+                          - lvgl.widget.hide: climate_bg_main_temperature
+                          - lvgl.widget.show: climate_bg_main_humidity
+                          - lambda: |-
+                              if (!id(climate_arc_hum_range_initialized))
+                                id(climate_update_arc_hum_range).execute();
+                              id(climate_update_humidity_segments).execute();
+                          - script.execute: climate_update_adjust_buttons_color
+                        else:
+                          - lvgl.label.update:
+                              id: climate_state_icon
+                              text: "${temperature_icon}"
+                          - lvgl.widget.show: climate_bg_main_temperature
+                          - lvgl.widget.hide: climate_bg_main_humidity
+                          - script.execute: climate_update_adjust_buttons_color
+        # BACK
+        - obj:
+            x: 150
+            y: 0
+            width: 80
+            height: 70
+            align: bottom_left
+            bg_opa: transp
+            pad_all: 0
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            radius: 0
+            widgets:
+              - obj:
+                  y: -20
+                  width: 80
+                  height: 5
+                  align: bottom_mid
+                  bg_color: color_steel_blue
+                  pad_all: 0
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  radius: 15 
+            on_click:
+              - lvgl.widget.hide: climate_fan_modes_panel
+              - lvgl.widget.hide: climate_swing_modes_panel
+              - delay: 100ms
+              - lvgl.page.show: home_page
+
+
+script:
+  - id: climate_update_arc_temp_range
+    then:
+      - script.execute: climate_update_arc_hum_range
+      - lambda: |-
+          if (!id(climate_arc_range_initialized) &&
+              id(climate_sensor_min_temp).has_state() &&
+              id(climate_sensor_max_temp).has_state()) {
+
+            int min_val = (int) id(climate_sensor_min_temp).state;
+            int max_val = (int) id(climate_sensor_max_temp).state;
+            int m = id(climate_temp_step_multiplier);
+            int min_scaled = min_val * m;
+            int max_scaled = max_val * m;
+
+            lv_arc_set_range(id(climate_arc_background), min_scaled, max_scaled);
+            lv_arc_set_range(id(climate_arc_current_temperature), min_scaled, max_scaled);
+            lv_arc_set_range(id(climate_arc_knob), min_scaled, max_scaled);
+            lv_arc_set_range(id(climate_arc_base_heat), min_scaled, max_scaled);
+            lv_arc_set_range(id(climate_arc_segment_heat), min_scaled, max_scaled);
+            lv_arc_set_range(id(climate_arc_dot_heat), min_scaled, max_scaled);
+            lv_arc_set_range(id(climate_arc_knob_heat), min_scaled, max_scaled);
+            lv_arc_set_range(id(climate_arc_base_cool), min_scaled, max_scaled);
+            lv_arc_set_range(id(climate_arc_segment_cool), min_scaled, max_scaled);
+            lv_arc_set_range(id(climate_arc_adjust_cool), min_scaled, max_scaled);
+
+            {
+              int minv_c = lv_arc_get_min_value(id(climate_arc_base_cool));
+              int maxv_c = lv_arc_get_max_value(id(climate_arc_base_cool));
+              int raw_c  = lv_arc_get_value(id(climate_arc_base_cool));
+              int high_scaled = minv_c + maxv_c - raw_c;
+              if (high_scaled < min_scaled) high_scaled = min_scaled;
+              if (high_scaled > max_scaled) high_scaled = max_scaled;
+              lv_arc_set_value(id(climate_arc_adjust_cool), high_scaled);
+            }
+
+            if (id(climate_sensor_state).state == "heat_cool") {
+              id(climate_is_active_cool) = true;
+              id(climate_update_active_arc_layer).execute();
+            }
+
+            id(climate_arc_range_initialized) = true;
+          }
+
+  - id: climate_update_mode_buttons_visibility
+    then:
+      - lambda: |-
+          std::string modes_str = id(climate_hvac_modes).state;
+          ESP_LOGD("HVAC", "Available modes: %s", modes_str.c_str());
+          
+          // OFF
+          if (modes_str.find("'off'") != std::string::npos) {
+            lv_obj_clear_flag(id(climate_off_mode_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(climate_off_mode_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          // HEAT
+          if (modes_str.find("'heat'") != std::string::npos) {
+            lv_obj_clear_flag(id(climate_heat_mode_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(climate_heat_mode_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          // COOL  
+          if (modes_str.find("'cool'") != std::string::npos) {
+            lv_obj_clear_flag(id(climate_cool_mode_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(climate_cool_mode_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          // AUTO
+          if (modes_str.find("'auto'") != std::string::npos) {
+            lv_obj_clear_flag(id(climate_auto_mode_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(climate_auto_mode_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          // HEAT_COOL
+          if (modes_str.find("'heat_cool'") != std::string::npos) {
+            lv_obj_clear_flag(id(climate_heat_cool_mode_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(climate_heat_cool_mode_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          // FAN_ONLY
+          if (modes_str.find("'fan_only'") != std::string::npos) {
+            lv_obj_clear_flag(id(climate_fan_mode_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(climate_fan_mode_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          // DRY
+          if (modes_str.find("'dry'") != std::string::npos) {
+            lv_obj_clear_flag(id(climate_dry_mode_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(climate_dry_mode_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          ESP_LOGD("HVAC", "Mode buttons visibility updated");
+
+  - id: climate_update_preset_buttons_visibility
+    then:
+      - lambda: |-
+          std::string presets_str = id(climate_preset_modes).state;
+          ESP_LOGD("HVAC", "Available presets: %s", presets_str.c_str());
+          
+          // ECO
+          if (presets_str.find("eco") != std::string::npos) {
+            lv_obj_clear_flag(id(climate_eco_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(climate_eco_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          // AWAY
+          if (presets_str.find("away") != std::string::npos) {
+            lv_obj_clear_flag(id(climate_away_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(climate_away_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          // BOOST
+          if (presets_str.find("boost") != std::string::npos) {
+            lv_obj_clear_flag(id(climate_boost_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(climate_boost_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          // COMFORT
+          if (presets_str.find("comfort") != std::string::npos) {
+            lv_obj_clear_flag(id(climate_comfort_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(climate_comfort_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          // HOME
+          if (presets_str.find("home") != std::string::npos) {
+            lv_obj_clear_flag(id(climate_home_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(climate_home_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          // SLEEP
+          if (presets_str.find("sleep") != std::string::npos) {
+            lv_obj_clear_flag(id(climate_sleep_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(climate_sleep_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          // ACTIVITY
+          if (presets_str.find("activity") != std::string::npos) {
+            lv_obj_clear_flag(id(climate_activity_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(climate_activity_preset_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          ESP_LOGD("HVAC", "Preset buttons visibility updated");
+
+
+  - id: climate_update_segments
+    mode: restart
+    then:
+      - lambda: |-
+          if (!id(climate_sensor_current_temp).has_state()) return;
+          std::string mode = id(climate_sensor_state).state;
+
+          int min_v = lv_arc_get_min_value(id(climate_arc_base_heat));
+          int max_v = lv_arc_get_max_value(id(climate_arc_base_heat));
+          if (min_v >= max_v) return;
+
+          int mseg = id(climate_temp_step_multiplier);
+          float current_scaled_f = id(climate_sensor_current_temp).state * mseg;
+          if (current_scaled_f < min_v) current_scaled_f = min_v;
+          if (current_scaled_f > max_v) current_scaled_f = max_v;
+          int current_scaled = (int) current_scaled_f;
+
+          auto angle_for_precise = [&](float v)->int {
+            float precise_angle = (v - min_v) * 180.0f / (float)(max_v - min_v);
+            return (int)(precise_angle * 10.0f + 0.5f) / 10;
+          };
+
+          // SINGLE HEAT
+          if (mode == "heat") {
+            int low_scaled = lv_arc_get_value(id(climate_arc_base_heat));
+            if (current_scaled < low_scaled - 0.1f * mseg) {
+              lv_obj_clear_flag(id(climate_arc_segment_heat), LV_OBJ_FLAG_HIDDEN);
+              lv_obj_clear_flag(id(climate_arc_dot_heat), LV_OBJ_FLAG_HIDDEN);
+              float a_start = angle_for_precise((float)current_scaled);
+              float a_end   = angle_for_precise((float)low_scaled);
+              if (a_end < a_start + 1.0f) a_end = a_start + 1.0f;
+              lv_arc_set_start_angle(id(climate_arc_segment_heat), (int)a_start);
+              lv_arc_set_end_angle(id(climate_arc_segment_heat), (int)a_end);
+              lv_arc_set_value(id(climate_arc_dot_heat), current_scaled);
+            } else {
+              lv_obj_add_flag(id(climate_arc_segment_heat), LV_OBJ_FLAG_HIDDEN);
+              lv_obj_add_flag(id(climate_arc_dot_heat), LV_OBJ_FLAG_HIDDEN);
+            }
+            lv_obj_add_flag(id(climate_arc_segment_cool), LV_OBJ_FLAG_HIDDEN);
+            return;
+          }
+
+          // SINGLE COOL
+          if (mode == "cool") {
+            int high_scaled = lv_arc_get_value(id(climate_arc_adjust_cool));
+            if (current_scaled > high_scaled + 0.1f * mseg) {
+              lv_obj_clear_flag(id(climate_arc_segment_cool), LV_OBJ_FLAG_HIDDEN);
+              float a_start = angle_for_precise((float)high_scaled);
+              float a_end   = angle_for_precise((float)current_scaled);
+              if (a_end < a_start + 1.0f) a_end = a_start + 1.0f;
+              lv_arc_set_start_angle(id(climate_arc_segment_cool), (int)a_start);
+              lv_arc_set_end_angle(id(climate_arc_segment_cool), (int)a_end);
+            } else {
+              lv_obj_add_flag(id(climate_arc_segment_cool), LV_OBJ_FLAG_HIDDEN);
+            }
+            lv_obj_add_flag(id(climate_arc_segment_heat), LV_OBJ_FLAG_HIDDEN);
+            return;
+          }
+
+          // DUAL (heat_cool)
+          if (mode == "heat_cool") {
+            int low_scaled  = lv_arc_get_value(id(climate_arc_base_heat));
+            int high_scaled = lv_arc_get_value(id(climate_arc_adjust_cool));
+
+            {
+              float heat_temp = low_scaled  / (float)mseg;
+              float cool_temp = high_scaled / (float)mseg;
+
+              static char hw[10], hf[10], cw[10], cf[10];
+              int m = mseg;
+
+              int heat_scaled_int = (int)(heat_temp * m + 0.5f);
+              int heat_whole = heat_scaled_int / m;
+              int heat_frac_digit = ((heat_scaled_int * 10) / m) % 10;
+              snprintf(hw, sizeof(hw), "%d", heat_whole);
+              snprintf(hf, sizeof(hf), ".%01d", heat_frac_digit);
+              lv_label_set_text(id(climate_target_temperature_whole_heat), hw);
+              lv_label_set_text(id(climate_target_temperature_fraction_heat), hf);
+
+              int cool_scaled_int = (int)(cool_temp * m + 0.5f);
+              int cool_whole = cool_scaled_int / m;
+              int cool_frac_digit = ((cool_scaled_int * 10) / m) % 10;
+              snprintf(cw, sizeof(cw), "%d", cool_whole);
+              snprintf(cf, sizeof(cf), ".%01d", cool_frac_digit);
+              lv_label_set_text(id(climate_target_temperature_whole_cool), cw);
+              lv_label_set_text(id(climate_target_temperature_fraction_cool), cf);
+            }
+
+            if (low_scaled > high_scaled) {
+              if (id(climate_ui_user_adjusting_target)) {
+                if (id(climate_is_active_cool)) {
+                  low_scaled = high_scaled;
+                  if (low_scaled < min_v) low_scaled = min_v;
+                  lv_arc_set_value(id(climate_arc_base_heat), low_scaled);
+                } else {
+                  high_scaled = low_scaled;
+                  if (high_scaled > max_v) high_scaled = max_v;
+                  lv_arc_set_value(id(climate_arc_adjust_cool), high_scaled);
+                  int minv_c = lv_arc_get_min_value(id(climate_arc_base_cool));
+                  int maxv_c = lv_arc_get_max_value(id(climate_arc_base_cool));
+                  int raw = minv_c + maxv_c - high_scaled;
+                  lv_arc_set_value(id(climate_arc_base_cool), raw);
+                }
+              } else {
+                int mid = (low_scaled + high_scaled) / 2;
+                lv_arc_set_value(id(climate_arc_base_heat), mid);
+                lv_arc_set_value(id(climate_arc_adjust_cool), mid);
+                int minv_c = lv_arc_get_min_value(id(climate_arc_base_cool));
+                int maxv_c = lv_arc_get_max_value(id(climate_arc_base_cool));
+                int raw = minv_c + maxv_c - mid;
+                lv_arc_set_value(id(climate_arc_base_cool), raw);
+                low_scaled = high_scaled = mid;
+              }
+            }
+
+            // HEAT
+            if (current_scaled < low_scaled - 0.1f * mseg) {
+              lv_obj_clear_flag(id(climate_arc_segment_heat), LV_OBJ_FLAG_HIDDEN);
+              lv_obj_clear_flag(id(climate_arc_dot_heat), LV_OBJ_FLAG_HIDDEN);
+              float a_start = angle_for_precise((float)current_scaled);
+              float a_end   = angle_for_precise((float)low_scaled);
+              if (a_end < a_start + 1.0f) a_end = a_start + 1.0f;
+              lv_arc_set_start_angle(id(climate_arc_segment_heat), (int)a_start);
+              lv_arc_set_end_angle(id(climate_arc_segment_heat),   (int)a_end);
+              lv_arc_set_value(id(climate_arc_dot_heat), current_scaled);
+            } else {
+              lv_obj_add_flag(id(climate_arc_segment_heat), LV_OBJ_FLAG_HIDDEN);
+              lv_obj_add_flag(id(climate_arc_dot_heat), LV_OBJ_FLAG_HIDDEN);
+            }
+
+            // COOL
+            if (current_scaled > high_scaled + 0.1f * mseg) {
+              lv_obj_clear_flag(id(climate_arc_segment_cool), LV_OBJ_FLAG_HIDDEN);
+              float cs = angle_for_precise((float)high_scaled);
+              float ce = angle_for_precise((float)current_scaled);
+              if (ce < cs + 1.0f) ce = cs + 1.0f;
+              lv_arc_set_start_angle(id(climate_arc_segment_cool), (int)cs);
+              lv_arc_set_end_angle(id(climate_arc_segment_cool),   (int)ce);
+            } else {
+              lv_obj_add_flag(id(climate_arc_segment_cool), LV_OBJ_FLAG_HIDDEN);
+            }
+            return;
+          }
+
+          // OTHER MODES
+          lv_obj_add_flag(id(climate_arc_segment_heat), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(climate_arc_segment_cool), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(climate_arc_dot_heat), LV_OBJ_FLAG_HIDDEN);
+
+
+
+  - id: climate_update_active_arc_layer
+    then:
+      - if:
+          condition:
+            lambda: 'return id(climate_sensor_state).state == "heat_cool";'
+          then:
+            - if:
+                condition:
+                  lambda: 'return id(climate_is_active_cool);'
+                then:
+                  - lambda: |-
+                      lv_obj_clear_flag(id(climate_arc_base_heat), LV_OBJ_FLAG_CLICKABLE);
+                      lv_obj_clear_flag(id(climate_arc_base_heat), LV_OBJ_FLAG_ADV_HITTEST);
+                      
+                      lv_obj_add_flag(id(climate_arc_adjust_cool), LV_OBJ_FLAG_CLICKABLE);
+                      lv_obj_add_flag(id(climate_arc_adjust_cool), LV_OBJ_FLAG_ADV_HITTEST);
+                      
+                      lv_obj_move_background(id(climate_arc_knob_heat));
+                      lv_obj_move_background(id(climate_arc_dot_heat));
+                      lv_obj_move_background(id(climate_arc_segment_heat));
+                      lv_obj_move_background(id(climate_arc_base_heat));
+                      lv_obj_move_background(id(climate_arc_current_temperature));
+                      lv_obj_move_foreground(id(climate_arc_base_cool));
+                      lv_obj_move_foreground(id(climate_arc_segment_cool));
+                      lv_obj_move_foreground(id(climate_arc_adjust_cool));
+
+                  - script.execute: climate_update_adjust_buttons_color
+
+                else:
+                  - lambda: |-
+                      lv_obj_clear_flag(id(climate_arc_adjust_cool), LV_OBJ_FLAG_CLICKABLE);
+                      lv_obj_clear_flag(id(climate_arc_adjust_cool), LV_OBJ_FLAG_ADV_HITTEST);
+                      
+                      lv_obj_add_flag(id(climate_arc_base_heat), LV_OBJ_FLAG_CLICKABLE);
+                      lv_obj_add_flag(id(climate_arc_base_heat), LV_OBJ_FLAG_ADV_HITTEST);
+                      
+                      lv_obj_move_background(id(climate_arc_adjust_cool));
+                      lv_obj_move_background(id(climate_arc_segment_cool));
+                      lv_obj_move_background(id(climate_arc_base_cool));
+                      lv_obj_move_background(id(climate_arc_current_temperature));
+                      lv_obj_move_foreground(id(climate_arc_base_heat));
+                      lv_obj_move_foreground(id(climate_arc_segment_heat));
+                      lv_obj_move_foreground(id(climate_arc_dot_heat));
+                      lv_obj_move_foreground(id(climate_arc_knob_heat));
+
+                  - script.execute: climate_update_adjust_buttons_color
+          else:
+            - lambda: |-
+                lv_obj_add_flag(id(climate_arc_adjust_cool), LV_OBJ_FLAG_CLICKABLE);
+                lv_obj_add_flag(id(climate_arc_adjust_cool), LV_OBJ_FLAG_ADV_HITTEST);
+                
+                lv_obj_add_flag(id(climate_arc_base_heat), LV_OBJ_FLAG_CLICKABLE);
+                lv_obj_add_flag(id(climate_arc_base_heat), LV_OBJ_FLAG_ADV_HITTEST);
+
+                lv_obj_move_foreground(id(climate_arc_background));
+                lv_obj_move_foreground(id(climate_arc_current_temperature));
+                lv_obj_move_foreground(id(climate_arc_knob));
+                lv_obj_move_foreground(id(climate_arc_base_heat));
+                lv_obj_move_foreground(id(climate_arc_segment_heat));
+                lv_obj_move_foreground(id(climate_arc_dot_heat));
+                lv_obj_move_foreground(id(climate_arc_knob_heat));
+                lv_obj_move_foreground(id(climate_arc_base_cool));
+                lv_obj_move_foreground(id(climate_arc_segment_cool));
+                lv_obj_move_foreground(id(climate_arc_adjust_cool));
+
+  - id: climate_update_adjust_buttons_color
+    then:
+      - lambda: |-
+          if (id(climate_temp_hum_mode)) {
+            lv_obj_set_style_text_color(id(climate_plus_label), lv_color_hex(0x9BA2BC), 0);
+            lv_obj_set_style_text_color(id(climate_minus_label), lv_color_hex(0x9BA2BC), 0);
+            return;
+          }
+
+          std::string mode = id(climate_sensor_state).state;
+          if (mode == "heat") {
+            lv_obj_set_style_text_color(id(climate_plus_label), lv_color_hex(0xFF6600), 0);
+            lv_obj_set_style_text_color(id(climate_minus_label), lv_color_hex(0xFF6600), 0);
+          } else if (mode == "cool") {
+            lv_obj_set_style_text_color(id(climate_plus_label), lv_color_hex(0x4C9FFF), 0);
+            lv_obj_set_style_text_color(id(climate_minus_label), lv_color_hex(0x4C9FFF), 0);
+          } else if (mode == "heat_cool") {
+            if (id(climate_is_active_cool)) {
+              lv_obj_set_style_text_color(id(climate_plus_label), lv_color_hex(0x4C9FFF), 0);
+              lv_obj_set_style_text_color(id(climate_minus_label), lv_color_hex(0x4C9FFF), 0);
+            } else {
+              lv_obj_set_style_text_color(id(climate_plus_label), lv_color_hex(0xFF6600), 0);
+              lv_obj_set_style_text_color(id(climate_minus_label), lv_color_hex(0xFF6600), 0);
+            }
+          } else {
+            lv_obj_set_style_text_color(id(climate_plus_label), lv_color_hex(0x9BA2BC), 0);
+            lv_obj_set_style_text_color(id(climate_minus_label), lv_color_hex(0x9BA2BC), 0);
+          }
+
+  - id: climate_update_arc_hum_range
+    then:  
+      - lambda: |-
+          int min_h = 30;
+            int max_h = 99;
+            if (id(climate_sensor_min_hum).has_state())
+              min_h = (int)id(climate_sensor_min_hum).state;
+            if (id(climate_sensor_max_hum).has_state())
+              max_h = (int)id(climate_sensor_max_hum).state;
+            if (min_h < 0) min_h = 0;
+            if (max_h > 100) max_h = 100;
+            if (min_h >= max_h) { min_h = 30; max_h = 99; }
+
+            lv_arc_set_range(id(climate_arc_base_humidity), min_h, max_h);
+            lv_arc_set_range(id(climate_arc_knob_humidity), min_h, max_h);
+            lv_arc_set_range(id(climate_arc_dot_humidity),  min_h, max_h);
+
+            if (id(climate_sensor_target_hum).has_state()) {
+              int t = (int)id(climate_sensor_target_hum).state;
+              if (t < min_h) t = min_h;
+              if (t > max_h) t = max_h;
+              lv_arc_set_value(id(climate_arc_base_humidity), t);
+              lv_arc_set_value(id(climate_arc_knob_humidity), t);
+            }
+            if (id(climate_sensor_current_hum).has_state()) {
+              int c = (int)id(climate_sensor_current_hum).state;
+              if (c < min_h) c = min_h;
+              if (c > max_h) c = max_h;
+              lv_arc_set_value(id(climate_arc_dot_humidity), c);
+            }
+
+            if (!id(climate_arc_hum_range_initialized))
+              id(climate_arc_hum_range_initialized) = true;
+
+            id(climate_update_humidity_segments).execute();
+
+
+  - id: climate_update_humidity_segments
+    then:
+      - lambda: |-
+          if (!id(climate_arc_base_humidity) || !id(climate_arc_dot_humidity) || !id(climate_arc_segment_humidity)) return;
+
+          int minv = lv_arc_get_min_value(id(climate_arc_base_humidity));
+          int maxv = lv_arc_get_max_value(id(climate_arc_base_humidity));
+          if (maxv <= minv) return;
+
+          int target = lv_arc_get_value(id(climate_arc_base_humidity));
+          int current = lv_arc_get_value(id(climate_arc_dot_humidity));
+
+          if (current < minv) current = minv;
+          if (current > maxv) current = maxv;
+          if (target < minv) target = minv;
+          if (target > maxv) target = maxv;
+
+          auto to_angle = [&](int v)->int {
+            return (int) (( (v - minv) * 180.0f ) / (float)(maxv - minv) + 0.5f);
+          };
+
+          if (current < target) {
+            int a_start = to_angle(current);
+            int a_end   = to_angle(target);
+            if (a_end <= a_start) a_end = a_start + 1;
+            lv_arc_set_start_angle(id(climate_arc_segment_humidity), a_start);
+            lv_arc_set_end_angle(id(climate_arc_segment_humidity), a_end);
+          } else {
+            int a = to_angle(current);
+            lv_arc_set_start_angle(id(climate_arc_segment_humidity), a);
+            lv_arc_set_end_angle(id(climate_arc_segment_humidity), a);
+          }
+
+
+  - id: climate_toggle_fan_panel
+    then:
+      - lambda: |-
+          if (id(climate_fan_panel_open)) {
+            // Закрытие панели без открытия другой -> анимация закрытия
+            lv_anim_t a;
+            lv_anim_init(&a);
+            lv_anim_set_var(&a, id(climate_fan_modes_panel));
+            lv_anim_set_values(&a, lv_obj_get_x(id(climate_fan_modes_panel)), -lv_obj_get_width(id(climate_fan_modes_panel)));
+            lv_anim_set_time(&a, 300);
+            lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t) lv_obj_set_x);
+            lv_anim_set_path_cb(&a, lv_anim_path_ease_out);
+            lv_anim_set_ready_cb(&a, [](lv_anim_t *a) {
+              lv_obj_add_flag((lv_obj_t *)a->var, LV_OBJ_FLAG_HIDDEN);
+              lv_obj_clear_flag(id(climate_state_label), LV_OBJ_FLAG_HIDDEN);
+            });
+            lv_anim_start(&a);
+            id(climate_fan_panel_open) = false;
+          } else {
+            // Проверяем, открыта ли swing панель
+            bool swing_panel_was_open = id(climate_swing_panel_open);
+            
+            // Если swing панель открыта, мгновенно скрываем ее
+            if (swing_panel_was_open) {
+              lv_obj_add_flag(id(climate_swing_modes_panel), LV_OBJ_FLAG_HIDDEN);
+              id(climate_swing_panel_open) = false;
+            }
+            
+            id(climate_build_fan_modes_panel).execute();
+            lv_obj_clear_flag(id(climate_fan_modes_panel), LV_OBJ_FLAG_HIDDEN);
+            
+            if (swing_panel_was_open) {
+              // Если переключаемся с другой панели - мгновенное открытие
+              lv_obj_set_x(id(climate_fan_modes_panel), 0);
+            } else {
+              // Если другая панель не была открыта - анимация открытия
+              lv_obj_set_x(id(climate_fan_modes_panel), -lv_obj_get_width(id(climate_fan_modes_panel)));
+              lv_anim_t a;
+              lv_anim_init(&a);
+              lv_anim_set_var(&a, id(climate_fan_modes_panel));
+              lv_anim_set_values(&a, -lv_obj_get_width(id(climate_fan_modes_panel)), 0);
+              lv_anim_set_time(&a, 300);
+              lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t) lv_obj_set_x);
+              lv_anim_set_path_cb(&a, lv_anim_path_ease_out);
+              lv_anim_start(&a);
+            }
+            
+            id(climate_fan_panel_open) = true;
+            lv_obj_add_flag(id(climate_state_label), LV_OBJ_FLAG_HIDDEN);
+          }
+
+  - id: climate_build_fan_modes_panel
+    then:
+      - lambda: |-
+          static esphome::lvgl::FontEngine fe_mdi_24(id(mdi_icons_24));
+          static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
+
+          lv_obj_t * cont = id(climate_fan_modes_panel);
+          if (!cont) return;
+
+          while (lv_obj_get_child_cnt(cont) > 0) {
+            lv_obj_t * child = lv_obj_get_child(cont, 0);
+            lv_obj_del(child);
+          }
+
+          auto & list = id(climate_fan_mode_list);
+          int sel = id(climate_selected_fan_mode_index);
+
+          const lv_color_t COLOR_DEFAULT = lv_color_hex(0x9BA2BC);
+          const lv_color_t COLOR_ACTIVE  = lv_color_hex(0x2ECC71);
+
+          auto icon_for = [&](const std::string & m)->std::string {
+            if (m == "auto") return std::string("${fan_auto_icon}");
+            if (m == "on") return std::string("${fan_on_icon}");
+            if (m == "off") return std::string("${fan_off_icon}");
+            if (m == "low") return std::string("${fan_low_icon}");
+            if (m == "medium" || m == "middle") return std::string("${fan_medium_icon}");
+            if (m == "high") return std::string("${fan_high_icon}");
+            if (m == "focus") return std::string("${fan_focus_icon}");
+            if (m == "diffuse") return std::string("${fan_diffuse_icon}");
+            return std::string("${fan_custom_icon}");
+          };
+
+          auto set_btn_state = [&](lv_obj_t * btn, bool active){
+            if (!btn) return;
+            if (lv_obj_get_child_cnt(btn) < 2) return;
+            lv_obj_t * icon = lv_obj_get_child(btn, 0);
+            lv_obj_t * txt  = lv_obj_get_child(btn, 1);
+            lv_color_t c = active ? COLOR_ACTIVE : COLOR_DEFAULT;
+            lv_obj_set_style_text_color(icon, c, 0);
+              lv_obj_set_style_text_color(txt , c, 0);
+            lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
+          };
+
+          for (int i = 0; i < (int)list.size(); ++i) {
+            lv_obj_t * btn = lv_obj_create(cont);
+            lv_obj_set_size(btn, 120, 30);
+            lv_obj_add_flag(btn, LV_OBJ_FLAG_CLICKABLE);
+            lv_obj_clear_flag(btn, LV_OBJ_FLAG_SCROLLABLE);
+            lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
+            lv_obj_set_style_border_width(btn, 0, 0);
+            lv_obj_set_style_pad_left(btn, 10, 0);
+            lv_obj_set_style_pad_top(btn, 10, 0);
+            lv_obj_set_style_pad_bottom(btn, 10, 0);
+            lv_obj_set_style_pad_column(btn, 10, 0);
+
+            lv_obj_set_flex_flow(btn, LV_FLEX_FLOW_ROW);
+            lv_obj_set_flex_align(btn,
+                                  LV_FLEX_ALIGN_START,
+                                  LV_FLEX_ALIGN_CENTER,
+                                  LV_FLEX_ALIGN_CENTER);
+
+            lv_obj_t * icon = lv_label_create(btn);
+            lv_label_set_text(icon, icon_for(list[i]).c_str());
+            lv_obj_set_style_text_font(icon, fe_mdi_24.get_lv_font(), 0);
+
+            lv_obj_t * txt = lv_label_create(btn);
+            std::string caption = list[i];
+            if (!caption.empty())
+              caption[0] = (char)std::toupper((unsigned char)caption[0]);
+            lv_label_set_text(txt, caption.c_str());
+            lv_obj_set_style_text_font(txt, fe_nunito_16.get_lv_font(), 0);
+
+            set_btn_state(btn, i == sel);
+
+            lv_obj_add_event_cb(btn, [](lv_event_t * e){
+              int idx = (int)(intptr_t) lv_event_get_user_data(e);
+              auto & list = id(climate_fan_mode_list);
+              if (idx < 0 || idx >= (int)list.size()) return;
+
+              id(climate_selected_fan_mode_index) = idx;
+              std::string mode = list[idx];
+              std::string icon = "${fan_custom_icon}";
+              if (mode == "auto") icon = "${fan_auto_icon}";
+              else if (mode == "on") icon = "${fan_on_icon}";
+              else if (mode == "off") icon = "${fan_off_icon}";
+              else if (mode == "low") icon = "${fan_low_icon}";
+              else if (mode == "medium" || mode == "middle") icon = "${fan_medium_icon}";
+              else if (mode == "high") icon = "${fan_high_icon}";
+              else if (mode == "focus") icon = "${fan_focus_icon}";
+              else if (mode == "diffuse") icon = "${fan_diffuse_icon}";
+              lv_label_set_text(id(climate_fan_speed_mode_label), icon.c_str());
+
+              id(climate_send_fan_mode_to_ha).execute();
+
+              lv_obj_clear_flag(id(climate_state_label), LV_OBJ_FLAG_HIDDEN);
+
+              lv_obj_t * parent = id(climate_fan_modes_panel);
+              if (parent) {
+                int child_cnt = lv_obj_get_child_cnt(parent);
+                for (int j = 0; j < child_cnt; ++j) {
+                  lv_obj_t * b = lv_obj_get_child(parent, j);
+                  if (lv_obj_get_child_cnt(b) >= 2) {
+                    lv_color_t c = (j == idx) ? lv_color_hex(0x2ECC71) : lv_color_hex(0x9BA2BC);
+                    lv_obj_set_style_text_color(lv_obj_get_child(b,0), c, 0);
+                    lv_obj_set_style_text_color(lv_obj_get_child(b,1), c, 0);
+                    lv_obj_set_style_bg_opa(b, LV_OPA_TRANSP, 0);
+                  }
+                }
+              }
+
+              lv_obj_add_flag(id(climate_fan_modes_panel), LV_OBJ_FLAG_HIDDEN);
+              id(climate_fan_panel_open) = false;
+            }, LV_EVENT_CLICKED, (void*)(intptr_t)i);
+          }
+
+  - id: climate_send_fan_mode_to_ha
+    then:
+      - homeassistant.action:
+          action: climate.set_fan_mode
+          data:
+            entity_id: "${climate_entity}"
+            fan_mode: !lambda |-
+              auto & list = id(climate_fan_mode_list);
+              int idx = id(climate_selected_fan_mode_index);
+              if (idx >= 0 && idx < (int)list.size()) return list[idx];
+              return std::string("");
+
+
+  - id: climate_toggle_swing_panel
+    then:
+      - lambda: |-
+          if (id(climate_swing_panel_open)) {
+            // Закрытие панели без открытия другой -> анимация закрытия
+            lv_anim_t a;
+            lv_anim_init(&a);
+            lv_anim_set_var(&a, id(climate_swing_modes_panel));
+            lv_anim_set_values(&a, lv_obj_get_x(id(climate_swing_modes_panel)), -lv_obj_get_width(id(climate_swing_modes_panel)));
+            lv_anim_set_time(&a, 300);
+            lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t) lv_obj_set_x);
+            lv_anim_set_path_cb(&a, lv_anim_path_ease_out);
+            lv_anim_set_ready_cb(&a, [](lv_anim_t *a) {
+              lv_obj_add_flag((lv_obj_t *)a->var, LV_OBJ_FLAG_HIDDEN);
+              lv_obj_clear_flag(id(climate_state_label), LV_OBJ_FLAG_HIDDEN);
+            });
+            lv_anim_start(&a);
+            id(climate_swing_panel_open) = false;
+          } else {
+            // Проверяем, открыта ли fan панель
+            bool fan_panel_was_open = id(climate_fan_panel_open);
+            
+            // Если fan панель открыта, мгновенно скрываем ее
+            if (fan_panel_was_open) {
+              lv_obj_add_flag(id(climate_fan_modes_panel), LV_OBJ_FLAG_HIDDEN);
+              id(climate_fan_panel_open) = false;
+            }
+            
+            id(climate_build_swing_modes_panel).execute();
+            lv_obj_clear_flag(id(climate_swing_modes_panel), LV_OBJ_FLAG_HIDDEN);
+            
+            if (fan_panel_was_open) {
+              // Если переключаемся с другой панели - мгновенное открытие
+              lv_obj_set_x(id(climate_swing_modes_panel), 0);
+            } else {
+              // Если другая панель не была открыта - анимация открытия
+              lv_obj_set_x(id(climate_swing_modes_panel), -lv_obj_get_width(id(climate_swing_modes_panel)));
+              lv_anim_t a;
+              lv_anim_init(&a);
+              lv_anim_set_var(&a, id(climate_swing_modes_panel));
+              lv_anim_set_values(&a, -lv_obj_get_width(id(climate_swing_modes_panel)), 0);
+              lv_anim_set_time(&a, 300);
+              lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t) lv_obj_set_x);
+              lv_anim_set_path_cb(&a, lv_anim_path_ease_out);
+              lv_anim_start(&a);
+            }
+            
+            id(climate_swing_panel_open) = true;
+            lv_obj_add_flag(id(climate_state_label), LV_OBJ_FLAG_HIDDEN);
+          }
+
+
+  - id: climate_build_swing_modes_panel
+    then:
+      - lambda: |-
+          static esphome::lvgl::FontEngine fe_mdi_24(id(mdi_icons_24));
+          static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
+
+          lv_obj_t * cont = id(climate_swing_modes_panel);
+          if (!cont) return;
+
+          while (lv_obj_get_child_cnt(cont) > 0) {
+            lv_obj_t * child = lv_obj_get_child(cont, 0);
+            lv_obj_del(child);
+          }
+
+          auto & list = id(climate_swing_mode_list);
+          int sel = id(climate_selected_swing_mode_index);
+
+          const lv_color_t COLOR_DEFAULT = lv_color_hex(0x9BA2BC);
+          const lv_color_t COLOR_ACTIVE  = lv_color_hex(0x2ECC71);
+
+          auto icon_for = [&](const std::string & m)->std::string {
+            if (m == "on")         return std::string("${swing_on_icon}");
+            if (m == "off")        return std::string("${swing_off_icon}");
+            if (m == "both")       return std::string("${swing_both_icon}");
+            if (m == "vertical")   return std::string("${swing_vertical_icon}");
+            if (m == "horizontal") return std::string("${swing_horizontal_icon}");
+            return std::string("${swing_off_icon}");
+          };
+
+          auto set_btn_state = [&](lv_obj_t * btn, bool active){
+            if (!btn) return;
+            if (lv_obj_get_child_cnt(btn) < 2) return;
+            lv_obj_t * icon = lv_obj_get_child(btn, 0);
+            lv_obj_t * txt  = lv_obj_get_child(btn, 1);
+            lv_color_t c = active ? COLOR_ACTIVE : COLOR_DEFAULT;
+            lv_obj_set_style_text_color(icon, c, 0);
+            lv_obj_set_style_text_color(txt , c, 0);
+            lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
+          };
+
+          for (int i = 0; i < (int)list.size(); ++i) {
+            lv_obj_t * btn = lv_obj_create(cont);
+            lv_obj_set_size(btn, 120, 30);
+            lv_obj_add_flag(btn, LV_OBJ_FLAG_CLICKABLE);
+            lv_obj_clear_flag(btn, LV_OBJ_FLAG_SCROLLABLE);
+            lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
+            lv_obj_set_style_border_width(btn, 0, 0);
+            lv_obj_set_style_pad_left(btn, 10, 0);
+            lv_obj_set_style_pad_top(btn, 10, 0);
+            lv_obj_set_style_pad_bottom(btn, 10, 0);
+            lv_obj_set_style_pad_column(btn, 10, 0);
+
+            lv_obj_set_flex_flow(btn, LV_FLEX_FLOW_ROW);
+            lv_obj_set_flex_align(btn,
+                                  LV_FLEX_ALIGN_START,
+                                  LV_FLEX_ALIGN_CENTER,
+                                  LV_FLEX_ALIGN_CENTER);
+
+            lv_obj_t * icon = lv_label_create(btn);
+            lv_label_set_text(icon, icon_for(list[i]).c_str());
+            lv_obj_set_style_text_font(icon, fe_mdi_24.get_lv_font(), 0);
+
+            lv_obj_t * txt = lv_label_create(btn);
+            std::string caption = list[i];
+            if (!caption.empty())
+              caption[0] = (char)std::toupper((unsigned char)caption[0]);
+            lv_label_set_text(txt, caption.c_str());
+            lv_obj_set_style_text_font(txt, fe_nunito_16.get_lv_font(), 0);
+
+            set_btn_state(btn, i == sel);
+
+            lv_obj_add_event_cb(btn, [](lv_event_t * e){
+              int idx = (int)(intptr_t) lv_event_get_user_data(e);
+              auto & list = id(climate_swing_mode_list);
+              if (idx < 0 || idx >= (int)list.size()) return;
+
+              id(climate_selected_swing_mode_index) = idx;
+              std::string mode = list[idx];
+
+              std::string icon = "${swing_off_icon}";
+              if (mode == "on") icon = "${swing_on_icon}";
+              else if (mode == "off") icon = "${swing_off_icon}";
+              else if (mode == "both") icon = "${swing_both_icon}";
+              else if (mode == "vertical") icon = "${swing_vertical_icon}";
+              else if (mode == "horizontal") icon = "${swing_horizontal_icon}";
+              lv_label_set_text(id(climate_swing_mode_label), icon.c_str());
+
+              id(climate_send_swing_mode_to_ha).execute();
+
+              lv_obj_clear_flag(id(climate_state_label), LV_OBJ_FLAG_HIDDEN);
+
+              lv_obj_t * parent = id(climate_swing_modes_panel);
+              if (parent) {
+                int child_cnt = lv_obj_get_child_cnt(parent);
+                for (int j = 0; j < child_cnt; ++j) {
+                  lv_obj_t * b = lv_obj_get_child(parent, j);
+                  if (lv_obj_get_child_cnt(b) >= 2) {
+                    lv_color_t c = (j == idx) ? lv_color_hex(0x2ECC71) : lv_color_hex(0x9BA2BC);
+                    lv_obj_set_style_text_color(lv_obj_get_child(b,0), c, 0);
+                    lv_obj_set_style_text_color(lv_obj_get_child(b,1), c, 0);
+                    lv_obj_set_style_bg_opa(b, LV_OPA_TRANSP, 0);
+                  }
+                }
+              }
+
+              lv_obj_add_flag(id(climate_swing_modes_panel), LV_OBJ_FLAG_HIDDEN);
+              id(climate_swing_panel_open) = false;
+            }, LV_EVENT_CLICKED, (void*)(intptr_t)i);
+          }
+
+  - id: climate_send_swing_mode_to_ha
+    then:
+      - homeassistant.action:
+          action: climate.set_swing_mode
+          data:
+            entity_id: "${climate_entity}"
+            swing_mode: !lambda |-
+              auto & list = id(climate_swing_mode_list);
+              int idx = id(climate_selected_swing_mode_index);
+              if (idx >= 0 && idx < (int)list.size()) return list[idx];
+              return std::string("");
+
