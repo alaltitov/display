@@ -1,8 +1,4 @@
 globals:
-  # - id: ${widget_name}_light_is_on
-  #   type: bool
-  #   initial_value: 'false'
-
   - id: ${widget_name}_current_hue
     type: float
     initial_value: '0.0'
@@ -22,6 +18,23 @@ globals:
   - id: ${widget_name}_is_temp_mode
     type: bool
     initial_value: 'true'
+
+  # Новые глобальные переменные для хранения поддерживаемых режимов
+  - id: ${widget_name}_supports_color_temp
+    type: bool
+    initial_value: 'false'
+
+  - id: ${widget_name}_supports_hs
+    type: bool
+    initial_value: 'false'
+
+  - id: ${widget_name}_supports_rgb
+    type: bool
+    initial_value: 'false'
+
+  - id: ${widget_name}_supports_brightness
+    type: bool
+    initial_value: 'false'
 
 
 sensor:
@@ -61,6 +74,7 @@ sensor:
 
 
 text_sensor:
+  # HS Color sensor
   - platform: homeassistant
     id: ${widget_name}_light_sensor_hs
     entity_id: "${light_entity}"
@@ -88,6 +102,48 @@ text_sensor:
             - lvgl.slider.update:
                 id: ${widget_name}_light_saturation_slider
                 value: !lambda return id(${widget_name}_current_saturation);
+
+  # НОВЫЙ СЕНСОР: Определение поддерживаемых режимов цвета
+  # Этот сенсор читает атрибут supported_color_modes и определяет возможности лампы
+  - platform: homeassistant
+    id: ${widget_name}_light_supported_modes
+    entity_id: "${light_entity}"
+    attribute: supported_color_modes
+    on_value:
+      - lambda: |-
+          // Парсим строку с поддерживаемыми режимами
+          // Формат: "['color_temp', 'hs']" или "['brightness']" и т.д.
+          std::string modes = x;
+          
+          // Проверяем наличие каждого режима
+          // color_temp - поддержка цветовой температуры (автоматически включает brightness)
+          id(${widget_name}_supports_color_temp) = (modes.find("color_temp") != std::string::npos);
+          
+          // hs - поддержка hue/saturation (автоматически включает brightness)
+          // rgb, rgbw, rgbww, xy - все эти режимы также означают поддержку цвета
+          id(${widget_name}_supports_hs) = (modes.find("hs") != std::string::npos);
+          id(${widget_name}_supports_rgb) = (modes.find("rgb") != std::string::npos);
+          
+          // Если есть HS, RGB или color_temp - значит есть и brightness
+          // brightness - отдельный режим только яркости
+          id(${widget_name}_supports_brightness) = (
+            modes.find("brightness") != std::string::npos ||
+            id(${widget_name}_supports_hs) ||
+            id(${widget_name}_supports_rgb) ||
+            id(${widget_name}_supports_color_temp)
+          );
+          
+          ESP_LOGD("light_widget", "Supported modes: %s", modes.c_str());
+          ESP_LOGD("light_widget", "Color temp: %d, HS: %d, RGB: %d, Brightness: %d",
+            id(${widget_name}_supports_color_temp),
+            id(${widget_name}_supports_hs),
+            id(${widget_name}_supports_rgb),
+            id(${widget_name}_supports_brightness)
+          );
+      
+      # После определения режимов обновляем видимость виджетов
+      - script.execute: ${widget_name}_update_widget_visibility
+
 
 lvgl:
 
@@ -142,7 +198,6 @@ lvgl:
             align: center
             bg_color: color_slate_blue_gray
             pad_all: 0
-            # border_color: color_black
             border_opa: transp
             border_width: 0
             shadow_color: color_black
@@ -151,7 +206,6 @@ lvgl:
             widgets:
               - slider:
                   id: ${widget_name}_light_brightness_slider
-                  # x: -160
                   radius: 16
                   width: 60
                   height: 280
@@ -168,10 +222,15 @@ lvgl:
                     radius: 10
                   knob:
                     bg_opa: transp
-                  on_release:
+                  
+                  # НОВОЕ: on_value для обновления цвета лампочки в реальном времени
+                  on_value:
                     - globals.set:
                         id: ${widget_name}_current_brightness
                         value: !lambda return int(x);
+                    - script.execute: ${widget_name}_update_lightbulb_color
+                  
+                  on_release:
                     - homeassistant.action:
                         action: light.turn_on
                         data:
@@ -189,7 +248,6 @@ lvgl:
             align: center
             bg_color: color_slate_blue_gray
             pad_all: 0
-            # border_color: color_black
             border_opa: transp
             border_width: 0
             shadow_color: color_black
@@ -198,7 +256,6 @@ lvgl:
             widgets:
               - slider:
                   id: ${widget_name}_light_saturation_slider
-                  # x: -60
                   radius: 16
                   width: 60
                   height: 280
@@ -215,10 +272,15 @@ lvgl:
                     radius: 10
                   knob:
                     bg_opa: transp
-                  on_release:
+                  
+                  # НОВОЕ: on_value для обновления цвета лампочки в реальном времени
+                  on_value:
                     - globals.set:
                         id: ${widget_name}_current_saturation
                         value: !lambda return x;
+                    - script.execute: ${widget_name}_update_lightbulb_color
+                  
+                  on_release:
                     - homeassistant.action:
                         action: light.turn_on
                         data:
@@ -268,11 +330,7 @@ lvgl:
                         border_color: color_black
                         border_opa: 40%
                         border_width: 3
-                        # border_opa: transp
-                        # border_width: 0
-                        # shadow_color: color_black
-                        # shadow_spread: 2
-                        # shadow_width: 8
+              
               - obj:
                   id: ${widget_name}_hue_gradient_obj
                   hidden: true
@@ -282,7 +340,6 @@ lvgl:
                   radius: 222
                   align: right_mid
                   pad_all: 0
-                  # bg_opa: transp
                   bg_grad: ${widget_name}_hue_gradient
                   bg_grad_dir: ver
                   shadow_opa: transp
@@ -297,7 +354,6 @@ lvgl:
                   radius: 222
                   align: right_mid
                   pad_all: 0
-                  # bg_opa: transp
                   bg_grad: ${widget_name}_color_temp_gradient
                   bg_grad_dir: ver
                   shadow_opa: transp
@@ -326,6 +382,7 @@ lvgl:
                   border_width: 3
                   border_opa: 15%
                   widgets:
+                    # ВИДЖЕТ ЦВЕТА ЛАМПОЧКИ - обновляется динамически
                     - obj:
                         id: ${widget_name}_lightbulb_color
                         x: 67
@@ -358,6 +415,7 @@ lvgl:
                   border_opa: transp
                   border_width: 0
                   widgets:
+                    # ARC для HUE (оттенок)
                     - arc:
                         id: ${widget_name}_light_arc_hue
                         hidden: true
@@ -383,17 +441,16 @@ lvgl:
                           bg_opa: transp
                           border_color: color_steel_blue
                           border_width: 4
-                          # shadow_color: color_black
-                          # shadow_spread: 2
-                          # shadow_width: 13
                           shadow_opa: transp
-                        # on_value:
-
-
-                        on_release:
+                        
+                        # НОВОЕ: on_value для обновления цвета лампочки в реальном времени
+                        on_value:
                           - globals.set:
                               id: ${widget_name}_current_hue
                               value: !lambda return x;
+                          - script.execute: ${widget_name}_update_lightbulb_color
+
+                        on_release:
                           - homeassistant.action:
                               action: light.turn_on
                               data:
@@ -404,6 +461,7 @@ lvgl:
                                 hue: !lambda return x;
                                 sat: !lambda return id(${widget_name}_current_saturation);
 
+                    # ARC для COLOR TEMP (цветовая температура)
                     - arc:
                         id: ${widget_name}_light_arc_color_temp
                         hidden: false
@@ -429,12 +487,14 @@ lvgl:
                           bg_opa: transp
                           border_color: color_steel_blue
                           border_width: 4
-                          # shadow_color: color_black
-                          # shadow_spread: 2
-                          # shadow_width: 13
                           shadow_opa: transp
-                        # on_value:
-
+                        
+                        # НОВОЕ: on_value для обновления цвета лампочки в реальном времени
+                        on_value:
+                          - globals.set:
+                              id: ${widget_name}_current_color_temp
+                              value: !lambda return x;
+                          - script.execute: ${widget_name}_update_lightbulb_color
 
                         on_release:
                           - homeassistant.action:
@@ -443,7 +503,7 @@ lvgl:
                                 entity_id: "${light_entity}"
                                 color_temp_kelvin: !lambda return int(x);
 
-
+                    # КНОПКА ПЕРЕКЛЮЧЕНИЯ РЕЖИМА
                     - obj:
                         id: ${widget_name}_mode_select_btn
                         clickable: true
@@ -496,34 +556,242 @@ lvgl:
                   border_opa: transp
                   border_width: 0
                   shadow_opa: transp
-                  radius: 15 
-            on_click:
-              - lvgl.widget.hide: light_select_widget
-              - delay: 100ms
-              - lvgl.page.show: home_page
+                  radius: 15
 
 
 script:
+  # Скрипт переключения между режимами color_temp и hs
   - id: ${widget_name}_toggle_gradient
     then:
       - if:
           condition:
             lambda: return id(${widget_name}_is_temp_mode);
           then:
+            # РЕЖИМ COLOR_TEMP
             - lvgl.widget.hide: ${widget_name}_hue_gradient_obj
             - lvgl.widget.hide: ${widget_name}_light_arc_hue
             - lvgl.widget.show: ${widget_name}_color_temp_gradient_obj
             - lvgl.widget.show: ${widget_name}_light_arc_color_temp
+            # СКРЫВАЕМ saturation в режиме температуры
+            - lvgl.widget.hide: ${widget_name}_light_saturation_background
+            # СДВИГАЕМ brightness вправо
+            - lvgl.obj.update:
+                id: ${widget_name}_light_brightness_background
+                x: -110
             - lvgl.label.update:
                 id: ${widget_name}_mode_select_icon
                 text_font: mdi_icons_28
                 text: "${palette_icon}"
+            - script.execute: ${widget_name}_update_lightbulb_color
           else:
+            # РЕЖИМ HUE/SATURATION
             - lvgl.widget.hide: ${widget_name}_color_temp_gradient_obj
             - lvgl.widget.hide: ${widget_name}_light_arc_color_temp
             - lvgl.widget.show: ${widget_name}_hue_gradient_obj
             - lvgl.widget.show: ${widget_name}_light_arc_hue
+            # ПОКАЗЫВАЕМ saturation в режиме цвета (если лампа поддерживает)
+            - if:
+                condition:
+                  lambda: 'return id(${widget_name}_supports_hs) || id(${widget_name}_supports_rgb);'
+                then:
+                  - lvgl.widget.show: ${widget_name}_light_saturation_background
+                  # ВОЗВРАЩАЕМ brightness на исходную позицию
+                  - lvgl.obj.update:
+                      id: ${widget_name}_light_brightness_background
+                      x: -160
             - lvgl.label.update:
                 id: ${widget_name}_mode_select_icon
                 text_font: icons_28
                 text: "${temperature_icon}"
+            - script.execute: ${widget_name}_update_lightbulb_color
+
+  # ИСПРАВЛЕННЫЙ СКРИПТ: Обновление цвета виджета лампочки
+  - id: ${widget_name}_update_lightbulb_color
+    then:
+      - lambda: |-
+          // Определяем цвет в зависимости от текущего режима
+          int r = 255, g = 255, b = 255;
+          
+          if (id(${widget_name}_is_temp_mode)) {
+            // РЕЖИМ ЦВЕТОВОЙ ТЕМПЕРАТУРЫ
+            // Конвертируем Kelvin в RGB
+            float temp = id(${widget_name}_current_color_temp) / 100.0;
+            
+            // Алгоритм конвертации цветовой температуры в RGB
+            // Красный канал
+            if (temp <= 66) {
+              r = 255;
+            } else {
+              r = temp - 60;
+              r = 329.698727446 * pow(r, -0.1332047592);
+              r = (r < 0) ? 0 : ((r > 255) ? 255 : r);
+            }
+            
+            // Зеленый канал
+            if (temp <= 66) {
+              g = temp;
+              g = 99.4708025861 * log(g) - 161.1195681661;
+            } else {
+              g = temp - 60;
+              g = 288.1221695283 * pow(g, -0.0755148492);
+            }
+            g = (g < 0) ? 0 : ((g > 255) ? 255 : g);
+            
+            // Синий канал
+            if (temp >= 66) {
+              b = 255;
+            } else if (temp <= 19) {
+              b = 0;
+            } else {
+              b = temp - 10;
+              b = 138.5177312231 * log(b) - 305.0447927307;
+              b = (b < 0) ? 0 : ((b > 255) ? 255 : b);
+            }
+            
+          } else {
+            // РЕЖИМ HUE/SATURATION
+            // Конвертируем HSV в RGB
+            float h = id(${widget_name}_current_hue);
+            float s = id(${widget_name}_current_saturation) / 100.0;
+            float v = 1.0; // Используем полную яркость для отображения цвета
+            
+            float c = v * s;
+            float x = c * (1 - fabs(fmod(h / 60.0, 2) - 1));
+            float m = v - c;
+            
+            float r_prime, g_prime, b_prime;
+            
+            if (h >= 0 && h < 60) {
+              r_prime = c; g_prime = x; b_prime = 0;
+            } else if (h >= 60 && h < 120) {
+              r_prime = x; g_prime = c; b_prime = 0;
+            } else if (h >= 120 && h < 180) {
+              r_prime = 0; g_prime = c; b_prime = x;
+            } else if (h >= 180 && h < 240) {
+              r_prime = 0; g_prime = x; b_prime = c;
+            } else if (h >= 240 && h < 300) {
+              r_prime = x; g_prime = 0; b_prime = c;
+            } else {
+              r_prime = c; g_prime = 0; b_prime = x;
+            }
+            
+            r = (r_prime + m) * 255;
+            g = (g_prime + m) * 255;
+            b = (b_prime + m) * 255;
+          }
+          
+          // ИСПРАВЛЕНО: Применяем яркость к цвету с минимальным порогом 20%
+          // Это гарантирует, что цвет виджета всегда будет виден
+          float brightness_factor = id(${widget_name}_current_brightness) / 255.0;
+          // Минимальная яркость для отображения - 20% (чтобы цвет был виден)
+          brightness_factor = std::max(brightness_factor, 0.2f);
+          
+          r = r * brightness_factor;
+          g = g * brightness_factor;
+          b = b * brightness_factor;
+          
+          // Формируем цвет в формате 0xRRGGBB
+          uint32_t color = (r << 16) | (g << 8) | b;
+          
+          ESP_LOGD("lightbulb_color", "Brightness: %.0f%%, Factor: %.2f, Color: R=%d, G=%d, B=%d (0x%06X)", 
+            (id(${widget_name}_current_brightness) / 255.0) * 100, brightness_factor, r, g, b, color);
+          
+          // Устанавливаем цвет виджета
+          lv_obj_set_style_bg_color(id(${widget_name}_lightbulb_color), lv_color_hex(color), 0);
+
+  # ИСПРАВЛЕННЫЙ СКРИПТ: Обновление видимости виджетов
+  - id: ${widget_name}_update_widget_visibility
+    then:
+      - lambda: |-
+          ESP_LOGD("widget_visibility", "Updating widget visibility...");
+          ESP_LOGD("widget_visibility", "Supports - Brightness: %d, HS: %d, RGB: %d, ColorTemp: %d",
+            id(${widget_name}_supports_brightness),
+            id(${widget_name}_supports_hs),
+            id(${widget_name}_supports_rgb),
+            id(${widget_name}_supports_color_temp)
+          );
+      
+      # Управление видимостью слайдера яркости
+      - if:
+          condition:
+            lambda: 'return id(${widget_name}_supports_brightness);'
+          then:
+            - lvgl.widget.show: ${widget_name}_light_brightness_background
+            - lambda: |-
+                ESP_LOGD("widget_visibility", "Brightness slider: VISIBLE");
+          else:
+            - lvgl.widget.hide: ${widget_name}_light_brightness_background
+            - lambda: |-
+                ESP_LOGD("widget_visibility", "Brightness slider: HIDDEN");
+      
+      # Управление видимостью слайдера насыщенности
+      # ВАЖНО: Видимость saturation также управляется в toggle_gradient
+      # Здесь мы только определяем, поддерживается ли он вообще
+      - if:
+          condition:
+            lambda: 'return id(${widget_name}_supports_hs) || id(${widget_name}_supports_rgb);'
+          then:
+            - lambda: |-
+                ESP_LOGD("widget_visibility", "Saturation slider: SUPPORTED (visibility controlled by mode)");
+            # Если мы в режиме HS - показываем, если в режиме temp - скрываем
+            - if:
+                condition:
+                  lambda: 'return !id(${widget_name}_is_temp_mode);'
+                then:
+                  - lvgl.widget.show: ${widget_name}_light_saturation_background
+                  # Brightness на исходной позиции
+                  - lvgl.obj.update:
+                      id: ${widget_name}_light_brightness_background
+                      x: -160
+                else:
+                  - lvgl.widget.hide: ${widget_name}_light_saturation_background
+                  # Brightness сдвинут вправо
+                  - lvgl.obj.update:
+                      id: ${widget_name}_light_brightness_background
+                      x: -110
+          else:
+            - lvgl.widget.hide: ${widget_name}_light_saturation_background
+            # Brightness сдвинут вправо, так как saturation не поддерживается
+            - lvgl.obj.update:
+                id: ${widget_name}_light_brightness_background
+                x: -110
+            - lambda: |-
+                ESP_LOGD("widget_visibility", "Saturation slider: NOT SUPPORTED (hidden)");
+      
+      # Управление видимостью кнопки переключения режимов
+      - if:
+          condition:
+            lambda: |-
+              return id(${widget_name}_supports_color_temp) && 
+                     (id(${widget_name}_supports_hs) || id(${widget_name}_supports_rgb));
+          then:
+            # Показываем кнопку - лампа поддерживает оба режима
+            - lvgl.widget.show: ${widget_name}_mode_select_btn
+            - lambda: |-
+                ESP_LOGD("widget_visibility", "Mode switch button: VISIBLE");
+          else:
+            # Скрываем кнопку и автоматически выбираем доступный режим
+            - lvgl.widget.hide: ${widget_name}_mode_select_btn
+            - lambda: |-
+                ESP_LOGD("widget_visibility", "Mode switch button: HIDDEN");
+            
+            # Автоматический выбор режима
+            - if:
+                condition:
+                  lambda: 'return id(${widget_name}_supports_hs) || id(${widget_name}_supports_rgb);'
+                then:
+                  # Если поддерживается только цвет - переключаемся в режим HS
+                  - lambda: |-
+                      id(${widget_name}_is_temp_mode) = false;
+                      ESP_LOGD("widget_visibility", "Auto-switching to HS mode");
+                  - script.execute: ${widget_name}_toggle_gradient
+                else:
+                  - if:
+                      condition:
+                        lambda: 'return id(${widget_name}_supports_color_temp);'
+                      then:
+                        # Если поддерживается только температура - переключаемся в режим temp
+                        - lambda: |-
+                            id(${widget_name}_is_temp_mode) = true;
+                            ESP_LOGD("widget_visibility", "Auto-switching to ColorTemp mode");
+                        - script.execute: ${widget_name}_toggle_gradient
