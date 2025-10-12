@@ -4,19 +4,19 @@ loading:
 
 ota:
   start:
-    primary: "Demarrage MAJ!"
+    primary: "Démarrage MAJ!"
     secondary: "Patientez..."
   end: 
-    primary: "Mise a jour terminee!"
+    primary: "Mise à jour terminée!"
     secondary: "Redemarrage..."
   error:
     primary: "Erreur de mise a jour !"
     secondary: "Redemarrage..."
-  progress: "Mise a jour %0.1f%%"
+  progress: "Mise à jour %0.1f%%"
 
 settings:
-  backlight: "Retro-eclairage"
-  sleep_time: "Duree veille"
+  backlight: "Retro-éclairage"
+  sleep_time: "Délai veille"
 
 sleep_time:
   never: "Jamais"
@@ -35,9 +35,9 @@ forecasts:
 weather:
   clear-night: "Nuit claire"
   cloudy: "Nuageux"
-  exceptional: "Exceptionnel"
+  exceptional: "Alerte"
   fog: "Brouillard"
-  hail: "Grele"
+  hail: "Grêle"
   lightning: "Foudre"
   lightning-rainy: "Foudre, pluie"
   partlycloudy: "Partiellement nuageux"
@@ -45,7 +45,7 @@ weather:
   rainy: "Pluvieux"
   snowy: "Neigeux"
   snowy-rainy: "Neigeux, pluvieux"
-  sunny: "Ensoleille"
+  sunny: "Ensoleillé"
   windy: "Venteux"
   windy-variant: "Venteux, nuageux"
 
