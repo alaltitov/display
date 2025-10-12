@@ -15,7 +15,7 @@ ota:
   progress: "Mise a jour %0.1f%%"
 
 settings:
-  backlight: "Retroeclairage"
+  backlight: "Retro-eclairage"
   sleep_time: "Duree veille"
 
 sleep_time:
