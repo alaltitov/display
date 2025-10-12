@@ -1,17 +1,17 @@
 loading:
-  synchronization: "Synchronization..."
-  connection_api: "Connecting to API..."
+  synchronization: "Synchronisation..."
+  connection_api: "Connection à l'API..."
 
 ota:
   start:
     primary: "Starting OTA!"
-    secondary: "Wait..."
+    secondary: "Patientez..."
   end: 
     primary: "Update complete!"
-    secondary: "Rebooting..."
+    secondary: "Redemarrage..."
   error:
     primary: "Update ERROR!"
-    secondary: "Rebooting..."
+    secondary: "Redemarrage..."
   progress: "Firmware progress %0.1f%%"
 
 settings:
@@ -21,33 +21,33 @@ settings:
 sleep_time:
   never: "Never"
   minute1: "1 minute"
-  minute5: "5 minutes" 
+  minute5: "5 minutes"
   minute10: "10 minutes"
   minute30: "30 minutes"
-  hour1: "1 hour"
-  hour6: "6 hours"
-  hour12: "12 hours"
+  hour1: "1 heure"
+  hour6: "6 heures"
+  hour12: "12 heures"
 
 forecasts:
-  daily: "Daily"
-  hourly: "Hourly"
+  daily: "par jour"
+  hourly: "par heure"
 
 weather:
-  clear-night: "Clear, night"
-  cloudy: "Cloudy"
-  exceptional: "Exceptional"
-  fog: "Fog"
-  hail: "Hail"
-  lightning: "Lightning"
-  lightning-rainy: "Lightning, rainy"
-  partlycloudy: "Partly cloudy"
-  pouring: "Pouring"
-  rainy: "Rainy"
-  snowy: "Snowy"
-  snowy-rainy: "Snowy, rainy"
-  sunny: "Sunny"
-  windy: "Windy"
-  windy-variant: "Windy, cloudy"
+  clear-night: "Nuit claire"
+  cloudy: "Nuageux"
+  exceptional: "Exceptionnel"
+  fog: "Brouillard"
+  hail: "Grele"
+  lightning: "Foudre"
+  lightning-rainy: "Foudre, pluie"
+  partlycloudy: "Partiellement nuageux"
+  pouring: "Averses"
+  rainy: "Pluieux"
+  snowy: "Neigeux"
+  snowy-rainy: "Neigeux, pluvieux"
+  sunny: "Ensoleille"
+  windy: "Venteux"
+  windy-variant: "Venteux, nuageux"
 
 day_of_week:
   monday: "Lundi"
