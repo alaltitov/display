@@ -1,25 +1,25 @@
 loading:
   synchronization: "Synchronisation..."
-  connection_api: "Connection à l'API..."
+  connection_api: "Connexion à l'API..."
 
 ota:
   start:
-    primary: "Starting OTA!"
+    primary: "Demarrage MAJ!"
     secondary: "Patientez..."
   end: 
-    primary: "Update complete!"
+    primary: "Mise a jour terminee!"
     secondary: "Redemarrage..."
   error:
-    primary: "Update ERROR!"
+    primary: "Erreur de mise a jour !"
     secondary: "Redemarrage..."
-  progress: "Firmware progress %0.1f%%"
+  progress: "Mise a jour %0.1f%%"
 
 settings:
-  backlight: "Backlight"
-  sleep_time: "Sleep time"
+  backlight: "Retroeclairage"
+  sleep_time: "Duree veille"
 
 sleep_time:
-  never: "Never"
+  never: "Jamais"
   minute1: "1 minute"
   minute5: "5 minutes"
   minute10: "10 minutes"
@@ -42,7 +42,7 @@ weather:
   lightning-rainy: "Foudre, pluie"
   partlycloudy: "Partiellement nuageux"
   pouring: "Averses"
-  rainy: "Pluieux"
+  rainy: "Pluvieux"
   snowy: "Neigeux"
   snowy-rainy: "Neigeux, pluvieux"
   sunny: "Ensoleille"
