@@ -1,0 +1,82 @@
+loading:
+  synchronization: "Synchronisation..."
+  connection_api: "Connexion à l'API..."
+
+ota:
+  start:
+    primary: "Demarrage MAJ!"
+    secondary: "Patientez..."
+  end: 
+    primary: "Mise a jour terminee!"
+    secondary: "Redemarrage..."
+  error:
+    primary: "Erreur de mise a jour !"
+    secondary: "Redemarrage..."
+  progress: "Mise a jour %0.1f%%"
+
+settings:
+  backlight: "Retro-eclairage"
+  sleep_time: "Duree veille"
+
+sleep_time:
+  never: "Jamais"
+  minute1: "1 minute"
+  minute5: "5 minutes"
+  minute10: "10 minutes"
+  minute30: "30 minutes"
+  hour1: "1 heure"
+  hour6: "6 heures"
+  hour12: "12 heures"
+
+forecasts:
+  daily: "par jour"
+  hourly: "par heure"
+
+weather:
+  clear-night: "Nuit claire"
+  cloudy: "Nuageux"
+  exceptional: "Exceptionnel"
+  fog: "Brouillard"
+  hail: "Grele"
+  lightning: "Foudre"
+  lightning-rainy: "Foudre, pluie"
+  partlycloudy: "Partiellement nuageux"
+  pouring: "Averses"
+  rainy: "Pluvieux"
+  snowy: "Neigeux"
+  snowy-rainy: "Neigeux, pluvieux"
+  sunny: "Ensoleille"
+  windy: "Venteux"
+  windy-variant: "Venteux, nuageux"
+
+day_of_week:
+  monday: "Lundi"
+  tuesday: "Mardi"
+  wednesday: "Mercredi"
+  thursday: "Jeudi"
+  friday: "Vendredi"
+  saturday: "Samedi"
+  sunday: "Dimanche"
+
+day_of_week_short:
+  monday: "Lun"
+  tuesday: "Mar"
+  wednesday: "Mer"
+  thursday: "Jeu"
+  friday: "Ven"
+  saturday: "Sam"
+  sunday: "Dim"
+
+month:
+  january: "Janvier"
+  february: "Fevrier"
+  march: "Mars"
+  april: "Avril"
+  may: "Mai"
+  june: "Juin"
+  july: "Juillet"
+  august: "Aout"
+  september: "Septembre"
+  october: "Octobre"
+  november: "Novembre"
+  december: "Decembre"
