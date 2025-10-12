@@ -680,24 +680,27 @@ script:
             b = (b_prime + m) * 255;
           }
           
-          // ИСПРАВЛЕНО: Применяем яркость к цвету с минимальным порогом 20%
-          // Это гарантирует, что цвет виджета всегда будет виден
-          float brightness_factor = id(${widget_name}_current_brightness) / 255.0;
-          // Минимальная яркость для отображения - 20% (чтобы цвет был виден)
-          brightness_factor = std::max(brightness_factor, 0.2f);
+          // ИСПРАВЛЕНО: Масштабирование яркости от 60% до 100%
+          // Реальная яркость лампы (0-100%) масштабируется в диапазон 60-100% для отображения
+          float real_brightness = id(${widget_name}_current_brightness) / 255.0; // 0.0 - 1.0
           
-          r = r * brightness_factor;
-          g = g * brightness_factor;
-          b = b * brightness_factor;
+          // Формула линейного масштабирования: display = min + (real * (max - min))
+          // min = 0.6 (60%), max = 1.0 (100%), range = 0.4 (40%)
+          float brightness_display = 0.6 + (real_brightness * 0.4);
+          
+          r = r * brightness_display;
+          g = g * brightness_display;
+          b = b * brightness_display;
           
           // Формируем цвет в формате 0xRRGGBB
           uint32_t color = (r << 16) | (g << 8) | b;
           
-          ESP_LOGD("lightbulb_color", "Brightness: %.0f%%, Factor: %.2f, Color: R=%d, G=%d, B=%d (0x%06X)", 
-            (id(${widget_name}_current_brightness) / 255.0) * 100, brightness_factor, r, g, b, color);
+          ESP_LOGD("lightbulb_color", "Real brightness: %.0f%% → Display brightness: %.0f%%, Color: R=%d, G=%d, B=%d (0x%06X)", 
+            real_brightness * 100, brightness_display * 100, r, g, b, color);
           
           // Устанавливаем цвет виджета
           lv_obj_set_style_bg_color(id(${widget_name}_lightbulb_color), lv_color_hex(color), 0);
+          lv_obj_set_style_text_color(id(${widget_name}_icon), lv_color_hex(color), 0);
 
   # ИСПРАВЛЕННЫЙ СКРИПТ: Обновление видимости виджетов
   - id: ${widget_name}_update_widget_visibility

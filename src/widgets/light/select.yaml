@@ -13,12 +13,15 @@ substitutions:
   floor_lamp:                   "\U000F08DD"
   vanity_light:                 "\U000F11E1"
 
-  lights_amount: "2" # choise 1,2,3 or 4
+  lights_amount: "4" # choise 1,2,3 or 4
 
 lvgl:
   on_boot:
     then:
       - script.execute: get_light_amount_btn
+      - lvgl.obj.update:
+          id: ${light_widget_name_1}_btn
+          shadow_color: color_misty_blue
 
   top_layer:
     widgets:
@@ -81,6 +84,18 @@ lvgl:
                             text: "${light_icon_1}"
                       on_press:
                         - lvgl.page.show: ${light_widget_name_1}_light_page
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_1}_btn
+                            shadow_color: color_misty_blue
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_2}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_3}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_4}_btn
+                            shadow_color: color_black
 
                   - obj:
                       id: ${light_widget_name_2}_btn
@@ -105,6 +120,18 @@ lvgl:
                             text: "${light_icon_2}"
                       on_press:
                         - lvgl.page.show: ${light_widget_name_2}_light_page
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_1}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_2}_btn
+                            shadow_color: color_misty_blue
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_3}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_4}_btn
+                            shadow_color: color_black
 
                   - obj:
                       id: ${light_widget_name_3}_btn
@@ -129,6 +156,18 @@ lvgl:
                             text: "${light_icon_3}"
                       on_press:
                         - lvgl.page.show: ${light_widget_name_3}_light_page
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_1}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_2}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_3}_btn
+                            shadow_color: color_misty_blue
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_4}_btn
+                            shadow_color: color_black
 
                   - obj:
                       id: ${light_widget_name_4}_btn
@@ -153,6 +192,18 @@ lvgl:
                             text: "${light_icon_4}"
                       on_press:
                         - lvgl.page.show: ${light_widget_name_4}_light_page
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_1}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_2}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_3}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_4}_btn
+                            shadow_color: color_misty_blue
 
 script:
   - id: get_light_amount_btn
