@@ -1,0 +1,82 @@
+loading:
+  synchronization: "Sincronizando..."
+  connection_api: "Conectando a la API..."
+
+ota:
+  start:
+    primary: "Comenzando OTA!"
+    secondary: "Espere..."
+  end: 
+    primary: "Actualización completa!"
+    secondary: "Reiniciando..."
+  error:
+    primary: "ERROR en la actualización!"
+    secondary: "Reiniciando..."
+  progress: "Firmware progreso %0.1f%%"
+
+settings:
+  backlight: "Retroiluminación"
+  sleep_time: "Tiempo de reposo"
+
+sleep_time:
+  never: "Nunca"
+  minute1: "1 minuto"
+  minute5: "5 minutos" 
+  minute10: "10 minutos"
+  minute30: "30 minutos"
+  hour1: "1 hora"
+  hour6: "6 horas"
+  hour12: "12 horas"
+
+forecasts:
+  daily: "Por días"
+  hourly: "Por horas"
+
+weather:
+  clear-night: "Noche despejada"
+  cloudy: "Nublado"
+  exceptional: "Excepcional"
+  fog: "Niebla"
+  hail: "Granizo"
+  lightning: "Relámpagos"
+  lightning-rainy: "Lluvia con truenos"
+  partlycloudy: "Parcialmente nublado"
+  pouring: "Lluvia torrencial"
+  rainy: "Lluvia"
+  snowy: "Nieve"
+  snowy-rainy: "Aguanieve"
+  sunny: "Soleado"
+  windy: "Ventoso"
+  windy-variant: "Nublado con viento"
+
+day_of_week:
+  monday: "Lunes"
+  tuesday: "Martes"
+  wednesday: "Miércoles"
+  thursday: "Jueves"
+  friday: "Viernes"
+  saturday: "Sábado"
+  sunday: "Domingo"
+
+day_of_week_short:
+  monday: "LUN"
+  tuesday: "MAR"
+  wednesday: "MIÉ"
+  thursday: "JUE"
+  friday: "VIE"
+  saturday: "SÁB"
+  sunday: "DOM"
+
+month:
+  january: "Enero"
+  february: "Febrero"
+  march: "Marzo"
+  april: "Abril"
+  may: "Mayo"
+  june: "Junio"
+  july: "Julio"
+  august: "Agosto"
+  september: "Septiembre"
+  october: "Octubre"
+  november: "Noviembre"
+  december: "Diciembre"
