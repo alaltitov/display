@@ -1,5 +1,5 @@
 packages:
-  animations: !include animations_dev.yaml
+  animations: !include animations.yaml
 
 globals:
 

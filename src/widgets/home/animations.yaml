@@ -1418,6 +1418,12 @@ script:
 
       - delay: 350ms
       - lambda: |-
+          // ВАЖНО: Сбрасываем состояние SETTINGS элементов
+          lv_obj_add_flag(id(settings_widget), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(circle_settings_widget), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_set_style_opa(id(circle_settings_widget), 0, 0);
+          lv_obj_set_style_opa(id(settings_widget), 0, 0);
+
           // ВАЖНО: Сбрасываем состояние INFO элементов перед анимацией
           lv_obj_clear_flag(id(info_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_clear_flag(id(circle_info_widget), LV_OBJ_FLAG_HIDDEN);
