@@ -1,0 +1,82 @@
+loading:
+  synchronization: "Synchroniseren..."
+  connection_api: "Verbinden met API..."
+
+ota:
+  start:
+    primary: "OTA starten!"
+    secondary: "Even geduld..."
+  end: 
+    primary: "Update voltooid!"
+    secondary: "Herstarten..."
+  error:
+    primary: "Update FOUT!"
+    secondary: "Herstarten..."
+  progress: "Firmwarevoortgang %0.1f%%"
+
+settings:
+  backlight: "Achtergrondverlichting"
+  sleep_time: "Scherm timeout"
+
+sleep_time:
+  never: "Nooit"
+  minute1: "1 minuut"
+  minute5: "5 minuten" 
+  minute10: "10 minuten"
+  minute30: "30 minuten"
+  hour1: "1 uur"
+  hour6: "6 uur"
+  hour12: "12 uur"
+
+forecasts:
+  daily: "Dagelijks"
+  hourly: "Per uur"
+
+weather:
+  clear-night: "Helder, nacht"
+  cloudy: "Bewolkt"
+  exceptional: "Uitzonderlijk"
+  fog: "Mist"
+  hail: "Hagel"
+  lightning: "Onweer"
+  lightning-rainy: "Onweer, regen"
+  partlycloudy: "Gedeeltelijk bewolkt"
+  pouring: "Stromende regen"
+  rainy: "Regenachtig"
+  snowy: "Sneeuw"
+  snowy-rainy: "Sneeuw, regen"
+  sunny: "Zonnig"
+  windy: "Winderig"
+  windy-variant: "Winderig, bewolkt"
+
+day_of_week:
+  monday: "Maandag"
+  tuesday: "Dinsdag"
+  wednesday: "Woensdag"
+  thursday: "Donderdag"
+  friday: "Vrijdag"
+  saturday: "Zaterdag"
+  sunday: "Zondag"
+
+day_of_week_short:
+  monday: "ma"
+  tuesday: "di"
+  wednesday: "wo"
+  thursday: "do"
+  friday: "vr"
+  saturday: "za"
+  sunday: "zo"
+
+month:
+  january: "Januari"
+  february: "Februari"
+  march: "Maart"
+  april: "April"
+  may: "Mei"
+  june: "Juni"
+  july: "Juli"
+  august: "Augustus"
+  september: "September"
+  october: "Oktober"
+  november: "November"
+  december: "December"
