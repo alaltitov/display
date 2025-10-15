@@ -28,9 +28,13 @@ external_components:
 i18n:
   id: i18n_translations
   sources:
-    - translations/ru.yaml
     - translations/en.yaml
-  default_locale: ru
+    - translations/es.yaml
+    - translations/fr.yaml
+    - translations/nl.yaml
+    - translations/pl.yaml
+    - translations/ru.yaml
+  default_locale: en
 
 esphome:
   name: ${display_name}

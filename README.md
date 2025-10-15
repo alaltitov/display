@@ -1,65 +1,61 @@
 # LVGL ESPhome Guition ESP32-S3-4848S040 custom firmware
 
 <p align="center">
- <img width="200px" src="/doc/img/screen1.png">
- <img width="200px" src="/doc/img/screen2.png">
- <img width="200px" src="/doc/img/screen3.png">
- <img width="200px" src="/doc/img/screen4.png">
- <img width="200px" src="/doc/img/screen5.png">
- <img width="200px" src="/doc/img/screen6.png">
- <img width="200px" src="/doc/img/screen7.png">
- <img width="200px" src="/doc/img/screen8.png">
- <img width="200px" src="/doc/img/screen9.png">
- <img width="200px" src="/doc/img/screen10.png">
- <img width="200px" src="/doc/img/screen12.png">
+ <img width="200px" src="/doc/images/loading.png">
+ <img width="200px" src="/doc/images/home.png">
+ <img width="200px" src="/doc/images/forecasts.png">
+ <img width="200px" src="/doc/images/info.png">
+ <img width="200px" src="/doc/images/settings.png">
+ <img width="200px" src="/doc/images/light0.png">
+ <img width="200px" src="/doc/images/light1.png">
+ <img width="200px" src="/doc/images/climate0.png">
+ <img width="200px" src="/doc/images/climate1.png">
+ <img width="200px" src="/doc/images/climate2.png">
+ <img width="200px" src="/doc/images/climate3.png">
 </p>
 
 <p align="center">
     <img alt="Static Badge" src="https://img.shields.io/badge/made%20by-alaltitov-blue">
-    <img alt="Static Badge" src="https://img.shields.io/badge/version-v1.0%20Beta-green">
-    <img alt="Static Badge" src="https://img.shields.io/badge/esphome min version-2025.5.2-red">
+    <img alt="Static Badge" src="https://img.shields.io/badge/version-v1.0%20Dev-green">
+    <img alt="Static Badge" src="https://img.shields.io/badge/esphome test version-2025.9.3-red">
     <img alt="Static Badge" src="https://img.shields.io/badge/license-MIT-orange">
 </p>
 
 ## ✨ Features
 
-- Status indicators for Wi-Fi, Home Assistant, thermostat, air conditioner, touchscreen lock, alarm panel
+- Status indicators for Wi-Fi, Home Assistant API, thermostat, air conditioner, touchscreen lock, alarm panel
 - Weather icons with current conditions and temperature
+- Weather Forecasts daily and hourly
 - Date and time
 - Sensor readings from Home Assistant
-- Thermostat control with built-in display relay
-- Air Conditioner control with built-in display relay
-- Vacuum control
-- Shutter control
-- Media player control
-- Control of lights
-- Alarm panel
+- Climate control (auto)
+- lights control (auto)
+- Other controls (for example, vacuum, alarm panel, shutter, fan, media player, switchs...) coming soon
 - Settings:
   * Backlight adjustment
   * Screen timeout settings
-  * Language selection for states (ru, en, pl, pt, fr, es, de, it, us, tr, sv, vi, id, ro, nl, hu, cs, fi)
+  * Language selection:
+    - ru (from [alaltitov](https://github.com/alaltitov))
+    - en (from [alaltitov](https://github.com/alaltitov))
+    - pl (from [reaper7](https://github.com/reaper7))
+    - fr (from [lboue](https://github.com/lboue))
+    - es (from Antonio)
+    - nl (from [zjean](https://github.com/zjean))
 
 ## 📦 Installation
-> [!WARNING]
-> All versions ESPHome firmware now available!!! (Big thanks [сlydebarrow](https://github.com/clydebarrow) ).
-
 > 📹 **Video [instruction](https://youtu.be/HYN_2hvcbes?si=JfYQH4vCuFlr8Q9r)**
 
-<img width="400px" src="/doc/img/screen11.png">
+<img width="400px" src="/doc/imgages/ha_options.png">
 
 - You must enable the "Allow the device to perform Home Assistant actions." option in the ESPHome integration to Home Assistant to control devices.
-- Install custom component for translations and covers for media player from [here](https://github.com/alaltitov/homeassistant-display-tools).
-- Copy repository to vscode or to esphome folder of your Home Assistant. Change in substitutions your entities in all widgets (only in substitution, in code everything will be substituted automatically).
-
-## 🐛 Known Issues
-- The weather status text does not change depending on day/night, only the picture
-- When the connection with the API is lost/reboot, the screen lock state is not restored
+- Install custom component for forecasts and covers for media player from [here](https://github.com/alaltitov/homeassistant-display-tools).
+- Copy repository to vscode or to esphome folder of your Home Assistant. Change in substitutions.yaml and config.yaml (light folder) your entities in all widgets (only in substitution, in code everything will be substituted automatically).
 
 ## ⚠️ Important Notice
-- Regarding shutter and vacuum widgets: Testing was conducted on demo entities (as I don't have real devices), so errors may occur when working with real entities. Feedback is welcome! 🙏
+- Support for new versions will be provided only for the release version (while the dev branch is in effect); beta and alpha versions will not be supported taking into account new versions of ESPHome.
 
 ## 📖 Documentation
-- [Firmware](https://alaltitov.github.io/Guition-ESP32-S3-4848S040-DOCS)
+- [Firmware](https://alaltitov.github.io/Guition-ESP32-S3-4848S040-DOCS) - Need update. Coming soon.
 - [ESPHome LVGL 8.4](https://esphome.io/components/lvgl/)
 
 ## 🤝 Thanks for your help
