@@ -45,7 +45,7 @@
 ## 📦 Installation
 > 📹 **Video [instruction](https://youtu.be/HYN_2hvcbes?si=JfYQH4vCuFlr8Q9r)**
 
-<img width="400px" src="/doc/imgages/ha_options.png">
+<img width="400px" src="/doc/images/ha_options.png">
 
 - You must enable the "Allow the device to perform Home Assistant actions." option in the ESPHome integration to Home Assistant to control devices.
 - Install custom component for forecasts and covers for media player from [here](https://github.com/alaltitov/homeassistant-display-tools).
