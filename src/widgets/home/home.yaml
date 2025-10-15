@@ -1622,6 +1622,7 @@ mapping:
       it: flags_it_img
       pt: flags_pt_img
       ru: flags_ru_img
+      nl: flags_nl_img
 
 script:
 
