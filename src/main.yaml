@@ -34,6 +34,7 @@ i18n:
     - translations/nl.yaml
     - translations/pl.yaml
     - translations/ru.yaml
+    - translations/si.yaml
   default_locale: en
 
 esphome:

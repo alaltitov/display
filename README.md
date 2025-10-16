@@ -41,6 +41,7 @@
     - fr (from [lboue](https://github.com/lboue))
     - es (from Antonio)
     - nl (from [zjean](https://github.com/zjean))
+    - si (from [Protoncek](https://github.com/Protoncek))
 
 ## 📦 Installation
 > 📹 **Video [instruction](https://youtu.be/HYN_2hvcbes?si=JfYQH4vCuFlr8Q9r)**
