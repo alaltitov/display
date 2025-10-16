@@ -1,0 +1,82 @@
+loading:
+  synchronization: "Sinhronizacija.."
+  connection_api: "Povezujem na API..."
+
+ota:
+  start:
+    primary: "Zaganjam OTA!"
+    secondary: "Počakaj..."
+  end:
+    primary: "Posodobitev končana!"
+    secondary: "Ponovni zagon..."
+  error:
+    primary: "NAPAKA posodobitve!"
+    secondary: "Ponovni zagon..."
+  progress: "Firmware napredek %0.1f%%"
+
+settings:
+  backlight: "Osvetlitev"
+  sleep_time: "Čas spanja"
+
+sleep_time:
+  never: "Nikoli"
+  minute1: "1 minuta"
+  minute5: "5 minut"
+  minute10: "10 minut"
+  minute30: "30 minut"
+  hour1: "1 ura"
+  hour6: "6 ura"
+  hour12: "12 ur"
+
+forecasts:
+  daily: "Dnevno"
+  hourly: "Vsako uro"
+
+weather:
+  clear-night: "Jasno, noč"
+  cloudy: "Oblačno"
+  exceptional: "Izjemno"
+  fog: "Megla"
+  hail: "Toča"
+  lightning: "Strele"
+  lightning-rainy: "Strele, dež"
+  partlycloudy: "Delno oblačno"
+  pouring: "Močno dežuje"
+  rainy: "Deževno"
+  snowy: "Sneži"
+  snowy-rainy: "Sneg in dež"
+  sunny: "Sončno"
+  windy: "Vetrovno"
+  windy-variant: "Vetrovno, oblačno"
+
+day_of_week:
+  monday: "Ponedeljek"
+  tuesday: "Torek"
+  wednesday: "Sreda"
+  thursday: "Četrtek"
+  friday: "Petek"
+  saturday: "Sobota"
+  sunday: "Nedelja"
+
+day_of_week_short:
+  monday: "PON"
+  tuesday: "TOR"
+  wednesday: "SRE"
+  thursday: "ČET"
+  friday: "PET"
+  saturday: "SOB"
+  sunday: "NED"
+
+month:
+  january: "Januar"
+  february: "Februar"
+  march: "Marec"
+  april: "April"
+  may: "Maj"
+  june: "JuniJ"
+  july: "JuliJ"
+  august: "Avgust"
+  september: "September"
+  october: "OKtober"
+  november: "November"
+  december: "December"
