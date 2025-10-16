@@ -1623,6 +1623,7 @@ mapping:
       pt: flags_pt_img
       ru: flags_ru_img
       nl: flags_nl_img
+      si: flags_si_img
 
 script:
 
