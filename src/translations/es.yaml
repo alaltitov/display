@@ -16,7 +16,7 @@ ota:
 
 settings:
   backlight: "Retroiluminación"
-  sleep_time: "Tiempo de reposo"
+  sleep_time: "Tiempo hasta reposo"
 
 sleep_time:
   never: "Nunca"
