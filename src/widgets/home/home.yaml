@@ -1097,7 +1097,7 @@ lvgl:
                                 bg_color: color_steel_blue
                                 shadow_width: 4
                               on_click:
-                                - lvgl.page.show: climate_page
+                                - lvgl.widget.show: devices_panel
 
                           - obj:
                               width: 60

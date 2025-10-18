@@ -1,51 +1,6 @@
 # https://esphome.io/components/climate/climate.html
 
-substitutions:
-
-  # climate_entity:     "climate.demo_climate_air"
-  # climate_entity:     "climate.display_thermostat"
-  # climate_entity:     "climate.hvac"
-  # climate_entity:     "climate.ecobee"
-
-  climate_icon:               "\U0000e93b"
-  temperature_icon:           "\U0000e939"
-  humidity_icon:              "\U0000e938"
-  heat_icon:                  "\U000F0238"
-  cool_icon:                  "\U000F0717"
-  heat_cool_icon:             "\U000F1A79"
-  fan_icon:                   "\U000F0210"
-  auto_icon:                  "\U000F1B18"
-  off_icon:                   "\U000F0425"
-  plus_icon:                  "\U000F0415"
-  minus_icon:                 "\U000F0374"
-
-  none_preset_icon:           "\U000F043D"
-  eco_preset_icon:            "\U000F032A"
-  away_preset_icon:           "\U000F0F9B"
-  boost_preset_icon:          "\U000F14DE"     
-  comfort_preset_icon:        "\U000F04B9"
-  home_preset_icon:           "\U000F02DC"
-  sleep_preset_icon:          "\U000F0904"
-  activity_preset_icon:       "\U000F046E"
-
-  fan_on_icon:                "\U000F0210"
-  fan_off_icon:               "\U000F081D"
-  fan_auto_icon:              "\U000F171D"
-  fan_low_icon:               "\U000F0F86"
-  fan_medium_icon:            "\U000F0F85"
-  fan_middle_icon:            "\U000F0F85"
-  fan_high_icon:              "\U000F04C5"
-  fan_focus_icon:             "\U000F04FE"
-  fan_diffuse_icon:           "\U000F059D"
-  fan_custom_icon:            "\U000F09DF"
-  
-  swing_on_icon:              "\U000F1C91"
-  swing_off_icon:             "\U000F1C92"
-  swing_both_icon:            "\U000F0041"
-  swing_vertical_icon:        "\U000F0E79"
-  swing_horizontal_icon:      "\U000F0E73"
-
-  settings_icon:              "\U000F0493"
+substitutions: !include substitutions.yaml
 
 globals:
 
@@ -1215,7 +1170,6 @@ text_sensor:
 lvgl:
   top_layer:
     widgets:
-
       # FAN MODES PANEL
       - obj:
           id: climate_fan_modes_panel

@@ -1,0 +1,56 @@
+lvgl:
+
+
+  top_layer:
+    widgets:
+      # DEVICES PANEL
+      - obj:
+          id: devices_panel
+          hidden: true
+          y: 60
+          width: 440
+          height: 220
+          align: top_mid
+          clickable: false
+          scrollable: false
+          radius: 20
+          pad_all: 0
+          bg_opa: transp
+          border_opa: transp
+          border_width: 0
+          shadow_opa: transp
+          layout:
+            type: flex
+            flex_flow: column
+            flex_align_main: center
+            flex_align_cross: center
+          widgets:
+            # Climate button
+            - button:
+                id: devices_climate_btn
+                width: 130
+                height: 60
+                widgets:
+                  - label:
+                      align: center
+                      text_font: nunito_18
+                      text_color: color_misty_blue
+                      text: "Climate"
+                on_click:
+                  - lvgl.page.show: climate_page
+                  - lvgl.widget.hide: devices_panel
+
+            # Media Player button
+            - button:
+                id: devices_media_player_btn
+                width: 130
+                height: 60
+                widgets:
+                  - label:
+                      align: center
+                      text_font: nunito_18
+                      text_color: color_misty_blue
+                      text: "Media player"
+                on_click:
+                  - lvgl.page.show: media_player_page
+                  - lvgl.widget.hide: devices_panel

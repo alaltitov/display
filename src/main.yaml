@@ -1,15 +1,11 @@
 packages:
-  # home: !include widgets/home/home.yaml
-  # lights_config: !include widgets/light/lights_config.yaml
-  # devices: !include widgets/devices.yaml
-
+  devices: !include common/widgets/devices.yaml
+  loading_page: !include common/widgets/loading.yaml
   home: !include widgets/home/home.yaml
-  climate: !include widgets/climate/climate.yaml
   light: !include widgets/light/config.yaml
 
-  # settings: !include widgets/settings.yaml
-  # menu_controls_main: !include widgets/menu_controls_main.yaml
-  loading_page: !include common/widgets/loading.yaml
+  climate: !include widgets/climate/climate.yaml
+  media_player: !include widgets/media_player/media_player.yaml
 
 
 substitutions: !include common/substitutions.yaml
@@ -35,6 +31,7 @@ i18n:
     - translations/pl.yaml
     - translations/ru.yaml
     - translations/si.yaml
+    - translations/it.yaml
   default_locale: en
 
 esphome:
@@ -76,8 +73,8 @@ esp32:
     sdkconfig_options:
       CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: "y"
       # CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: y
-      CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
-      CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
+      # CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
+      # CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
       CONFIG_SPIRAM_FETCH_INSTRUCTIONS: y
       CONFIG_SPIRAM_RODATA: y
       # CONFIG_FREERTOS_USE_TRACE_FACILITY: "y"
@@ -232,6 +229,7 @@ lvgl:
                 bg_color: color_steel_blue
                 indicator:
                   bg_color: color_misty_blue
+  
 
 light:
   # Backlight

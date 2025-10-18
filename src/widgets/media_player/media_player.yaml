@@ -1,0 +1,810 @@
+substitutions: !include substitutions.yaml
+
+
+globals:
+  - id: repeat_modes
+    type: std::vector<std::string>
+    initial_value: '{"all", "one", "off"}'
+  - id: repeat_icons
+    type: std::vector<std::string>
+    initial_value: '{"${repeat_all_icon}", "${repeat_one_icon}", "${repeat_off_icon}"}'
+  - id: current_repeat_mode_idx
+    type: int
+    initial_value: '0'
+  - id: tmp_repeat_mode
+    type: std::string
+    restore_value: no
+    initial_value: '"all"'
+  - id: tmp_repeat_icon
+    type: std::string
+    restore_value: no
+    initial_value: '"${repeat_all_icon}"'
+  - id: cover_url
+    type: std::string
+    restore_value: no
+    initial_value: '""'
+  - id: duration_slider_user_interaction
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+  - id: slider_position
+    type: float
+    restore_value: no
+    initial_value: '0.0'
+  - id: pending_cover_url
+    type: std::string
+    restore_value: no
+    initial_value: '""'
+  - id: pending_repeat_value
+    type: std::string
+    restore_value: no
+    initial_value: '""'
+
+
+sensor:
+  - platform: homeassistant
+    id: media_player_volume_level_sensor
+    entity_id: "${media_player_entity}"
+    attribute: volume_level
+    on_value:
+      - lvgl.arc.update:
+          id: media_player_volume_arc
+          value: !lambda 'return int(x * 100);'
+
+  - platform: homeassistant
+    id: media_player_media_duration_sensor
+    entity_id: "${media_player_entity}"
+    attribute: media_duration
+    on_value:
+      - lambda: |-
+          lv_slider_set_range(id(media_player_duration_pos_slider), 0, x);
+
+  - platform: homeassistant
+    id: media_player_media_position_sensor
+    entity_id: "${media_player_entity}"
+    attribute: media_position
+    on_value: 
+      - if:
+          condition:
+            lambda: 'return !id(duration_slider_user_interaction);'
+          then:
+            - lvgl.slider.update:
+                id: media_player_duration_pos_slider
+                value: !lambda return x;
+
+
+binary_sensor:
+  - platform: homeassistant
+    id: media_player_is_volume_muted
+    entity_id: "${media_player_entity}"
+    attribute: is_volume_muted
+    on_state:
+      - if:
+          condition:
+            lambda: 'return x;'
+          then:
+            - lvgl.label.update:
+                id: media_player_mute_label
+                text: "${volume_off_icon}"
+          else:
+            - lvgl.label.update:
+                id: media_player_mute_label
+                text: "${volume_on_icon}"
+
+
+text_sensor:
+
+  - platform: homeassistant
+    id: media_player_state_sensor
+    entity_id: "${media_player_entity}"
+    on_value:
+      - if:
+          condition:
+            lambda: 'return x == "paused";'
+          then:
+            - lvgl.label.update: 
+                id: media_player_state_label
+                x: 0
+                text: "${play_icon}"
+          else:
+            - lvgl.label.update: 
+                id: media_player_state_label
+                x: 0
+                text: "${pause_icon}"
+
+  - platform: homeassistant
+    id: media_player_cover_sensor
+    entity_id: "${media_player_entity}"
+    attribute: entity_picture
+    on_value:
+      - lambda: |-
+          id(pending_cover_url) = x;
+      - script.execute: update_cover_script
+
+  - platform: homeassistant
+    id: media_player_friendly_name_sensor
+    entity_id: "${media_player_entity}"
+    attribute: friendly_name
+    on_value:
+      - lvgl.label.update:
+          id: media_player_name_label
+          text: !lambda return x;
+
+  - platform: homeassistant
+    id: media_player_title_sensor
+    entity_id: "${media_player_entity}"
+    attribute: media_title
+    on_value:
+      - delay: 1s
+      - lvgl.label.update:
+          id: media_player_title_label
+          text: !lambda return x;
+
+  - platform: homeassistant
+    id: media_player_artist_sensor
+    entity_id: "${media_player_entity}"
+    attribute: media_artist
+    on_value:
+      - delay: 1s
+      - lvgl.label.update:
+          id: media_player_artist_label
+          text: !lambda return x;
+
+  - platform: homeassistant
+    id: media_player_repeat_sensor
+    entity_id: "${media_player_entity}"
+    attribute: repeat
+    on_value:
+      - lambda: |-
+          id(pending_repeat_value) = x;
+      - script.execute: update_repeat_mode_script
+
+lvgl:
+
+  pages:
+    - id: media_player_page
+      bg_color: color_black
+      scrollable: false
+      widgets:
+        - label:
+            id: media_player_name_label
+            y: 15
+            align: top_mid
+            text_font: nunito_20
+            text_color: color_misty_blue
+            text: "My Media Player"
+        - obj:
+            id: media_widget_background
+            hidden: false
+            y: 60
+            width: 440
+            height: 160
+            align: top_mid
+            clickable: false
+            scrollable: false
+            radius: 20
+            pad_all: 0
+            bg_color: color_slate_blue_gray
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              # Cover
+              - obj:
+                  id: media_player_cover
+                  width: 140
+                  height: 140
+                  align: left_mid
+                  bg_color: color_steel_blue
+                  bg_image_src: media_image_jpeg
+                  border_color: color_slate_blue_gray
+                  border_width: 10
+                  shadow_opa: transp
+                  radius: 20
+
+              # Title/Artist/Duration
+              - obj:
+                  width: 300
+                  height: 120
+                  align: right_mid
+                  bg_color: color_steel_blue
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  radius: 10
+                  widgets:
+                    - label:
+                        id: media_player_title_label
+                        height: 40
+                        width: 260
+                        long_mode: DOT
+                        y: -25
+                        align: CENTER
+                        text_color: color_misty_blue
+                        text_font: nunito_20
+                        text: "Title"
+                    - label:
+                        id: media_player_artist_label
+                        height: 30
+                        width: 260
+                        long_mode: DOT
+                        y: 3
+                        align: CENTER
+                        text_color: color_misty_blue
+                        text_font: nunito_16
+                        text: "Artist"
+                    - slider:
+                        id: media_player_duration_pos_slider
+                        radius: 2
+                        y: 35
+                        bg_color: color_steel_blue
+                        align: center
+                        width: 260
+                        height: 5
+                        min_value: 0
+                        max_value: 100
+                        indicator:
+                          bg_color: color_misty_blue
+                          radius: 2
+                        knob:
+                          bg_opa: transp
+                        on_press:
+                          - lambda: |-
+                              id(duration_slider_user_interaction) = true;
+                        on_release:
+                          - lambda: |-
+                              id(slider_position) = x;
+                          - script.execute: handle_duration_slider_release_script
+
+        # PRIMARY BUTTONS
+        - obj:
+            id: media_player_primary_controls_background
+            y: 230
+            width: 440
+            height: 100
+            align: top_mid
+            clickable: false
+            scrollable: false
+            radius: 20
+            pad_all: 0
+            bg_color: color_slate_blue_gray
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              - obj:
+                  width: 440
+                  height: 100
+                  align: center
+                  clickable: false
+                  scrollable: false
+                  radius: 20
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    # PREVIOUS BUTTON
+                    - obj:
+                        x: 30
+                        width: 90
+                        height: 90
+                        align: left_mid
+                        pad_all: 0
+                        bg_opa: transp
+                        shadow_opa: transp
+                        border_opa: transp
+                        widgets:
+                          - button:
+                              width: 70
+                              height: 70
+                              align: center
+                              clickable: true
+                              radius: 50
+                              pad_all: 0
+                              bg_opa: transp
+                              border_opa: transp
+                              border_width: 0
+                              shadow_width: 8
+                              shadow_spread: 2
+                              shadow_ofs_y: 0
+                              shadow_color: color_black
+                              shadow_opa: cover
+                              pressed:
+                                bg_color: color_steel_blue
+                                shadow_width: 4
+                              on_press:
+                                - homeassistant.action:
+                                    action: media_player.media_previous_track
+                                    data:
+                                      entity_id: "${media_player_entity}"
+
+                          - obj:
+                              width: 60
+                              height: 60
+                              align: center
+                              clickable: false
+                              radius: 45
+                              pad_all: 0
+                              bg_opa: transp 
+                              border_opa: transp
+                              shadow_width: 4
+                              shadow_color: 0xFFFFFF
+                              shadow_ofs_x: -4
+                              shadow_ofs_y: -2
+                              shadow_opa: 30%
+
+                          - obj:
+                              width: 65
+                              height: 65
+                              pad_all: 0
+                              align: center
+                              clickable: false
+                              radius: 50
+                              border_opa: transp
+                              bg_color: color_slate_blue_gray
+                              widgets:
+                                - label:
+                                    align: center
+                                    text_font: mdi_icons_40
+                                    text_color: color_misty_blue
+                                    text: "${previous_track_icon}"
+
+                    # NEXT BUTTON
+                    - obj:
+                        x: -30
+                        width: 90
+                        height: 90
+                        align: right_mid
+                        pad_all: 0
+                        bg_opa: transp
+                        shadow_opa: transp
+                        border_opa: transp
+                        widgets:
+                          - button:
+                              width: 70
+                              height: 70
+                              align: center
+                              clickable: true
+                              radius: 50
+                              pad_all: 0
+                              bg_opa: transp
+                              border_opa: transp
+                              border_width: 0
+                              shadow_width: 8
+                              shadow_spread: 2
+                              shadow_ofs_y: 0
+                              shadow_color: color_black
+                              shadow_opa: cover
+                              pressed:
+                                bg_color: color_steel_blue
+                                shadow_width: 4
+                              on_press:
+                                - homeassistant.action:
+                                    action: media_player.media_next_track
+                                    data:
+                                      entity_id: "${media_player_entity}"
+
+                          - obj:
+                              width: 60
+                              height: 60
+                              align: center
+                              clickable: false
+                              radius: 45
+                              pad_all: 0
+                              bg_opa: transp 
+                              border_opa: transp
+                              shadow_width: 4
+                              shadow_color: 0xFFFFFF
+                              shadow_ofs_x: -4
+                              shadow_ofs_y: -2
+                              shadow_opa: 30%
+
+                          - obj:
+                              width: 65
+                              height: 65
+                              pad_all: 0
+                              align: center
+                              clickable: false
+                              radius: 50
+                              border_opa: transp
+                              bg_color: color_slate_blue_gray
+                              widgets:
+                                - label:
+                                    align: center
+                                    text_font: mdi_icons_40
+                                    text_color: color_misty_blue
+                                    text: "${next_track_icon}"
+
+        # SECONDARY BUTTONS
+        - obj:
+            id: media_player_secondary_controls_background
+            x: 0
+            y: -60
+            width: 440
+            height: 80
+            pad_all: 0
+            align: bottom_mid
+            bg_color: color_slate_blue_gray
+            shadow_opa: transp
+            border_opa: transp
+            border_width: 0
+            radius: 20
+            widgets:
+              # off
+              - obj:
+                  x: 20
+                  align: left_mid
+                  width: 46
+                  height: 46
+                  pad_all: 0
+                  radius: 30
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 5
+                  shadow_spread: 1
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 4
+                  widgets:
+                    - label:
+                        align: center
+                        text_color: color_misty_blue
+                        text_font: mdi_icons_28
+                        text: "${power_icon}"
+                        on_press:
+                          - homeassistant.action:
+                              action: media_player.turn_off
+                              data:
+                                entity_id: "${media_player_entity}"
+              # repeat
+              - obj:
+                  x: 80
+                  align: left_mid
+                  width: 46
+                  height: 46
+                  pad_all: 0
+                  radius: 30
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 5
+                  shadow_spread: 1
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 4
+                  widgets:
+                    - label:
+                        id: media_player_repeat_label
+                        align: center
+                        text_color: color_misty_blue
+                        text_font: mdi_icons_28
+                        text: "${repeat_all_icon}"
+                        on_press:
+                          - script.execute: handle_repeat_press_script
+              
+              # source
+              - obj:
+                  x: 140
+                  align: left_mid
+                  width: 46
+                  height: 46
+                  pad_all: 0
+                  radius: 30
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 5
+                  shadow_spread: 1
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 4
+                  widgets:
+                    - label:
+                        id: media_player_source_label
+                        align: center
+                        text_color: color_misty_blue
+                        text_font: mdi_icons_28
+                        text: "${media_source}"
+
+              # mute
+              - obj:
+                  x: -140
+                  align: right_mid
+                  width: 46
+                  height: 46
+                  pad_all: 0
+                  radius: 30
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 5
+                  shadow_spread: 1
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 4
+                  widgets:
+                    - label:
+                        id: media_player_mute_label
+                        align: center
+                        text_color: color_misty_blue
+                        text_font: mdi_icons_28
+                        text: "${volume_on_icon}"
+                        on_press:
+                          - if:
+                              condition:
+                                lambda: 'return id(media_player_is_volume_muted).state;'
+                              then:
+                                - homeassistant.action:
+                                    action: media_player.volume_mute
+                                    data:
+                                      entity_id: "${media_player_entity}"
+                                      is_volume_muted: "false"
+                              else:
+                                - homeassistant.action:
+                                    action: media_player.volume_mute
+                                    data:
+                                      entity_id: "${media_player_entity}"
+                                      is_volume_muted: "true"
+
+              # volume -
+              - obj:
+                  x: -80
+                  align: right_mid
+                  width: 46
+                  height: 46
+                  pad_all: 0
+                  radius: 30
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 5
+                  shadow_spread: 1
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 4
+                  widgets:
+                    - label:
+                        id: media_player_vol_down_label
+                        align: center
+                        text_color: color_misty_blue
+                        text_font: mdi_icons_28
+                        text: "${volume_minus_icon}"
+                        on_press:
+                          - homeassistant.action:
+                              action: media_player.volume_down
+                              data:
+                                entity_id: "${media_player_entity}"
+
+
+              # volume +
+              - obj:
+                  x: -20
+                  align: right_mid
+                  width: 46
+                  height: 46
+                  pad_all: 0
+                  radius: 30
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 5
+                  shadow_spread: 1
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 4
+                  widgets:
+                    - label:
+                        id: media_player_vol_up_label
+                        align: center
+                        text_color: color_misty_blue
+                        text_font: mdi_icons_28
+                        text: "${volume_plus_icon}"
+                        on_press:
+                          - homeassistant.action:
+                              action: media_player.volume_up
+                              data:
+                                entity_id: "${media_player_entity}"
+              
+
+        # CIRCLE
+        - obj:
+            id: media_player_circle_background
+            y: 40
+            width: 150
+            height: 150
+            align: center
+            clickable: false
+            radius: 75
+            pad_all: 0
+            bg_color: color_black
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              - obj:
+                  width: 100
+                  height: 100
+                  pad_all: 0
+                  align: center
+                  clickable: false
+                  radius: 50
+                  border_opa: transp
+                  bg_color: color_slate_blue_gray
+
+
+              - obj:
+                  width: 150
+                  height: 150
+                  align: center
+                  clickable: false
+                  radius: 75
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    - arc:
+                        id: media_player_volume_arc
+                        clickable: false
+                        adjustable: false
+                        adv_hittest: false
+                        align: center
+                        width: 130
+                        height: 130
+                        min_value: 0
+                        max_value: 100
+                        start_angle: 0
+                        end_angle: 360
+                        rotation: 90
+                        arc_width: 5
+                        arc_color: color_steel_blue
+                        arc_rounded: false
+                        indicator:
+                          arc_width: 5
+                          arc_color: color_green
+
+                    - obj:
+                        width: 100
+                        height: 100
+                        pad_all: 0
+                        align: center
+                        clickable: false
+                        radius: 50
+                        border_opa: transp
+                        bg_opa: transp
+                        widgets:
+                          - label:
+                              id: media_player_state_label
+                              align: CENTER
+                              text_color: color_misty_blue
+                              text_font: mdi_icons_52
+                              text: "${play_icon}"
+                              on_press:
+                                - if:
+                                    condition:
+                                      lambda: 'return id(media_player_state_sensor).state == "playing";'
+                                    then:
+                                      - homeassistant.action:
+                                          action: media_player.media_pause
+                                          data:
+                                            entity_id: "${media_player_entity}"
+                                    else:
+                                      - homeassistant.action:
+                                          action: media_player.media_play
+                                          data:
+                                            entity_id: "${media_player_entity}"
+
+        # back
+        - obj:
+            y: 0
+            width: 80
+            height: 70
+            align: bottom_mid
+            bg_opa: transp
+            pad_all: 0
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            radius: 0
+            widgets:
+              - obj:
+                  y: -20
+                  width: 80
+                  height: 5
+                  align: bottom_mid
+                  bg_color: color_steel_blue
+                  pad_all: 0
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  radius: 15 
+            on_click:
+              - lvgl.page.show: home_page
+
+script:
+  - id: update_cover_script
+    mode: restart
+    then:
+      - lambda: |-
+          std::string url = id(pending_cover_url);
+          id(cover_url) = url;
+      - homeassistant.action:
+          action: display_tools.save_media_cover
+          data:
+            entity_id: "${media_player_entity}"
+            size: small
+      - delay: 1s
+      - online_image.release: media_image_jpeg
+      - online_image.set_url:
+          id: media_image_jpeg
+          url: "${ha_server}/local/display_tools/cover.jpeg"
+
+  - id: update_repeat_mode_script
+    mode: restart
+    then:
+      - lambda: |-
+          std::string x = id(pending_repeat_value);
+          auto modes = id(repeat_modes);
+          auto icons = id(repeat_icons);
+          for (int i = 0; i < modes.size(); i++) {
+            if (modes[i] == x) {
+              id(current_repeat_mode_idx) = i;
+              id(tmp_repeat_mode) = modes[i];
+              id(tmp_repeat_icon) = icons[i];
+              break;
+            }
+          }
+      - lvgl.label.update:
+          id: media_player_repeat_label
+          text: !lambda 'return id(tmp_repeat_icon);'
+
+  - id: handle_repeat_press_script
+    mode: restart
+    then:
+      - lambda: |-
+          int idx = id(current_repeat_mode_idx);
+          auto modes = id(repeat_modes);
+          auto icons = id(repeat_icons);
+          idx = (idx + 1) % modes.size();
+          id(current_repeat_mode_idx) = idx;
+          std::string new_mode = modes[idx];
+          std::string new_icon = icons[idx];
+          id(tmp_repeat_mode) = new_mode;
+          id(tmp_repeat_icon) = new_icon;
+      - lvgl.label.update:
+          id: media_player_repeat_label
+          text: !lambda 'return id(tmp_repeat_icon);'
+      - homeassistant.action:
+          action: media_player.repeat_set
+          data:
+            entity_id: "${media_player_entity}"
+            repeat: !lambda 'return id(tmp_repeat_mode);'
+
+  - id: handle_duration_slider_release_script
+    mode: restart
+    then:
+      - homeassistant.service:
+          service: media_player.media_seek
+          data:
+            entity_id: "${media_player_entity}"
+            seek_position: !lambda 'return std::to_string(int(id(slider_position)));'
+      - delay: 2s
+      - lambda: |-
+          id(duration_slider_user_interaction) = false;
+
+
+online_image:
+  - url: "https://www.example.com/example.jpeg"
+    format: JPEG
+    type: RGB565
+    resize: 120x120
+    id: media_image_jpeg
+    on_download_finished:
+      - lvgl.obj.update:
+          id: media_player_cover
+          bg_image_src: media_image_jpeg

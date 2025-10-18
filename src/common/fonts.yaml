@@ -304,6 +304,20 @@
     "\U000F06A1", # display home
     "\U000F18F6", # display weather
     "\U000F03D8", # palette
+    "\U000F04AE", # previous track
+    "\U000F04AD", # next track
+    "\U000F040A", # play
+    "\U000F03E4", # pause
+    "\U000F04DB", # stop
+    "\U000F0906", # power
+    "\U000F0456", # repeat
+    "\U000F0457", # repeat off
+    "\U000F0458", # repeat once
+    "\U000F0206", # media source
+    "\U000F057E", # volume on
+    "\U000F0581", # volume off
+    "\U000F075E", # volume minus
+    "\U000F075D", # volume plus
   ]
 
 
@@ -324,6 +338,8 @@
     "\U000F06BB", # shield plane
     "\U000F099E", # shield off
     "\U000F0498", # shield
+    "\U000F04AE", # previous track
+    "\U000F04AD", # next track
   ]
 
 - file: "assets/fonts/materialdesignicons-webfont.ttf"
@@ -339,6 +355,8 @@
     "\U000F0498", # shield
     "\U000F0826", # home
     "\U000F1A46", # away
+    "\U000F040A", # play
+    "\U000F03E4", # pause
   ]
 
 - file: "assets/fonts/materialdesignicons-webfont.ttf"
