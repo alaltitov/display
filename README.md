@@ -12,6 +12,7 @@
  <img width="200px" src="/doc/images/climate1.png">
  <img width="200px" src="/doc/images/climate2.png">
  <img width="200px" src="/doc/images/climate3.png">
+ <img width="200px" src="/doc/images/media_player.png">
 </p>
 
 <p align="center">
@@ -29,8 +30,9 @@
 - Date and time
 - Sensor readings from Home Assistant
 - Climate control (auto)
-- lights control (auto)
-- Other controls (for example, vacuum, alarm panel, shutter, fan, media player, switchs...) coming soon
+- Lights control (auto)
+- Media player
+- Other controls (for example, vacuum, alarm panel, shutter, fan, switchs...) coming soon
 - Settings:
   * Backlight adjustment
   * Screen timeout settings
