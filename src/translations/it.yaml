@@ -1,0 +1,82 @@
+loading:
+  synchronization: "Sincronizzazione..."
+  connection_api: "Connessione all'API..."
+
+ota:
+  start:
+    primary: "Avvio OTA!"
+    secondary: "Attendere..."
+  end: 
+    primary: "Aggiornamento completato!"
+    secondary: "Riavvio in corso..."
+  error:
+    primary: "Errore aggiornamento!"
+    secondary: "Riavvio in corso..."
+  progress: "Progresso firmware %0.1f%%"
+
+settings:
+  backlight: "Retroilluminazione"
+  sleep_time: "Tempo di standby"
+
+sleep_time:
+  never: "Mai"
+  minute1: "1 minuto"
+  minute5: "5 minuti"
+  minute10: "10 minuti"
+  minute30: "30 minuti"
+  hour1: "1 ora"
+  hour6: "6 ore"
+  hour12: "12 ore"
+
+forecasts:
+  daily: "Giornaliero"
+  hourly: "Orario"
+
+weather:
+  clear-night: "Sereno, notte"
+  cloudy: "Nuvoloso"
+  exceptional: "Eccezionale"
+  fog: "Nebbia"
+  hail: "Grandine"
+  lightning: "Fulmini"
+  lightning-rainy: "Fulmini, pioggia"
+  partlycloudy: "Parzialmente nuvoloso"
+  pouring: "Pioggia intensa"
+  rainy: "Piovoso"
+  snowy: "Nevoso"
+  snowy-rainy: "Neve e pioggia"
+  sunny: "Soleggiato"
+  windy: "Ventoso"
+  windy-variant: "Ventoso, nuvoloso"
+
+day_of_week:
+  monday: "Lunedì"
+  tuesday: "Martedì"
+  wednesday: "Mercoledì"
+  thursday: "Giovedì"
+  friday: "Venerdì"
+  saturday: "Sabato"
+  sunday: "Domenica"
+
+day_of_week_short:
+  monday: "LUN"
+  tuesday: "MAR"
+  wednesday: "MER"
+  thursday: "GIO"
+  friday: "VEN"
+  saturday: "SAB"
+  sunday: "DOM"
+
+month:
+  january: "Gennaio"
+  february: "Febbraio"
+  march: "Marzo"
+  april: "Aprile"
+  may: "Maggio"
+  june: "Giugno"
+  july: "Luglio"
+  august: "Agosto"
+  september: "Settembre"
+  october: "Ottobre"
+  november: "Novembre"
+  december: "Dicembre"
