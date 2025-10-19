@@ -1,20 +1,3 @@
-substitutions:
-
-  # ceiling_icon:                  "\U0000e907"
-  # lightbulb_icon:                "\U0000e908"
-  # spotlight_group_icon:          "\U0000e915"
-  # desk_lamp_icon:                "\U0000e916"
-  # pendant_lamp_icon:             "\U0000e917" 
-  # ceiling_lamp_icon:             "\U0000e918"
-  # ceiling_lamp_variant_icon:     "\U0000e921"
-  # night_lamp_icon:               "\U0000e919"
-  track_light:                  "\U000F0914"
-  ceiling_light_multiple:       "\U000F18DD"
-  floor_lamp:                   "\U000F08DD"
-  vanity_light:                 "\U000F11E1"
-
-  lights_amount: "4" # choise 1,2,3 or 4
-
 lvgl:
   on_boot:
     then:

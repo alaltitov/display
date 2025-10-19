@@ -1,9 +1,8 @@
 packages:
-  devices: !include common/widgets/devices.yaml
   loading_page: !include common/widgets/loading.yaml
   home: !include widgets/home/home.yaml
   light: !include widgets/light/config.yaml
-
+  devices: !include common/widgets/devices.yaml
   climate: !include widgets/climate/climate.yaml
   media_player: !include widgets/media_player/media_player.yaml
 

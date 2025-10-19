@@ -12,6 +12,8 @@
   hex: 333333
 - id: color_gray
   hex: 666666
+- id: color_light_gray
+  hex: 999999
 - id: color_white
   hex: f2f0eb
 - id: color_red

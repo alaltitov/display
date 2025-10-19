@@ -1097,7 +1097,7 @@ lvgl:
                                 bg_color: color_steel_blue
                                 shadow_width: 4
                               on_click:
-                                - lvgl.widget.show: devices_panel
+                                - lvgl.page.show: devices_page
 
                           - obj:
                               width: 60
@@ -1671,73 +1671,6 @@ script:
           lv_roller_set_options(roller_obj, options.c_str(), LV_ROLLER_MODE_NORMAL);
           lv_roller_set_selected(roller_obj, old_selection, LV_ANIM_OFF);
 
-  # - id: display_block_buttons
-  #   then:
-  #     if:
-  #       condition:
-  #         lambda: return !id(display_lock);
-  #       then:
-  #         - lvgl.label.update:
-  #             id: lock_status
-  #             text_color: color_steel_blue
-  #         - lvgl.button.update:
-  #             id: backlight_brightness_off_btn
-  #             clickable: true
-  #         - lvgl.button.update:
-  #             id: home_widget_btn 
-  #             clickable: true
-  #         - lvgl.button.update:
-  #             id: weather_widget_btn 
-  #             clickable: true
-  #         - lvgl.button.update:
-  #             id: info_widget_btn 
-  #             clickable: true
-  #         - lvgl.button.update:
-  #             id: settings_widget_btn 
-  #             clickable: true
-  #         - lvgl.button.update:
-  #             id: home_lights_btn
-  #             clickable: true
-  #         - lvgl.button.update:
-  #             id: home_devices_btn
-  #             clickable: true
-  #         - lvgl.button.update:
-  #             id: weather_forecast_daily_btn
-  #             clickable: true
-  #         - lvgl.button.update:
-  #             id: weather_forecast_hourly_btn
-  #             clickable: true
-  #       else:
-  #         - lvgl.label.update:
-  #             id: lock_status
-  #             text_color: color_red
-  #         - lvgl.button.update:
-  #             id: backlight_brightness_off_btn
-  #             clickable: false
-  #         - lvgl.button.update:
-  #             id: home_widget_btn 
-  #             clickable: false
-  #         - lvgl.button.update:
-  #             id: weather_widget_btn 
-  #             clickable: false
-  #         - lvgl.button.update:
-  #             id: info_widget_btn 
-  #             clickable: false
-  #         - lvgl.button.update:
-  #             id: settings_widget_btn 
-  #             clickable: false
-  #         - lvgl.button.update:
-  #             id: home_lights_btn
-  #             clickable: false
-  #         - lvgl.button.update:
-  #             id: home_devices_btn
-  #             clickable: false
-  #         - lvgl.button.update:
-  #             id: weather_forecast_daily_btn
-  #             clickable: false
-  #         - lvgl.button.update:
-  #             id: weather_forecast_hourly_btn
-  #             clickable: false
 
   - id: display_block_buttons
     mode: restart

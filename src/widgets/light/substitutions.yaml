@@ -1,0 +1,31 @@
+lights_amount: "4" # choise 1,2,3 or 4
+
+light_entity_1: "light.cbe_rgbcw_wi_fi_bluetooth_light"
+light_entity_2: "light.display01_backlight"
+light_entity_3: "light.lumi_v3_48df_light"
+light_entity_4: "light.office_rgbw_lights"
+
+light_widget_name_1: "light1"
+light_widget_name_2: "light2"
+light_widget_name_3: "light3"
+light_widget_name_4: "light4"
+
+
+light_icon_1: "\U000F0914"
+light_icon_2: "\U000F18DD"
+light_icon_3: "\U000F08DD"
+light_icon_4: "\U000F11E1"
+
+
+# ceiling_icon:                  "\U0000e907"
+# lightbulb_icon:                "\U0000e908"
+# spotlight_group_icon:          "\U0000e915"
+# desk_lamp_icon:                "\U0000e916"
+# pendant_lamp_icon:             "\U0000e917" 
+# ceiling_lamp_icon:             "\U0000e918"
+# ceiling_lamp_variant_icon:     "\U0000e921"
+# night_lamp_icon:               "\U0000e919"
+track_light:                  "\U000F0914"
+ceiling_light_multiple:       "\U000F18DD"
+floor_lamp:                   "\U000F08DD"
+vanity_light:                 "\U000F11E1"

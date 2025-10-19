@@ -1,20 +1,4 @@
-substitutions:
-
-  light_entity_1: "light.cbe_rgbcw_wi_fi_bluetooth_light"
-  light_entity_2: "light.cbe_rgbcw_wi_fi_bluetooth_light"
-  light_entity_3: "light.ceiling_lights"
-  light_entity_4: "light.office_rgbw_lights"
-
-  light_widget_name_1: "light1"
-  light_widget_name_2: "light2"
-  light_widget_name_3: "light3"
-  light_widget_name_4: "light4"
-
-
-  light_icon_1: "\U000F0914"
-  light_icon_2: "\U000F18DD"
-  light_icon_3: "\U000F08DD"
-  light_icon_4: "\U000F11E1"
+substitutions: !include substitutions.yaml
 
 packages:
   select: !include select.yaml
