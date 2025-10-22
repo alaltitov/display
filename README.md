@@ -24,19 +24,14 @@
 
 ## Support the Project
 
-<table border="0" cellspacing="0" cellpadding="0">
-<tr>
-<td width="150">
-  <img src="/doc/images/donate.png" alt="QR Code" width="150"/>
-</td>
-<td>
-  <p><b>Support me on</b></p>
-  <a href="https://boosty.to/altitov/donate">
-    <img src="/doc/images/boosty.png" alt="Boosty" width="120"/>
-  </a>
-</td>
-</tr>
-</table>
+<img src="/doc/images/donate.png" alt="QR Code" width="150" align="left" hspace="10"/>
+
+<b>Support me on</b><br/>
+<a href="https://boosty.to/altitov/donate">
+  <img src="/doc/images/boosty.png" alt="Boosty" width="120"/>
+</a>
+
+<br clear="all"/>
 
 ## ⚠️ Important Notice
 - Support for new versions will be provided only for the release version (while the dev branch is in effect) 
