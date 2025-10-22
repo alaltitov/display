@@ -24,7 +24,7 @@
 
 ## Support the Project
 
-<table style="border: none;">
+<table border="0" cellspacing="0" cellpadding="0">
 <tr>
 <td width="150">
   <img src="/doc/images/donate.png" alt="QR Code" width="150"/>
