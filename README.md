@@ -26,10 +26,11 @@
 
 <img src="/doc/images/donate.png" alt="QR Code" width="150" align="left" hspace="10"/>
 
-<div align="center">
-  <b>Support me on</b><br/><br/>
+<div style="padding-top: 40px;">
+  <b>Support me on</b>
+  <div style="height: 30px;"></div>
   <a href="https://boosty.to/altitov/donate">
-    <img src="/doc/images/boosty.png" alt="Boosty" width="200"/>
+    <img src="/doc/images/boosty.png" alt="Boosty" width="160"/>
   </a>
 </div>
 
