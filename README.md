@@ -22,6 +22,26 @@
     <img alt="Static Badge" src="https://img.shields.io/badge/license-MIT-orange">
 </p>
 
+## Support the Project
+
+<table>
+<tr>
+<td width="150">
+  <img src="/doc/images/donate.png" alt="QR Code" width="150"/>
+</td>
+<td>
+  <p><b>Support me on</b></p>
+  <a href="https://boosty.to/altitov/donate">
+    <img src="/doc/images/boosty.png" alt="Boosty" width="120"/>
+  </a>
+</td>
+</tr>
+</table>
+
+## ⚠️ Important Notice
+- Support for new versions will be provided only for the release version (while the dev branch is in effect) 
+- Beta and alpha versions will not be supported taking into account new versions of ESPHome.
+
 ## ✨ Features
 
 - Status indicators for Wi-Fi, Home Assistant API, thermostat, air conditioner, touchscreen lock, alarm panel
@@ -55,20 +75,10 @@
 - Install custom component for forecasts and covers for media player from [here](https://github.com/alaltitov/homeassistant-display-tools).
 - Copy repository to vscode or to esphome folder of your Home Assistant. Change in substitutions.yaml and config.yaml (light folder) your entities in all widgets (only in substitution, in code everything will be substituted automatically).
 
-## ⚠️ Important Notice
-- Support for new versions will be provided only for the release version (while the dev branch is in effect); beta and alpha versions will not be supported taking into account new versions of ESPHome.
-
 ## 📖 Documentation
-- [Firmware](https://alaltitov.github.io/Guition-ESP32-S3-4848S040-DOCS) - Need update. Coming soon.
+- [Firmware](https://alaltitov.github.io/Guition-ESP32-S3-4848S040-DOCS)  (Need update, coming soon...)
 - [ESPHome LVGL 8.4](https://esphome.io/components/lvgl/)
 
 ## 🤝 Thanks for your help
 
 - Thanks, [сlydebarrow](https://github.com/clydebarrow), [jesserockz](https://github.com/jesserockz), [ssieb](https://github.com/ssieb) for helping me with the project!
-
-## 💝 Support the Project
-This project was made in my free time and if it was useful to you, you can support me if you find it necessary 😊:
-
-**ETH/USDT (ERC-20):** `0x9fF0E16a58229bEcdFDf47d9759f20bE77356994`
-
-Or just put ⭐ Thank you
