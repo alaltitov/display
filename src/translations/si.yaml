@@ -80,3 +80,15 @@ month:
   october: "Oktober"
   november: "November"
   december: "December"
+
+vacuum:
+  name: "Vacuum"
+  state:
+    cleaning: "Cleaning"
+    docked: "Docked"
+    error: "Error"
+    idle: "Idle"
+    off: "Off"
+    on: "On"
+    paused: "Paused"
+    returning: "Returning to dock"

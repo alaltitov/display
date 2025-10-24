@@ -80,3 +80,15 @@ month:
   october: "Октября"
   november: "Ноября"
   december: "Декабря"
+
+vacuum:
+  name: "Пылесос"
+  state:
+    cleaning: "Уборка"
+    docked: "У док-станции"
+    error: "Ошибка"
+    idle: "Бездействие"
+    off: "Выключено"
+    on: "Включено"
+    paused: "Пауза"
+    returning: "Возвращается к док-станции"

@@ -91,3 +91,8 @@ swing_off_icon:             "\U000F1C92"
 swing_both_icon:            "\U000F0041"
 swing_vertical_icon:        "\U000F0E79"
 swing_horizontal_icon:      "\U000F0E73"
+
+sleep_icon:                 "\U000F04B2"
+return_to_base_icon:        "\U000F05F8"
+clean_spot_icon:            "\U000F0A77"
+locate_map_icon:            "\U000F034E"

@@ -23,122 +23,15 @@
   type: rgb565
   transparency: alpha_channel
 
-# - file: 'assets/images/light/rgb_ring.png'
-#   id: rgb_img
-#   type: rgb565
-#   transparency: alpha_channel
-
   #############################
   ########## VACUUM ###########
   #############################
 
-# - file: 'img/vacuum/vacuum.png'
-#   id: vacuum_img
-#   type: rgb565
-#   resize: 200x200
-#   transparency: alpha_channel
-
-# - file: 'img/vacuum/vacuum_0_10.png'
-#   id: vacuum_0_10_img
-#   type: rgb565
-#   resize: 200x200
-#   transparency: alpha_channel
-
-# - file: 'img/vacuum/vacuum_0_20.png'
-#   id: vacuum_0_20_img
-#   type: rgb565
-#   resize: 200x200
-#   transparency: alpha_channel
-
-# - file: 'img/vacuum/vacuum_0_30.png'
-#   id: vacuum_0_30_img
-#   type: rgb565
-#   resize: 200x200
-#   transparency: alpha_channel
-
-# - file: 'img/vacuum/vacuum_5.png'
-#   id: vacuum_5_img
-#   type: rgb565
-#   resize: 200x200
-#   transparency: alpha_channel
-
-# - file: 'img/vacuum/vacuum_10.png'
-#   id: vacuum_10_img
-#   type: rgb565
-#   resize: 200x200
-#   transparency: alpha_channel
-
-# - file: 'img/vacuum/vacuum_15.png'
-#   id: vacuum_15_img
-#   type: rgb565
-#   resize: 200x200
-#   transparency: alpha_channel
-
-# - file: 'img/vacuum/vacuum_20.png'
-#   id: vacuum_20_img
-#   type: rgb565
-#   resize: 200x200
-#   transparency: alpha_channel
-
-# - file: 'img/vacuum/vacuum_20_10.png'
-#   id: vacuum_20_10_img
-#   type: rgb565
-#   resize: 200x200
-#   transparency: alpha_channel
-
-# - file: 'img/vacuum/vacuum_20_20.png'
-#   id: vacuum_20_20_img
-#   type: rgb565
-#   resize: 200x200
-#   transparency: alpha_channel
-
-# - file: 'img/vacuum/vacuum_20_30.png'
-#   id: vacuum_20_30_img
-#   type: rgb565
-#   resize: 200x200
-#   transparency: alpha_channel
-
-# - file: 'img/vacuum/vacuum_355.png'
-#   id: vacuum_355_img
-#   type: rgb565
-#   resize: 200x200
-#   transparency: alpha_channel
-
-# - file: 'img/vacuum/vacuum_350.png'
-#   id: vacuum_350_img
-#   type: rgb565
-#   resize: 200x200
-#   transparency: alpha_channel
-
-# - file: 'img/vacuum/vacuum_345.png'
-#   id: vacuum_345_img
-#   type: rgb565
-#   resize: 200x200
-#   transparency: alpha_channel
-
-# - file: 'img/vacuum/vacuum_340.png'
-#   id: vacuum_340_img
-#   type: rgb565
-#   resize: 200x200
-#   transparency: alpha_channel
-
-# - file: 'img/vacuum/vacuum_340_10.png'
-#   id: vacuum_340_10_img
-#   type: rgb565
-#   resize: 200x200
-#   transparency: alpha_channel
-
-# - file: 'img/vacuum/vacuum_340_20.png'
-#   id: vacuum_340_20_img
-#   type: rgb565
-#   resize: 200x200
-#   transparency: alpha_channel
-
-# - file: 'img/vacuum/vacuum_340_30.png'
-#   id: vacuum_340_30_img
-#   type: rgb565
-#   resize: 200x200
-#   transparency: alpha_channel
+- file: 'assets/images/vacuum/vacuum.png'
+  id: vacuum_image
+  type: rgb565
+  resize: 160x160
+  transparency: alpha_channel
 
   #############################
   ########## WEATHER ##########

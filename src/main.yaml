@@ -5,6 +5,7 @@ packages:
   devices: !include common/widgets/devices.yaml
   climate: !include widgets/climate/climate.yaml
   media_player: !include widgets/media_player/media_player.yaml
+  vacuum: !include widgets/vacuum/vacuum.yaml
 
 
 substitutions: !include common/substitutions.yaml

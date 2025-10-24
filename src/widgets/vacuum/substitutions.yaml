@@ -1,0 +1,3 @@
+vacuum_entity: "vacuum.demo_vacuum_0_ground_floor"
+battery_level_entity: "sensor.vacuum_battery_level"
+cleaned_area_entity: "sensor.vacuum_cleaned_area"

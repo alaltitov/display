@@ -13,6 +13,7 @@
  <img width="200px" src="/doc/images/climate2.png">
  <img width="200px" src="/doc/images/climate3.png">
  <img width="200px" src="/doc/images/media_player.png">
+ <img width="200px" src="/doc/images/vacuum.png">
 </p>
 
 <p align="center">

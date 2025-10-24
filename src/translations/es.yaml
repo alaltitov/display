@@ -80,3 +80,15 @@ month:
   october: "Octubre"
   november: "Noviembre"
   december: "Diciembre"
+
+vacuum:
+  name: "Aspiradora"
+  state:
+    cleaning: "Limpiando"
+    docked: "En la base"
+    error: "Error"
+    idle: "Inactivo"
+    off: "Apagado"
+    on: "Encendido"
+    paused: "En pausa"
+    returning: "Volviendo a la base"

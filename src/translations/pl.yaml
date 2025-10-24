@@ -80,3 +80,15 @@ month:
   october: "Październik"
   november: "Listopad"
   december: "Grudzień"
+
+vacuum:
+  name: "Odkurzacz"
+  state:
+    cleaning: "sprzątanie"
+    docked: "zadokowany"
+    error: "Error"
+    idle: "brak aktywności"
+    off: "wyłączono"
+    on: "włączono"
+    paused: "wstrzymano"
+    returning: "wraca do stacji dokującej"

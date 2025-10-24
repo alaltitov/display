@@ -80,3 +80,15 @@ month:
   october: "Oktober"
   november: "November"
   december: "December"
+
+vacuum:
+  name: "Stofzuiger"
+  state:
+    cleaning: "Schoonmaken"
+    docked: "Gedockt"
+    error: "Fout"
+    idle: "Inactief"
+    off: "Uit"
+    on: "Aan"
+    paused: "Gepauzeerd"
+    returning: "Terugkeren naar dock"

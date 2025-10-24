@@ -1,0 +1,913 @@
+substitutions: !include substitutions.yaml
+
+sensor:
+  # Battery level
+  - platform: homeassistant
+    id: vacuum_battery_level_sensor
+    entity_id: "${battery_level_entity}"
+    on_value: 
+      - lvgl.label.update:
+          id: vacuum_battery_level_label
+          text: !lambda |-
+            if (isnan(x)) return " ";
+            char buffer[32];
+            snprintf(buffer, sizeof(buffer), "%.0f%%", x);
+            return std::string(buffer);
+
+      - if:
+          condition:
+            lambda: return x == 100;
+          then:
+            - script.execute: vacuum_stop_all_animations
+
+  # Creaned area
+  - platform: homeassistant
+    id: vacuum_cleaned_area_sensor
+    entity_id: "${cleaned_area_entity}"
+    on_value: 
+      - lvgl.label.update:
+          id: vacuum_cleaned_area_label
+          text: !lambda |-
+            if (isnan(x)) return " ";
+            char buffer[32];
+            snprintf(buffer, sizeof(buffer), "%.0f m²", x);
+            return std::string(buffer);
+
+text_sensor:
+
+  - platform: homeassistant
+    id: vacuum_name_sensor
+    entity_id: "${vacuum_entity}"
+    attribute: friendly_name
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: vacuum_name_label
+            text: !lambda return x;
+
+  - platform: homeassistant
+    id: vacuum_state_sensor
+    entity_id: "${vacuum_entity}"
+    on_value:
+      then:
+        - script.execute: update_vacuum_translations
+        # ═══════════════════════════════════════════════════════════════════
+        # ОСТАНОВКА ВСЕХ АНИМАЦИЙ ПЕРЕД СМЕНОЙ СОСТОЯНИЯ
+        # ═══════════════════════════════════════════════════════════════════
+        - script.execute: vacuum_stop_all_animations
+
+        # ═══════════════════════════════════════════════════════════════════
+        # СОСТОЯНИЕ: CLEANING (уборка) - вращение
+        # ═══════════════════════════════════════════════════════════════════
+        - if:
+            condition:
+              lambda: 'return x == "cleaning";'
+            then:
+              - script.execute: vacuum_start_cleaning_animation
+              - lvgl.label.update:
+                  id: vacuum_play_pause_icon
+                  text: "${pause_icon}"
+            else:
+              - lvgl.label.update:
+                  id: vacuum_play_pause_icon
+                  text: "${play_icon}"
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # СОСТОЯНИЕ: RETURNING (возврат на базу) - покачивание
+        # ═══════════════════════════════════════════════════════════════════
+        - if:
+            condition:
+              lambda: 'return x == "returning";'
+            then:
+              - script.execute: vacuum_start_go_home_animation
+
+        # ═══════════════════════════════════════════════════════════════════
+        # СОСТОЯНИЕ: DOCKED (на базе)
+        # ═══════════════════════════════════════════════════════════════════
+        - if:
+            condition:
+              lambda: 'return x == "docked";'
+            then:
+              - if:
+                  condition:
+                    lambda: 'return id(vacuum_battery_level_sensor).state < 100;'
+                  then:
+                    # Зарядка - пульсация
+                    - script.execute: vacuum_start_charging_animation
+
+
+        # ═══════════════════════════════════════════════════════════════════
+        # СОСТОЯНИЕ: PAUSED, IDLE и др. - статичное изображение
+        # ═══════════════════════════════════════════════════════════════════
+        - if:
+            condition:
+              lambda: 'return (x == "paused" || x == "idle");'
+            then:
+              - lambda: |-
+                  ESP_LOGD("vacuum", "State: %s - static image", x.c_str());
+              - script.execute: vacuum_start_paused_animation
+
+
+lvgl:
+  pages:
+    - id: vacuum_page
+      bg_color: color_black
+      widgets:
+
+        - obj:
+            y: 20
+            width: 440
+            height: 235
+            align: top_mid
+            radius: 20
+            bg_color: color_slate_blue_gray
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+
+              - image:
+                  id: vacuum_state_image
+                  y: -10
+                  align: center
+                  src: vacuum_image
+
+              - label:
+                  id: vacuum_sleep_icon
+                  hidden: true
+                  x: 80
+                  y: -80
+                  align: center
+                  text_font: mdi_icons_52
+                  text_color: color_white
+                  text: "${sleep_icon}"
+
+
+              # battery_level
+              - obj:
+                  x: 10
+                  radius: 10
+                  width: 80
+                  height: 40
+                  align: left_mid
+                  bg_color: color_slate_blue_gray
+                  pad_all: 0
+                  border_opa: transp
+                  border_width: 0
+                  # shadow_opa: transp
+                  shadow_color: color_black
+                  shadow_spread: 1
+                  shadow_width: 6
+                  widgets:
+                    - label: 
+                        id: vacuum_battery_level_label
+                        align: center
+                        text_font: nunito_18
+                        text_color: color_misty_blue
+                        text: "100%"
+
+              # cleaned area
+              - obj:
+                  x: -10
+                  radius: 10
+                  width: 80
+                  height: 40
+                  align: right_mid
+                  bg_color: color_slate_blue_gray
+                  pad_all: 0
+                  border_opa: transp
+                  border_width: 0
+                  # shadow_opa: transp
+                  shadow_color: color_black
+                  shadow_spread: 2
+                  shadow_width: 8
+                  widgets:
+                    - label: 
+                        id: vacuum_cleaned_area_label
+                        align: center
+                        text_font: nunito_18
+                        text_color: color_misty_blue
+                        text: "0 m²"
+
+              - label: 
+                  id: vacuum_state_label
+                  y: -15
+                  align: bottom_mid
+                  text_font: nunito_20
+                  text_color: color_steel_blue
+                  text: "State"
+
+
+        - obj:
+            id: vacuum_controls_background
+            y: 265
+            width: 440
+            height: 100
+            align: top_mid
+            clickable: false
+            scrollable: false
+            radius: 20
+            pad_all: 0
+            bg_color: color_slate_blue_gray
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              # STOP BUTTON
+              - obj:
+                  x: 115
+                  width: 70
+                  height: 70
+                  align: center
+                  pad_all: 0
+                  bg_opa: transp
+                  shadow_opa: transp
+                  border_opa: transp
+                  widgets:
+                    - button:
+                        id: vacuum_stop_btn
+                        width: 50
+                        height: 50
+                        align: center
+                        clickable: true
+                        radius: 50
+                        pad_all: 0
+                        bg_opa: transp
+                        border_opa: transp
+                        border_width: 0
+                        shadow_width: 8
+                        shadow_spread: 2
+                        shadow_ofs_y: 0
+                        shadow_color: color_black
+                        shadow_opa: cover
+                        pressed:
+                          bg_color: color_steel_blue
+                          shadow_width: 4
+                        on_click:
+                          - homeassistant.action:
+                              action: vacuum.stop
+                              data:
+                                entity_id: "${vacuum_entity}"
+
+
+                    - obj:
+                        width: 40
+                        height: 40
+                        align: center
+                        clickable: false
+                        radius: 45
+                        pad_all: 0
+                        bg_opa: transp 
+                        border_opa: transp
+                        shadow_width: 4
+                        shadow_color: 0xFFFFFF
+                        shadow_ofs_x: -4
+                        shadow_ofs_y: -2
+                        shadow_opa: 30%
+
+                    - obj:
+                        width: 45
+                        height: 45
+                        pad_all: 0
+                        align: center
+                        clickable: false
+                        radius: 50
+                        border_opa: transp
+                        bg_color: color_slate_blue_gray
+                        widgets:
+                          - label:
+                              id: vacuum_stop_icon
+                              align: center
+                              text_font: mdi_icons_28
+                              text_color: color_misty_blue
+                              text: "${stop_icon}"
+
+
+              # RETURN TO BASE BUTTON
+              - obj:
+                  x: -115
+                  width: 70
+                  height: 70
+                  align: center
+                  pad_all: 0
+                  bg_opa: transp
+                  shadow_opa: transp
+                  border_opa: transp
+                  widgets:
+                    - button:
+                        id: vacuum_returning_btn
+                        width: 50
+                        height: 50
+                        align: center
+                        clickable: true
+                        radius: 50
+                        pad_all: 0
+                        bg_opa: transp
+                        border_opa: transp
+                        border_width: 0
+                        shadow_width: 8
+                        shadow_spread: 2
+                        shadow_ofs_y: 0
+                        shadow_color: color_black
+                        shadow_opa: cover
+                        pressed:
+                          bg_color: color_steel_blue
+                          shadow_width: 4
+                        on_click:
+                          - homeassistant.action:
+                              action: vacuum.return_to_base
+                              data:
+                                entity_id: "${vacuum_entity}"
+
+
+                    - obj:
+                        width: 40
+                        height: 40
+                        align: center
+                        clickable: false
+                        radius: 45
+                        pad_all: 0
+                        bg_opa: transp 
+                        border_opa: transp
+                        shadow_width: 4
+                        shadow_color: 0xFFFFFF
+                        shadow_ofs_x: -4
+                        shadow_ofs_y: -2
+                        shadow_opa: 30%
+
+                    - obj:
+                        width: 45
+                        height: 45
+                        pad_all: 0
+                        align: center
+                        clickable: false
+                        radius: 50
+                        border_opa: transp
+                        bg_color: color_slate_blue_gray
+                        widgets:
+                          - label:
+                              id: vacuum_returning_icon
+                              align: center
+                              text_font: mdi_icons_28
+                              text_color: color_misty_blue
+                              text: "${return_to_base_icon}"
+
+
+              # LOCATE BUTTON
+              - obj:
+                  x: -180
+                  width: 70
+                  height: 70
+                  align: center
+                  pad_all: 0
+                  bg_opa: transp
+                  shadow_opa: transp
+                  border_opa: transp
+                  widgets:
+                    - button:
+                        id: vacuum_locate_btn
+                        width: 50
+                        height: 50
+                        align: center
+                        clickable: true
+                        radius: 50
+                        pad_all: 0
+                        bg_opa: transp
+                        border_opa: transp
+                        border_width: 0
+                        shadow_width: 8
+                        shadow_spread: 2
+                        shadow_ofs_y: 0
+                        shadow_color: color_black
+                        shadow_opa: cover
+                        pressed:
+                          bg_color: color_steel_blue
+                          shadow_width: 4
+                        on_click:
+                          - homeassistant.action:
+                              action: vacuum.locate
+                              data:
+                                entity_id: "${vacuum_entity}"
+
+
+                    - obj:
+                        width: 40
+                        height: 40
+                        align: center
+                        clickable: false
+                        radius: 45
+                        pad_all: 0
+                        bg_opa: transp 
+                        border_opa: transp
+                        shadow_width: 4
+                        shadow_color: 0xFFFFFF
+                        shadow_ofs_x: -4
+                        shadow_ofs_y: -2
+                        shadow_opa: 30%
+
+                    - obj:
+                        width: 45
+                        height: 45
+                        pad_all: 0
+                        align: center
+                        clickable: false
+                        radius: 50
+                        border_opa: transp
+                        bg_color: color_slate_blue_gray
+                        widgets:
+                          - label:
+                              id: vacuum_locate_icon
+                              align: center
+                              text_font: mdi_icons_28
+                              text_color: color_misty_blue
+                              text: "${locate_map_icon}"
+
+
+              # CLEAN SPOT BUTTON
+              - obj:
+                  x: 180
+                  width: 70
+                  height: 70
+                  align: center
+                  pad_all: 0
+                  bg_opa: transp
+                  shadow_opa: transp
+                  border_opa: transp
+                  widgets:
+                    - button:
+                        id: vacuum_clean_spot_btn
+                        width: 50
+                        height: 50
+                        align: center
+                        clickable: true
+                        radius: 50
+                        pad_all: 0
+                        bg_opa: transp
+                        border_opa: transp
+                        border_width: 0
+                        shadow_width: 8
+                        shadow_spread: 2
+                        shadow_ofs_y: 0
+                        shadow_color: color_black
+                        shadow_opa: cover
+                        pressed:
+                          bg_color: color_steel_blue
+                          shadow_width: 4
+                        on_click:
+                          - homeassistant.action:
+                              action: vacuum.clean_spot
+                              data:
+                                entity_id: "${vacuum_entity}"
+
+
+                    - obj:
+                        width: 40
+                        height: 40
+                        align: center
+                        clickable: false
+                        radius: 45
+                        pad_all: 0
+                        bg_opa: transp 
+                        border_opa: transp
+                        shadow_width: 4
+                        shadow_color: 0xFFFFFF
+                        shadow_ofs_x: -4
+                        shadow_ofs_y: -2
+                        shadow_opa: 30%
+
+                    - obj:
+                        width: 45
+                        height: 45
+                        pad_all: 0
+                        align: center
+                        clickable: false
+                        radius: 50
+                        border_opa: transp
+                        bg_color: color_slate_blue_gray
+                        widgets:
+                          - label:
+                              id: vacuum_clean_spot_icon
+                              align: center
+                              text_font: mdi_icons_28
+                              text_color: color_misty_blue
+                              text: "${clean_spot_icon}"
+
+
+        - obj:
+            id: vacuum_name_background
+            y: 375
+            width: 440
+            height: 60
+            align: top_mid
+            clickable: false
+            scrollable: false
+            radius: 20
+            pad_all: 0
+            bg_color: color_slate_blue_gray
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              - label:
+                  id: vacuum_name_label
+                  align: center
+                  text_font: nunito_18
+                  text_color: color_steel_blue
+                  text: "Vacuum"
+
+        # PLAY/PAUSE BUTTON
+        - obj:
+            id: vacuum_play_pause_background
+            y: 75
+            width: 150
+            height: 150
+            align: center
+            clickable: false
+            radius: 75
+            pad_all: 0
+            bg_color: color_black
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              - obj:
+                  width: 100
+                  height: 100
+                  pad_all: 0
+                  align: center
+                  clickable: false
+                  radius: 50
+                  border_opa: transp
+                  bg_color: color_slate_blue_gray
+
+              - obj:
+                  id: vacuum_play_pause_main
+                  width: 150
+                  height: 150
+                  align: center
+                  clickable: false
+                  radius: 75
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    - arc:
+                        id: vacuum_play_pause_arc
+                        clickable: false
+                        adjustable: false
+                        adv_hittest: false
+                        align: center
+                        width: 130
+                        height: 130
+                        start_angle: 0
+                        end_angle: 360
+                        arc_width: 5
+                        arc_color: color_green
+                        arc_rounded: false
+
+                    - obj:
+                        width: 100
+                        height: 100
+                        pad_all: 0
+                        align: center
+                        clickable: false
+                        radius: 50
+                        border_opa: transp
+                        bg_opa: transp
+                        widgets:
+                          - label:
+                              id: vacuum_play_pause_icon
+                              align: center
+                              text_font: mdi_icons_52
+                              text_color: color_misty_blue
+                              text: "${play_icon}"
+                        on_click:
+                          - if:
+                              condition:
+                                lambda: 'return id(vacuum_state_sensor).state == "cleaning";'
+                              then:
+                                - homeassistant.action:
+                                    action: vacuum.pause
+                                    data:
+                                      entity_id: "${vacuum_entity}"
+                              else:
+                                - homeassistant.action:
+                                    action: vacuum.start
+                                    data:
+                                      entity_id: "${vacuum_entity}"
+
+
+        # BACK
+        - obj:
+            y: 0
+            width: 80
+            height: 50
+            align: bottom_mid
+            bg_opa: transp
+            pad_all: 0
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            radius: 0
+            widgets:
+              - obj:
+                  y: -20
+                  width: 80
+                  height: 5
+                  align: bottom_mid
+                  bg_color: color_steel_blue
+                  pad_all: 0
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  radius: 15 
+            on_click:
+              - lvgl.page.show: devices_page      
+
+
+script:
+
+  - id: update_vacuum_translations
+    then:
+      - lvgl.label.update:
+          id: vacuum_state_label
+          text: !lambda |-
+            return id(i18n_translations).translate(("vacuum.state." + id(vacuum_state_sensor).state));
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # СКРИПТ: Остановка всех анимаций и сброс в исходное состояние
+  # ═══════════════════════════════════════════════════════════════════════════
+  - id: vacuum_stop_all_animations
+    then:
+      - lambda: |-
+          ESP_LOGD("vacuum", "Stopping all animations and resetting to initial state");
+          
+          lv_obj_t* img = id(vacuum_state_image);
+          lv_obj_t* sleep_icon = id(vacuum_sleep_icon);
+          
+          // ═══════════════════════════════════════════════════════════════
+          // Останавливаем ВСЕ анимации
+          // ═══════════════════════════════════════════════════════════════
+          lv_anim_del(img, nullptr);
+          lv_anim_del(sleep_icon, nullptr);
+          
+          // ═══════════════════════════════════════════════════════════════
+          // Сбрасываем трансформации изображения пылесоса
+          // ═══════════════════════════════════════════════════════════════
+          lv_img_set_angle(img, 0);                           // Угол → 0°
+          lv_img_set_zoom(img, 256);                          // Масштаб → 100%
+          lv_obj_set_style_img_opa(img, 255, 0);              // Прозрачность → 100%
+          
+          // ═══════════════════════════════════════════════════════════════
+          // Возвращаем позицию в исходное состояние (из YAML)
+          // ═══════════════════════════════════════════════════════════════
+          lv_obj_set_x(img, 0);                               // X → 0 (center)
+          lv_obj_set_y(img, -10);                              // Y → -130 (из YAML)
+          
+          // ═══════════════════════════════════════════════════════════════
+          // Скрываем иконку сна
+          // ═══════════════════════════════════════════════════════════════
+          lv_obj_add_flag(sleep_icon, LV_OBJ_FLAG_HIDDEN);
+          
+          ESP_LOGD("vacuum", "Reset complete: angle=0°, zoom=100%%, opacity=100%%, pos=(0,-100)");
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # СКРИПТ: Анимация уборки (поворот → движение → пауза)
+  # ═══════════════════════════════════════════════════════════════════════════
+  - id: vacuum_start_cleaning_animation
+    then:
+      - lambda: |-
+          // #include <cmath>
+          
+          ESP_LOGD("vacuum", "Starting cleaning animation (6s cycle with pauses)");
+          
+          lv_obj_t* img = id(vacuum_state_image);
+          lv_anim_del(img, nullptr);
+          
+          // ═══════════════════════════════════════════════════════════════
+          // КОМБИНИРОВАННАЯ АНИМАЦИЯ: поворот + движение + паузы
+          // ═══════════════════════════════════════════════════════════════
+          static lv_anim_t anim_cleaning;
+          lv_anim_init(&anim_cleaning);
+          lv_anim_set_var(&anim_cleaning, img);
+          lv_anim_set_time(&anim_cleaning, 6000);  // 6 секунд полный цикл
+          lv_anim_set_repeat_count(&anim_cleaning, LV_ANIM_REPEAT_INFINITE);
+          
+          lv_anim_set_exec_cb(&anim_cleaning, [](void * var, int32_t v) {
+            lv_obj_t* obj = (lv_obj_t*)var;
+            
+            float angle_deg = 0;
+            float distance = 0;
+            
+            // ═══════════════════════════════════════════════════════════════
+            // ФАЗА 1: 0-1500ms (0° → 20° → движение → пауза)
+            // ═══════════════════════════════════════════════════════════════
+            if (v < 1500) {
+              if (v < 500) {
+                // 0-500ms: Поворот 0° → 20°
+                angle_deg = (v / 500.0f) * 20.0f;
+                distance = 0;
+              } else if (v < 1000) {
+                // 500-1000ms: Движение вперёд-назад на 20°
+                angle_deg = 20.0f;
+                int progress = v - 500;
+                if (progress < 250) {
+                  distance = (progress / 250.0f) * 30.0f;  // 0 → 30
+                } else {
+                  distance = 30.0f - ((progress - 250) / 250.0f) * 30.0f;  // 30 → 0
+                }
+              } else {
+                // 1000-1500ms: ПАУЗА
+                angle_deg = 20.0f;
+                distance = 0;
+              }
+            }
+            
+            // ═══════════════════════════════════════════════════════════════
+            // ФАЗА 2: 1500-3000ms (20° → 0° → движение → пауза)
+            // ═══════════════════════════════════════════════════════════════
+            else if (v < 3000) {
+              int phase_time = v - 1500;
+              if (phase_time < 500) {
+                // 1500-2000ms: Поворот 20° → 0°
+                angle_deg = 20.0f - (phase_time / 500.0f) * 20.0f;
+                distance = 0;
+              } else if (phase_time < 1000) {
+                // 2000-2500ms: Движение вперёд-назад на 0°
+                angle_deg = 0.0f;
+                int progress = phase_time - 500;
+                if (progress < 250) {
+                  distance = (progress / 250.0f) * 30.0f;
+                } else {
+                  distance = 30.0f - ((progress - 250) / 250.0f) * 30.0f;
+                }
+              } else {
+                // 2500-3000ms: ПАУЗА
+                angle_deg = 0.0f;
+                distance = 0;
+              }
+            }
+            
+            // ═══════════════════════════════════════════════════════════════
+            // ФАЗА 3: 3000-4500ms (0° → -20° → движение → пауза)
+            // ═══════════════════════════════════════════════════════════════
+            else if (v < 4500) {
+              int phase_time = v - 3000;
+              if (phase_time < 500) {
+                // 3000-3500ms: Поворот 0° → -20° (340°)
+                angle_deg = -(phase_time / 500.0f) * 20.0f;
+                distance = 0;
+              } else if (phase_time < 1000) {
+                // 3500-4000ms: Движение вперёд-назад на -20°
+                angle_deg = -20.0f;
+                int progress = phase_time - 500;
+                if (progress < 250) {
+                  distance = (progress / 250.0f) * 30.0f;
+                } else {
+                  distance = 30.0f - ((progress - 250) / 250.0f) * 30.0f;
+                }
+              } else {
+                // 4000-4500ms: ПАУЗА
+                angle_deg = -20.0f;
+                distance = 0;
+              }
+            }
+            
+            // ═══════════════════════════════════════════════════════════════
+            // ФАЗА 4: 4500-6000ms (-20° → 0° → движение → пауза)
+            // ═══════════════════════════════════════════════════════════════
+            else {
+              int phase_time = v - 4500;
+              if (phase_time < 500) {
+                // 4500-5000ms: Поворот -20° → 0°
+                angle_deg = -20.0f + (phase_time / 500.0f) * 20.0f;
+                distance = 0;
+              } else if (phase_time < 1000) {
+                // 5000-5500ms: Движение вперёд-назад на 0°
+                angle_deg = 0.0f;
+                int progress = phase_time - 500;
+                if (progress < 250) {
+                  distance = (progress / 250.0f) * 30.0f;
+                } else {
+                  distance = 30.0f - ((progress - 250) / 250.0f) * 30.0f;
+                }
+              } else {
+                // 5500-6000ms: ПАУЗА
+                angle_deg = 0.0f;
+                distance = 0;
+              }
+            }
+            
+            // ═══════════════════════════════════════════════════════════════
+            // Применяем угол и позицию через тригонометрию
+            // ═══════════════════════════════════════════════════════════════
+            int16_t angle_lvgl = (int16_t)(angle_deg * 10.0f);
+            lv_img_set_angle(obj, angle_lvgl);
+            
+            float angle_rad = angle_deg * M_PI / 180.0f;
+            int16_t offset_x = (int16_t)(distance * sin(angle_rad));
+            int16_t offset_y = (int16_t)(-distance * cos(angle_rad)) - 10;
+            
+            lv_obj_set_x(obj, offset_x);
+            lv_obj_set_y(obj, offset_y);
+          });
+          
+          lv_anim_set_values(&anim_cleaning, 0, 6000);
+          lv_anim_set_path_cb(&anim_cleaning, lv_anim_path_linear);
+          lv_anim_start(&anim_cleaning);
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # СКРИПТ: Анимация паузы (пульсирующая иконка сна)
+  # ═══════════════════════════════════════════════════════════════════════════
+  - id: vacuum_start_paused_animation
+    then:
+      - lambda: |-
+          ESP_LOGD("vacuum", "Starting paused animation (pulsing sleep icon)");
+          
+          lv_obj_t* img = id(vacuum_state_image);
+          lv_obj_t* sleep_icon = id(vacuum_sleep_icon);
+          
+          // Останавливаем все анимации
+          lv_anim_del(img, nullptr);
+          lv_anim_del(sleep_icon, nullptr);
+          
+          // Сбрасываем картинку пылесоса в исходное состояние
+          lv_img_set_angle(img, 0);
+          lv_obj_set_x(img, 0);
+          lv_obj_set_y(img, -10);
+          
+          // Показываем иконку сна
+          lv_obj_clear_flag(sleep_icon, LV_OBJ_FLAG_HIDDEN);
+          
+          // ═══════════════════════════════════════════════════════════════
+          // АНИМАЦИЯ ПУЛЬСАЦИИ: opacity 0% → 100% → 0%
+          // ═══════════════════════════════════════════════════════════════
+          static lv_anim_t anim_pulse;
+          lv_anim_init(&anim_pulse);
+          lv_anim_set_var(&anim_pulse, sleep_icon);
+          lv_anim_set_values(&anim_pulse, LV_OPA_TRANSP, LV_OPA_COVER);  // 0 → 255
+          lv_anim_set_time(&anim_pulse, 1000);  // 1 секунда вперёд
+          lv_anim_set_playback_time(&anim_pulse, 1000);  // 1 секунда назад
+          lv_anim_set_repeat_count(&anim_pulse, LV_ANIM_REPEAT_INFINITE);
+          
+          // Callback для установки прозрачности
+          lv_anim_set_exec_cb(&anim_pulse, [](void * var, int32_t v) {
+            lv_obj_t* obj = (lv_obj_t*)var;
+            lv_obj_set_style_opa(obj, (lv_opa_t)v, LV_PART_MAIN);
+          });
+          
+          lv_anim_set_path_cb(&anim_pulse, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_pulse);
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # СКРИПТ: Запуск анимации возврата на базу (покачивание ±15°)
+  # ═══════════════════════════════════════════════════════════════════════════
+  - id: vacuum_start_go_home_animation
+    then:
+      - lambda: |-
+          ESP_LOGD("vacuum", "Starting go home animation (swing ±15°)");
+          
+          lv_obj_t* img = id(vacuum_state_image);
+          lv_anim_del(img, nullptr);
+          
+          lv_anim_t anim_go_home_swing;
+          
+          lv_anim_init(&anim_go_home_swing);
+          lv_anim_set_var(&anim_go_home_swing, img);
+          lv_anim_set_values(&anim_go_home_swing, -150, 150);  // -15° -> +15°
+          lv_anim_set_time(&anim_go_home_swing, 1000);
+          lv_anim_set_repeat_count(&anim_go_home_swing, LV_ANIM_REPEAT_INFINITE);
+          lv_anim_set_playback_time(&anim_go_home_swing, 1000);  // Возврат обратно
+          lv_anim_set_exec_cb(&anim_go_home_swing, [](void * var, int32_t v) {
+            lv_img_set_angle((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_go_home_swing, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_go_home_swing);
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # СКРИПТ: Запуск анимации зарядки (пульсация прозрачности)
+  # ═══════════════════════════════════════════════════════════════════════════
+  - id: vacuum_start_charging_animation
+    then:
+      - lambda: |-
+          ESP_LOGD("vacuum", "Starting charging animation (pulse opacity)");
+          
+          lv_obj_t* img = id(vacuum_state_image);
+          lv_anim_del(img, nullptr);
+          
+          lv_anim_t anim_charging_pulse;
+          
+          lv_anim_init(&anim_charging_pulse);
+          lv_anim_set_var(&anim_charging_pulse, img);
+          lv_anim_set_values(&anim_charging_pulse, 80, 255);  // 30% -> 100%
+          lv_anim_set_time(&anim_charging_pulse, 1200);
+          lv_anim_set_repeat_count(&anim_charging_pulse, LV_ANIM_REPEAT_INFINITE);
+          lv_anim_set_playback_time(&anim_charging_pulse, 1200);
+          lv_anim_set_exec_cb(&anim_charging_pulse, [](void * var, int32_t v) {
+            lv_obj_set_style_img_opa((lv_obj_t*)var, v, 0);
+          });
+          lv_anim_set_path_cb(&anim_charging_pulse, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_charging_pulse);

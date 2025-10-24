@@ -16,6 +16,7 @@
   glyphsets:
     - GF_Latin_Core
     - GF_Cyrillic_Core
+  glyphs: "²"
 
 - file: "assets/fonts/Nunito-SemiBold.ttf"
   id: nunito_20
@@ -318,8 +319,10 @@
     "\U000F0581", # volume off
     "\U000F075E", # volume minus
     "\U000F075D", # volume plus
+    "\U000F05F8", # home locate
+    "\U000F0A77", # target variant
+    "\U000F034E", # map marker
   ]
-
 
 - file: "assets/fonts/materialdesignicons-webfont.ttf"
   id: mdi_icons_40
@@ -357,33 +360,5 @@
     "\U000F1A46", # away
     "\U000F040A", # play
     "\U000F03E4", # pause
-  ]
-
-- file: "assets/fonts/materialdesignicons-webfont.ttf"
-  id: mdi_icons_68
-  size: 68
-  bpp: 4
-  glyphs: [
-    "\U000F068A", # shield home
-    "\U000F1828", # shield moon
-    "\U000F099D", # shield lock
-    "\U000F06BB", # shield plane
-    "\U000F099E", # shield off
-    "\U000F0498", # shield
-  ]
-
-- file: "assets/fonts/materialdesignicons-webfont.ttf"
-  id: mdi_icons_72
-  size: 72
-  bpp: 4
-  glyphs: [
-    "\U000F099D", # shield lock
-  ]
-
-- file: "assets/fonts/materialdesignicons-webfont.ttf"
-  id: mdi_icons_160
-  size: 160
-  bpp: 4
-  glyphs: [
-    "\U000F1107", # socket
+    "\U000F04B2", # sleep
   ]
