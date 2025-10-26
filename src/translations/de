@@ -1,0 +1,94 @@
+loading:
+  synchronization: "Synchronisiere..."
+  connection_api: "Verbinde mit API..."
+
+ota:
+  start:
+    primary: "Starte OTA!"
+    secondary: "Bitte warten..."
+  end: 
+    primary: "Update abgeschlossen!"
+    secondary: "Starte neu..."
+  error:
+    primary: "Update FEHLER!"
+    secondary: "Starte neu..."
+  progress: "Firmware-Fortschritt %0.1f%%"
+
+settings:
+  backlight: "Hintergrundbeleuchtung"
+  sleep_time: "Ruhezeit"
+
+sleep_time:
+  never: "Nie"
+  minute1: "1 Minute"
+  minute5: "5 Minuten" 
+  minute10: "10 Minuten"
+  minute30: "30 Minuten"
+  hour1: "1 Stunde"
+  hour6: "6 Stunden"
+  hour12: "12 Stunden"
+
+forecasts:
+  daily: "Täglich"
+  hourly: "Stündlich"
+
+weather:
+  clear-night: "Klare Nacht"
+  cloudy: "Bewölkt"
+  exceptional: "Unwetter"
+  fog: "Nebel"
+  hail: "Hagel"
+  lightning: "Gewitter"
+  lightning-rainy: "Gewitter, Regen"
+  partlycloudy: "Teilweise bewölkt"
+  pouring: "Starkregen"
+  rainy: "Regnerisch"
+  snowy: "Schnee"
+  snowy-rainy: "Schnee, Regen"
+  sunny: "Sonnig"
+  windy: "Windig"
+  windy-variant: "Windig, bewölkt"
+
+day_of_week:
+  monday: "Montag"
+  tuesday: "Dienstag"
+  wednesday: "Mittwoch"
+  thursday: "Donnerstag"
+  friday: "Freitag"
+  saturday: "Samstag"
+  sunday: "Sonntag"
+
+day_of_week_short:
+  monday: "MO"
+  tuesday: "DI"
+  wednesday: "MI"
+  thursday: "DO"
+  friday: "FR"
+  saturday: "SA"
+  sunday: "SO"
+
+month:
+  january: "Januar"
+  february: "Februar"
+  march: "März"
+  april: "April"
+  may: "Mai"
+  june: "Juni"
+  july: "Juli"
+  august: "August"
+  september: "September"
+  october: "Oktober"
+  november: "November"
+  december: "Dezember"
+
+vacuum:
+  name: "Staubsauger"
+  state:
+    cleaning: "Reinigt"
+    docked: "In Ladestation"
+    error: "Fehler"
+    idle: "Bereit"
+    off: "Aus"
+    on: "An"
+    paused: "Pausiert"
+    returning: "Zurück zur Station"
