@@ -624,7 +624,7 @@ lvgl:
                   shadow_opa: transp
                   radius: 15 
             on_click:
-              - lvgl.page.show: devices_page      
+              - lvgl.page.show: home_page
 
 
 script:

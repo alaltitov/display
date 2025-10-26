@@ -64,6 +64,7 @@
     - nl (from [zjean](https://github.com/zjean))
     - si (from [Protoncek](https://github.com/Protoncek))
     - it (from [echopage1964](https://github.com/echopage1964))
+    - de (from [MATZE-MAN](https://github.com/MATZE-MAN))
 
 ## 📦 Installation
 > 📹 **Video [instruction](https://youtu.be/HYN_2hvcbes?si=JfYQH4vCuFlr8Q9r)**
