@@ -1,0 +1,28 @@
+substitutions: !include substitutions.yaml
+
+packages:
+  select: !include select.yaml
+
+  media_player_1: !include
+    file: media_player.yaml
+    vars:
+      media_player_entity: "${media_player_entity_1}"
+      widget_name: "${media_player_widget_name_1}"
+      
+  media_player_2: !include
+    file: media_player.yaml
+    vars:
+      media_player_entity: "${media_player_entity_2}"
+      widget_name: "${media_player_widget_name_2}"
+      
+  media_player_3: !include
+    file: media_player.yaml
+    vars:
+      media_player_entity: "${media_player_entity_3}"
+      widget_name: "${media_player_widget_name_3}"
+
+  media_player_4: !include
+    file: media_player.yaml
+    vars:
+      media_player_entity: "${media_player_entity_4}"
+      widget_name: "${media_player_widget_name_4}"

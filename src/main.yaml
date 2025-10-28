@@ -4,7 +4,7 @@ packages:
   light: !include widgets/light/config.yaml
   devices: !include common/widgets/devices.yaml
   climate: !include widgets/climate/climate.yaml
-  media_player: !include widgets/media_player/media_player.yaml
+  media_player: !include widgets/media_player/config.yaml
   vacuum: !include widgets/vacuum/vacuum.yaml
 
 
@@ -16,6 +16,9 @@ color: !include common/colors.yaml
 
 http_request:
   verify_ssl: false
+  redirect_limit: 4
+  timeout: 10000ms
+  watchdog_timeout: 20000ms
 
 external_components:
   - source: github://alaltitov/esphome@main
@@ -76,10 +79,11 @@ esp32:
       # CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: y
       # CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
       # CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
-      CONFIG_SPIRAM_FETCH_INSTRUCTIONS: y
-      CONFIG_SPIRAM_RODATA: y
+      # CONFIG_SPIRAM_FETCH_INSTRUCTIONS: y
+      # CONFIG_SPIRAM_RODATA: y
       # CONFIG_FREERTOS_USE_TRACE_FACILITY: "y"
       # CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS: "y"
+      CONFIG_ESP_TASK_WDT_TIMEOUT_S: "60"
 
 psram:
   mode: octal
@@ -88,6 +92,9 @@ psram:
 
 logger:
   level: debug
+  logs:
+    lvgl: info
+  hardware_uart: UART0
 
 
 api:

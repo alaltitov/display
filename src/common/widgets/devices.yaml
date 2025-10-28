@@ -57,7 +57,13 @@ lvgl:
                         text_color: color_misty_blue
                         text: "Media player"
                   on_click:
-                    - lvgl.page.show: media_player_page
+                    - lvgl.page.show: ${media_player_widget_name_1}_media_player_page
+                    - delay: 250ms
+                    - lambda: |-
+                        int media_players = ${media_players_amount};
+                        if (media_players >= 2) {
+                          lv_obj_clear_flag(id(media_player_select_widget), LV_OBJ_FLAG_HIDDEN);
+                        }
 
               # Vacuum button
               - button:

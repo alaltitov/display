@@ -1,0 +1,221 @@
+lvgl:
+  on_boot:
+    then:
+      - script.execute: get_media_player_amount_btn
+      - lvgl.obj.update:
+          id: ${media_player_widget_name_1}_btn
+          shadow_color: color_misty_blue
+
+  top_layer:
+    widgets:
+      - obj:
+          id: media_player_select_widget
+          hidden: true
+          x: -40
+          y: -40
+          width: 300
+          height: 110
+          align: top_left
+          pad_all: 0
+          bg_color: color_slate_blue_gray
+          bg_opa: cover
+          border_opa: transp
+          border_width: 0
+          shadow_color: color_black
+          shadow_spread: 3
+          shadow_width: 8
+          scrollable: false
+          radius: 40
+          widgets:
+            - obj:
+                id: media_player_select_widget_cont
+                x: -10
+                y: -5
+                width: 240
+                height: 60
+                align: bottom_right
+                bg_opa: transp
+                border_opa: transp
+                border_width: 0
+                pad_all: 0
+                layout:
+                  type: flex
+                  flex_align_main: space_evenly
+                  flex_align_cross: center
+                  flex_align_track: center
+                widgets:
+                  - obj:
+                      id: ${media_player_widget_name_1}_btn
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: ${media_player_widget_name_1}_icon
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${media_player_icon_1}"
+                      on_press:
+                        - lvgl.page.show: ${media_player_widget_name_1}_media_player_page
+                        - lvgl.obj.update:
+                            id: ${media_player_widget_name_1}_btn
+                            shadow_color: color_misty_blue
+                        - lvgl.obj.update:
+                            id: ${media_player_widget_name_2}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${media_player_widget_name_3}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${media_player_widget_name_4}_btn
+                            shadow_color: color_black
+
+                  - obj:
+                      id: ${media_player_widget_name_2}_btn
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: ${media_player_widget_name_2}_icon
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${media_player_icon_2}"
+                      on_press:
+                        - lvgl.page.show: ${media_player_widget_name_2}_media_player_page
+                        - lvgl.obj.update:
+                            id: ${media_player_widget_name_1}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${media_player_widget_name_2}_btn
+                            shadow_color: color_misty_blue
+                        - lvgl.obj.update:
+                            id: ${media_player_widget_name_3}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${media_player_widget_name_4}_btn
+                            shadow_color: color_black
+
+                  - obj:
+                      id: ${media_player_widget_name_3}_btn
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: ${media_player_widget_name_3}_icon
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${media_player_icon_3}"
+                      on_press:
+                        - lvgl.page.show: ${media_player_widget_name_3}_media_player_page
+                        - lvgl.obj.update:
+                            id: ${media_player_widget_name_1}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${media_player_widget_name_2}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${media_player_widget_name_3}_btn
+                            shadow_color: color_misty_blue
+                        - lvgl.obj.update:
+                            id: ${media_player_widget_name_4}_btn
+                            shadow_color: color_black
+
+                  - obj:
+                      id: ${media_player_widget_name_4}_btn
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: ${media_player_widget_name_4}_icon
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${media_player_icon_4}"
+                      on_press:
+                        - lvgl.page.show: ${media_player_widget_name_4}_media_player_page
+                        - lvgl.obj.update:
+                            id: ${media_player_widget_name_1}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${media_player_widget_name_2}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${media_player_widget_name_3}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${media_player_widget_name_4}_btn
+                            shadow_color: color_misty_blue
+
+script:
+  - id: get_media_player_amount_btn
+    then:
+      - lambda: |-
+          int media_players = ${media_players_amount};
+          
+          if (media_players >= 2) {
+            lv_obj_set_width(id(media_player_select_widget), 190);
+            lv_obj_set_width(id(media_player_select_widget_cont), 130);
+            lv_obj_clear_flag(id(${media_player_widget_name_1}_btn), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(id(${media_player_widget_name_2}_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(${media_player_widget_name_1}_btn), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(${media_player_widget_name_2}_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          if (media_players >= 3) {
+            lv_obj_set_width(id(media_player_select_widget), 245);
+            lv_obj_set_width(id(media_player_select_widget_cont), 185);
+            lv_obj_clear_flag(id(${media_player_widget_name_3}_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(${media_player_widget_name_3}_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          if (media_players >= 4) {
+            lv_obj_set_width(id(media_player_select_widget), 300);
+            lv_obj_set_width(id(media_player_select_widget_cont), 240);
+            lv_obj_clear_flag(id(${media_player_widget_name_4}_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(${media_player_widget_name_4}_btn), LV_OBJ_FLAG_HIDDEN);
+          }

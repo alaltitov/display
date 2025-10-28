@@ -59,8 +59,6 @@ binary_sensor:
               action: light.toggle
               data:
                 entity_id: "${light_entity}"
-          - lambda: |-
-              ESP_LOGD("light_btn", "Short press - toggling light");
       
       # ДОЛГОЕ нажатие (800-3000ms) - переключение режима (только если поддерживается)
       - min_length: 800ms
@@ -75,14 +73,7 @@ binary_sensor:
               then:
                 - lambda: |-
                     id(${widget_name}_is_temp_mode) = !id(${widget_name}_is_temp_mode);
-                    ESP_LOGD("light_btn", "Long press - switching mode to: %s", 
-                      id(${widget_name}_is_temp_mode) ? "ColorTemp" : "HS");
                 - script.execute: ${widget_name}_toggle_gradient
-              else:
-                - lambda: |-
-                    ESP_LOGD("light_btn", "Long press ignored - only one color mode supported");
-
-
 
 sensor:
   # Brightness sensor
@@ -195,15 +186,7 @@ text_sensor:
             id(${widget_name}_supports_rgb) ||
             id(${widget_name}_supports_color_temp)
           );
-          
-          ESP_LOGD("light_widget", "═══════════════════════════════════════");
-          ESP_LOGD("light_widget", "Supported modes: %s", modes.c_str());
-          ESP_LOGD("light_widget", "Color temp: %d, HS: %d, RGB: %d, Brightness: %d",
-            id(${widget_name}_supports_color_temp),
-            id(${widget_name}_supports_hs),
-            id(${widget_name}_supports_rgb),
-            id(${widget_name}_supports_brightness)
-          );
+
           
           // ═══════════════════════════════════════════════════════════════════
           // НОВОЕ: Умный выбор начального режима
@@ -212,18 +195,14 @@ text_sensor:
           if (id(${widget_name}_supports_hs) || id(${widget_name}_supports_rgb)) {
             // Если поддерживается HS/RGB - начинаем с него (более универсальный)
             id(${widget_name}_is_temp_mode) = false;
-            ESP_LOGD("light_widget", "→ Initial mode: HS (preferred for color lights)");
           } else if (id(${widget_name}_supports_color_temp)) {
             // Если только ColorTemp - используем его
             id(${widget_name}_is_temp_mode) = true;
-            ESP_LOGD("light_widget", "→ Initial mode: ColorTemp (only option)");
           } else {
             // Если ничего не поддерживается - не важно
             id(${widget_name}_is_temp_mode) = false;
-            ESP_LOGD("light_widget", "→ Initial mode: N/A (no color modes)");
           }
           
-          ESP_LOGD("light_widget", "═══════════════════════════════════════");
       
       # После определения режимов обновляем видимость виджетов
       - script.execute: ${widget_name}_update_widget_visibility

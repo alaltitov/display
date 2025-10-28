@@ -322,6 +322,10 @@
     "\U000F05F8", # home locate
     "\U000F0A77", # target variant
     "\U000F034E", # map marker
+    "\U000F04C3", # speaker
+    "\U000F1B1B", # tv speaker
+    "\U000F093D", # projector / receiver
+    "\U000F0384", # music box
   ]
 
 - file: "assets/fonts/materialdesignicons-webfont.ttf"

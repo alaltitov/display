@@ -2,51 +2,55 @@ substitutions: !include substitutions.yaml
 
 
 globals:
-  - id: repeat_modes
+  - id: ${widget_name}_repeat_modes
     type: std::vector<std::string>
     initial_value: '{"all", "one", "off"}'
-  - id: repeat_icons
+  - id: ${widget_name}_repeat_icons
     type: std::vector<std::string>
     initial_value: '{"${repeat_all_icon}", "${repeat_one_icon}", "${repeat_off_icon}"}'
-  - id: current_repeat_mode_idx
+  - id: ${widget_name}_current_repeat_mode_idx
     type: int
     initial_value: '0'
-  - id: tmp_repeat_mode
+  - id: ${widget_name}_tmp_repeat_mode
     type: std::string
     restore_value: no
     initial_value: '"all"'
-  - id: tmp_repeat_icon
+  - id: ${widget_name}_tmp_repeat_icon
     type: std::string
     restore_value: no
     initial_value: '"${repeat_all_icon}"'
-  - id: cover_url
+  - id: ${widget_name}_cover_url
     type: std::string
     restore_value: no
     initial_value: '""'
-  - id: duration_slider_user_interaction
+  - id: ${widget_name}_duration_slider_user_interaction
     type: bool
     restore_value: no
     initial_value: 'false'
-  - id: slider_position
+  - id: ${widget_name}_slider_position
     type: float
     restore_value: no
     initial_value: '0.0'
-  - id: pending_cover_url
+  - id: ${widget_name}_pending_cover_url
     type: std::string
     restore_value: no
     initial_value: '""'
-  - id: pending_repeat_value
+  - id: ${widget_name}_pending_repeat_value
     type: std::string
     restore_value: no
     initial_value: '""'
-  - id: source_list
+  - id: ${widget_name}_source_list
     type: std::vector<std::string>
     restore_value: no
-  - id: source_list_index
+  - id: ${widget_name}_source_list_index
     type: int
     restore_value: no
     initial_value: '0'
-  - id: source_switch
+  - id: ${widget_name}_source_available
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+  - id: ${widget_name}_is_animating
     type: bool
     restore_value: no
     initial_value: 'false'
@@ -57,48 +61,48 @@ online_image:
     format: JPEG
     type: RGB565
     resize: 120x120
-    id: media_image_jpeg
+    id: ${widget_name}_media_image_jpeg
     on_download_finished:
       - lvgl.obj.update:
-          id: media_player_cover
-          bg_image_src: media_image_jpeg
+          id: ${widget_name}_media_player_cover
+          bg_image_src: ${widget_name}_media_image_jpeg
 
 
 sensor:
   - platform: homeassistant
-    id: media_player_volume_level_sensor
+    id: ${widget_name}_media_player_volume_level_sensor
     entity_id: "${media_player_entity}"
     attribute: volume_level
     on_value:
       - lvgl.arc.update:
-          id: media_player_volume_arc
+          id: ${widget_name}_media_player_volume_arc
           value: !lambda 'return int(x * 100);'
 
   - platform: homeassistant
-    id: media_player_media_duration_sensor
+    id: ${widget_name}_media_player_media_duration_sensor
     entity_id: "${media_player_entity}"
     attribute: media_duration
     on_value:
       - lambda: |-
-          lv_slider_set_range(id(media_player_duration_pos_slider), 0, x);
+          lv_slider_set_range(id(${widget_name}_media_player_duration_pos_slider), 0, x);
 
   - platform: homeassistant
-    id: media_player_media_position_sensor
+    id: ${widget_name}_media_player_media_position_sensor
     entity_id: "${media_player_entity}"
     attribute: media_position
     on_value: 
       - if:
           condition:
-            lambda: 'return !id(duration_slider_user_interaction);'
+            lambda: 'return !id(${widget_name}_duration_slider_user_interaction);'
           then:
             - lvgl.slider.update:
-                id: media_player_duration_pos_slider
+                id: ${widget_name}_media_player_duration_pos_slider
                 value: !lambda return x;
 
 
 binary_sensor:
   - platform: homeassistant
-    id: media_player_is_volume_muted
+    id: ${widget_name}_media_player_is_volume_muted
     entity_id: "${media_player_entity}"
     attribute: is_volume_muted
     on_state:
@@ -107,18 +111,18 @@ binary_sensor:
             lambda: 'return x;'
           then:
             - lvgl.label.update:
-                id: media_player_mute_label
+                id: ${widget_name}_media_player_mute_label
                 text: "${volume_off_icon}"
           else:
             - lvgl.label.update:
-                id: media_player_mute_label
+                id: ${widget_name}_media_player_mute_label
                 text: "${volume_on_icon}"
 
 
 text_sensor:
 
   - platform: homeassistant
-    id: media_player_state_sensor
+    id: ${widget_name}_media_player_state_sensor
     entity_id: "${media_player_entity}"
     on_value:
       - if:
@@ -126,72 +130,74 @@ text_sensor:
             lambda: 'return x == "paused";'
           then:
             - lvgl.label.update: 
-                id: media_player_state_label
+                id: ${widget_name}_media_player_state_label
                 x: 0
                 text: "${play_icon}"
           else:
             - lvgl.label.update: 
-                id: media_player_state_label
+                id: ${widget_name}_media_player_state_label
                 x: 0
                 text: "${pause_icon}"
 
   - platform: homeassistant
-    id: media_player_cover_sensor
+    id: ${widget_name}_media_player_cover_sensor
     entity_id: "${media_player_entity}"
     attribute: entity_picture
     on_value:
       - lambda: |-
-          id(pending_cover_url) = x;
-      - script.execute: update_cover_script
+          id(${widget_name}_pending_cover_url) = x;
+      - script.execute: ${widget_name}_update_cover_script
 
   - platform: homeassistant
-    id: media_player_friendly_name_sensor
+    id: ${widget_name}_media_player_friendly_name_sensor
     entity_id: "${media_player_entity}"
     attribute: friendly_name
     on_value:
       - lvgl.label.update:
-          id: media_player_name_label
+          id: ${widget_name}_media_player_name_label
           text: !lambda return x;
 
   - platform: homeassistant
-    id: media_player_title_sensor
+    id: ${widget_name}_media_player_title_sensor
     entity_id: "${media_player_entity}"
     attribute: media_title
     on_value:
       - delay: 1s
       - lvgl.label.update:
-          id: media_player_title_label
+          id: ${widget_name}_media_player_title_label
           text: !lambda return x;
 
   - platform: homeassistant
-    id: media_player_artist_sensor
+    id: ${widget_name}_media_player_artist_sensor
     entity_id: "${media_player_entity}"
     attribute: media_artist
     on_value:
       - delay: 1s
       - lvgl.label.update:
-          id: media_player_artist_label
+          id: ${widget_name}_media_player_artist_label
           text: !lambda return x;
 
   - platform: homeassistant
-    id: media_player_repeat_sensor
+    id: ${widget_name}_media_player_repeat_sensor
     entity_id: "${media_player_entity}"
     attribute: repeat
     on_value:
       - lambda: |-
-          id(pending_repeat_value) = x;
-      - script.execute: update_repeat_mode_script
+          id(${widget_name}_pending_repeat_value) = x;
+      - script.execute: ${widget_name}_update_repeat_mode_script
 
   # MEDIA PLAYER SOURCE LIST
   - platform: homeassistant
-    id: media_player_source_list_sensor
+    id: ${widget_name}_media_player_source_list_sensor
     entity_id: "${media_player_entity}"
     attribute: source_list
     on_value:
       - lambda: |-
           std::vector<std::string> sl;
           std::string input = x;
-          if (!input.empty() && input != "unknown") {
+          bool has_sources = false;
+          
+          if (!input.empty() && input != "unknown" && input != "unavailable") {
             input.erase(std::remove(input.begin(), input.end(), '['), input.end());
             input.erase(std::remove(input.begin(), input.end(), ']'), input.end());
             input.erase(std::remove(input.begin(), input.end(), '\''), input.end());
@@ -204,26 +210,42 @@ text_sensor:
                 item.erase(item.find_last_not_of(" \t") + 1);
               if (!item.empty()) sl.push_back(item);
             }
+            has_sources = !sl.empty();
           }
-          id(source_list) = sl;
-          int sel = id(source_list_index);
+          
+          id(${widget_name}_source_list) = sl;
+          id(${widget_name}_source_available) = has_sources;
+          
+          int sel = id(${widget_name}_source_list_index);
           if (sel < 0 || sel >= (int)sl.size()) sel = 0;
-          id(source_list_index) = sel;
-          ESP_LOGI("MP_PANEL","Parsed %d sources (sel=%d)", (int)sl.size(), sel);
-          id(media_player_build_source_panel).execute();
+          id(${widget_name}_source_list_index) = sel;
+          
+          // Обновляем состояние кнопки
+          lv_obj_t* btn = id(${widget_name}_media_player_source_btn);
+          lv_obj_t* label = id(${widget_name}_media_player_source_label);
+          
+          if (has_sources) {
+            lv_obj_clear_state(btn, LV_STATE_DISABLED);
+            lv_obj_set_style_opa(btn, LV_OPA_COVER, 0);
+            lv_obj_set_style_text_opa(label, LV_OPA_COVER, 0);
+            id(${widget_name}_media_player_build_source_panel).execute();
+          } else {
+            lv_obj_add_state(btn, LV_STATE_DISABLED);
+            lv_obj_set_style_opa(btn, LV_OPA_30, 0);
+            lv_obj_set_style_text_opa(label, LV_OPA_30, 0);
+          }
 
   # MEDIA PLAYER SOURCE
   - platform: homeassistant
-    id: media_player_source_sensor
+    id: ${widget_name}_media_player_source_sensor
     entity_id: "${media_player_entity}"
     attribute: source
     on_value:
       - lambda: |-
-          if (!id(source_list).empty() && !x.empty()) {
-            for (int i = 0; i < (int)id(source_list).size(); ++i) {
-              if (id(source_list)[i] == x) {
-                id(source_list_index) = i;
-                ESP_LOGD("MP_PANEL","Sync source -> index %d (%s)", i, x.c_str());
+          if (!id(${widget_name}_source_list).empty() && !x.empty()) {
+            for (int i = 0; i < (int)id(${widget_name}_source_list).size(); ++i) {
+              if (id(${widget_name}_source_list)[i] == x) {
+                id(${widget_name}_source_list_index) = i;
                 break;
               }
             }
@@ -233,12 +255,12 @@ text_sensor:
 lvgl:
 
   pages:
-    - id: media_player_page
+    - id: ${widget_name}_media_player_page
       bg_color: color_black
       scrollable: false
       widgets:
         - label:
-            id: media_player_name_label
+            id: ${widget_name}_media_player_name_label
             y: 15
             align: top_mid
             text_font: nunito_20
@@ -259,7 +281,7 @@ lvgl:
             shadow_opa: transp
             widgets:
               - obj:
-                  id: media_widget_background
+                  id: ${widget_name}_media_widget_background
                   hidden: false
                   width: 440
                   height: 160
@@ -275,12 +297,12 @@ lvgl:
                   widgets:
                     # Cover
                     - obj:
-                        id: media_player_cover
+                        id: ${widget_name}_media_player_cover
                         width: 140
                         height: 140
                         align: left_mid
                         bg_opa: transp
-                        bg_image_src: media_image_jpeg
+                        bg_image_src: ${widget_name}_media_image_jpeg
                         border_opa: transp
                         shadow_opa: transp
                         radius: 0
@@ -298,7 +320,7 @@ lvgl:
                         radius: 10
                         widgets:
                           - label:
-                              id: media_player_title_label
+                              id: ${widget_name}_media_player_title_label
                               height: 40
                               width: 260
                               long_mode: DOT
@@ -308,7 +330,7 @@ lvgl:
                               text_font: nunito_20
                               text: "Title"
                           - label:
-                              id: media_player_artist_label
+                              id: ${widget_name}_media_player_artist_label
                               height: 30
                               width: 260
                               long_mode: DOT
@@ -318,7 +340,7 @@ lvgl:
                               text_font: nunito_16
                               text: "Artist"
                           - slider:
-                              id: media_player_duration_pos_slider
+                              id: ${widget_name}_media_player_duration_pos_slider
                               radius: 2
                               y: 35
                               bg_color: color_steel_blue
@@ -334,11 +356,11 @@ lvgl:
                                 bg_opa: transp
                               on_press:
                                 - lambda: |-
-                                    id(duration_slider_user_interaction) = true;
+                                    id(${widget_name}_duration_slider_user_interaction) = true;
                               on_release:
                                 - lambda: |-
-                                    id(slider_position) = x;
-                                - script.execute: handle_duration_slider_release_script
+                                    id(${widget_name}_slider_position) = x;
+                                - script.execute: ${widget_name}_handle_duration_slider_release_script
 
               - obj:
                   width: 140
@@ -352,7 +374,7 @@ lvgl:
 
         # PRIMARY BUTTONS
         - obj:
-            id: media_player_primary_controls_background
+            id: ${widget_name}_media_player_primary_controls_background
             y: 230
             width: 440
             height: 100
@@ -381,7 +403,7 @@ lvgl:
                   widgets:
                     # PREVIOUS BUTTON
                     - obj:
-                        id: media_player_prev_btn
+                        id: ${widget_name}_media_player_prev_btn
                         x: 30
                         width: 90
                         height: 90
@@ -448,7 +470,7 @@ lvgl:
 
                     # NEXT BUTTON
                     - obj:
-                        id: media_player_next_btn
+                        id: ${widget_name}_media_player_next_btn
                         x: -30
                         width: 90
                         height: 90
@@ -528,7 +550,7 @@ lvgl:
             radius: 20
             widgets:
               - obj:
-                  id: media_player_secondary_controls_background
+                  id: ${widget_name}_media_player_secondary_controls_background
                   width: 440
                   height: 80
                   pad_all: 0
@@ -541,7 +563,7 @@ lvgl:
                   widgets:
                     # off
                     - obj:
-                        id: media_player_off_btn
+                        id: ${widget_name}_media_player_off_btn
                         x: 20
                         align: left_mid
                         width: 46
@@ -569,7 +591,7 @@ lvgl:
                                       entity_id: "${media_player_entity}"
                     # repeat
                     - obj:
-                        id: media_player_repeat_btn
+                        id: ${widget_name}_media_player_repeat_btn
                         x: 80
                         align: left_mid
                         width: 46
@@ -586,17 +608,17 @@ lvgl:
                           shadow_width: 4
                         widgets:
                           - label:
-                              id: media_player_repeat_label
+                              id: ${widget_name}_media_player_repeat_label
                               align: center
                               text_color: color_misty_blue
                               text_font: mdi_icons_28
                               text: "${repeat_all_icon}"
                               on_press:
-                                - script.execute: handle_repeat_press_script
+                                - script.execute: ${widget_name}_handle_repeat_press_script
                     
                     # source
                     - obj:
-                        id: media_player_source_btn
+                        id: ${widget_name}_media_player_source_btn
                         x: 140
                         align: left_mid
                         width: 46
@@ -613,20 +635,25 @@ lvgl:
                           shadow_width: 4
                         widgets:
                           - label:
-                              id: media_player_source_label
+                              id: ${widget_name}_media_player_source_label
                               align: center
                               text_color: color_misty_blue
                               text_font: mdi_icons_28
                               text: "${media_source}"
                         on_click:
                           - lambda: |-
-                              if (id(is_animating)) return;
-                              id(is_animating) = true;
-                          - script.execute: animate_mp_to_source
+                              // Проверяем доступность источников
+                              if (!id(${widget_name}_source_available)) {
+                                return;
+                              }
+                              
+                              if (id(${widget_name}_is_animating)) return;
+                              id(${widget_name}_is_animating) = true;
+                          - script.execute: ${widget_name}_animate_mp_to_source
 
                     # mute
                     - obj:
-                        id: media_player_mute_btn
+                        id: ${widget_name}_media_player_mute_btn
                         x: -140
                         align: right_mid
                         width: 46
@@ -643,7 +670,7 @@ lvgl:
                           shadow_width: 4
                         widgets:
                           - label:
-                              id: media_player_mute_label
+                              id: ${widget_name}_media_player_mute_label
                               align: center
                               text_color: color_misty_blue
                               text_font: mdi_icons_28
@@ -651,7 +678,7 @@ lvgl:
                               on_press:
                                 - if:
                                     condition:
-                                      lambda: 'return id(media_player_is_volume_muted).state;'
+                                      lambda: 'return id(${widget_name}_media_player_is_volume_muted).state;'
                                     then:
                                       - homeassistant.action:
                                           action: media_player.volume_mute
@@ -667,7 +694,7 @@ lvgl:
 
                     # volume -
                     - obj:
-                        id: media_player_vol_minus_btn
+                        id: ${widget_name}_media_player_vol_down_btn
                         x: -80
                         align: right_mid
                         width: 46
@@ -684,7 +711,7 @@ lvgl:
                           shadow_width: 4
                         widgets:
                           - label:
-                              id: media_player_vol_down_label
+                              id: ${widget_name}_media_player_vol_down_label
                               align: center
                               text_color: color_misty_blue
                               text_font: mdi_icons_28
@@ -698,7 +725,7 @@ lvgl:
 
                     # volume +
                     - obj:
-                        id: media_player_vol_plus_btn
+                        id: ${widget_name}_media_player_vol_up_btn
                         x: -20
                         align: right_mid
                         width: 46
@@ -715,7 +742,7 @@ lvgl:
                           shadow_width: 4
                         widgets:
                           - label:
-                              id: media_player_vol_up_label
+                              id: ${widget_name}_media_player_vol_up_label
                               align: center
                               text_color: color_misty_blue
                               text_font: mdi_icons_28
@@ -729,7 +756,7 @@ lvgl:
 
         # CIRCLE
         - obj:
-            id: media_player_circle_background
+            id: ${widget_name}_media_player_circle_background
             y: 40
             width: 150
             height: 150
@@ -766,7 +793,7 @@ lvgl:
                   shadow_opa: transp
                   widgets:
                     - arc:
-                        id: media_player_volume_arc
+                        id: ${widget_name}_media_player_volume_arc
                         clickable: false
                         adjustable: false
                         adv_hittest: false
@@ -796,7 +823,7 @@ lvgl:
                         bg_opa: transp
                         widgets:
                           - label:
-                              id: media_player_state_label
+                              id: ${widget_name}_media_player_state_label
                               align: CENTER
                               text_color: color_misty_blue
                               text_font: mdi_icons_52
@@ -804,7 +831,7 @@ lvgl:
                               on_press:
                                 - if:
                                     condition:
-                                      lambda: 'return id(media_player_state_sensor).state == "playing";'
+                                      lambda: 'return id(${widget_name}_media_player_state_sensor).state == "playing";'
                                     then:
                                       - homeassistant.action:
                                           action: media_player.media_pause
@@ -817,7 +844,7 @@ lvgl:
                                             entity_id: "${media_player_entity}"
 
         - obj:
-            id: media_player_source_panel
+            id: ${widget_name}_media_player_source_panel
             hidden: true
             width: 440
             height: 360
@@ -834,6 +861,11 @@ lvgl:
               flex_align_main: center
               flex_align_cross: center
               flex_align_track: center
+            on_click:
+              - lambda: |-
+                  if (id(${widget_name}_is_animating)) return;
+                  id(${widget_name}_is_animating) = true;
+              - script.execute: ${widget_name}_animate_source_to_mp
 
         # back
         - obj:
@@ -863,83 +895,83 @@ lvgl:
               - lvgl.page.show: home_page
 
 script:
-  - id: update_cover_script
-    mode: restart
+  - id: ${widget_name}_update_cover_script
+    mode: single
     then:
       - lambda: |-
-          std::string url = id(pending_cover_url);
-          id(cover_url) = url;
+          std::string url = id(${widget_name}_pending_cover_url);
+          id(${widget_name}_cover_url) = url;
       - homeassistant.action:
           action: display_tools.save_media_cover
           data:
             entity_id: "${media_player_entity}"
             size: small
       - delay: 1s
-      - online_image.release: media_image_jpeg
+      - online_image.release: ${widget_name}_media_image_jpeg
       - online_image.set_url:
-          id: media_image_jpeg
+          id: ${widget_name}_media_image_jpeg
           url: "${ha_server}/local/display_tools/cover.jpeg"
 
-  - id: update_repeat_mode_script
+  - id: ${widget_name}_update_repeat_mode_script
     mode: restart
     then:
       - lambda: |-
-          std::string x = id(pending_repeat_value);
-          auto modes = id(repeat_modes);
-          auto icons = id(repeat_icons);
+          std::string x = id(${widget_name}_pending_repeat_value);
+          auto modes = id(${widget_name}_repeat_modes);
+          auto icons = id(${widget_name}_repeat_icons);
           for (int i = 0; i < modes.size(); i++) {
             if (modes[i] == x) {
-              id(current_repeat_mode_idx) = i;
-              id(tmp_repeat_mode) = modes[i];
-              id(tmp_repeat_icon) = icons[i];
+              id(${widget_name}_current_repeat_mode_idx) = i;
+              id(${widget_name}_tmp_repeat_mode) = modes[i];
+              id(${widget_name}_tmp_repeat_icon) = icons[i];
               break;
             }
           }
       - lvgl.label.update:
-          id: media_player_repeat_label
-          text: !lambda 'return id(tmp_repeat_icon);'
+          id: ${widget_name}_media_player_repeat_label
+          text: !lambda 'return id(${widget_name}_tmp_repeat_icon);'
 
-  - id: handle_repeat_press_script
+  - id: ${widget_name}_handle_repeat_press_script
     mode: restart
     then:
       - lambda: |-
-          int idx = id(current_repeat_mode_idx);
-          auto modes = id(repeat_modes);
-          auto icons = id(repeat_icons);
+          int idx = id(${widget_name}_current_repeat_mode_idx);
+          auto modes = id(${widget_name}_repeat_modes);
+          auto icons = id(${widget_name}_repeat_icons);
           idx = (idx + 1) % modes.size();
-          id(current_repeat_mode_idx) = idx;
+          id(${widget_name}_current_repeat_mode_idx) = idx;
           std::string new_mode = modes[idx];
           std::string new_icon = icons[idx];
-          id(tmp_repeat_mode) = new_mode;
-          id(tmp_repeat_icon) = new_icon;
+          id(${widget_name}_tmp_repeat_mode) = new_mode;
+          id(${widget_name}_tmp_repeat_icon) = new_icon;
       - lvgl.label.update:
-          id: media_player_repeat_label
-          text: !lambda 'return id(tmp_repeat_icon);'
+          id: ${widget_name}_media_player_repeat_label
+          text: !lambda 'return id(${widget_name}_tmp_repeat_icon);'
       - homeassistant.action:
           action: media_player.repeat_set
           data:
             entity_id: "${media_player_entity}"
-            repeat: !lambda 'return id(tmp_repeat_mode);'
+            repeat: !lambda 'return id(${widget_name}_tmp_repeat_mode);'
 
-  - id: handle_duration_slider_release_script
+  - id: ${widget_name}_handle_duration_slider_release_script
     mode: restart
     then:
       - homeassistant.action:
           action: media_player.media_seek
           data:
             entity_id: "${media_player_entity}"
-            seek_position: !lambda 'return std::to_string(int(id(slider_position)));'
+            seek_position: !lambda 'return std::to_string(int(id(${widget_name}_slider_position)));'
       - delay: 2s
       - lambda: |-
-          id(duration_slider_user_interaction) = false;
+          id(${widget_name}_duration_slider_user_interaction) = false;
 
 
-  - id: media_player_build_source_panel
+  - id: ${widget_name}_media_player_build_source_panel
     then:
       - lambda: |-
           static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
 
-          lv_obj_t * cont = id(media_player_source_panel);
+          lv_obj_t * cont = id(${widget_name}_media_player_source_panel);
           if (!cont) return;
 
           while (lv_obj_get_child_cnt(cont) > 0) {
@@ -947,8 +979,8 @@ script:
             lv_obj_del(child);
           }
 
-          auto & list = id(source_list);
-          int sel = id(source_list_index);
+          auto & list = id(${widget_name}_source_list);
+          int sel = id(${widget_name}_source_list_index);
 
           const lv_color_t COLOR_DEFAULT = lv_color_hex(0x9BA2BC);
           const lv_color_t COLOR_ACTIVE  = lv_color_hex(0x2ECC71);
@@ -983,13 +1015,13 @@ script:
 
             lv_obj_add_event_cb(btn, [](lv_event_t * e){
               int idx = (int)(intptr_t) lv_event_get_user_data(e);
-              auto & list = id(source_list);
+              auto & list = id(${widget_name}_source_list);
               if (idx < 0 || idx >= (int)list.size()) return;
 
-              id(source_list_index) = idx;
-              id(media_player_send_source_to_ha).execute();
+              id(${widget_name}_source_list_index) = idx;
+              id(${widget_name}_media_player_send_source_to_ha).execute();
 
-              lv_obj_t * parent = id(media_player_source_panel);
+              lv_obj_t * parent = id(${widget_name}_media_player_source_panel);
               if (parent) {
                 int child_cnt = lv_obj_get_child_cnt(parent);
                 for (int j = 0; j < child_cnt; ++j) {
@@ -1003,37 +1035,40 @@ script:
                 }
               }
 
-              if (!id(is_animating)) {
-                id(is_animating) = true;
-                id(animate_source_to_mp).execute();
+              if (!id(${widget_name}_is_animating)) {
+                id(${widget_name}_is_animating) = true;
+                id(${widget_name}_animate_source_to_mp).execute();
               }
             }, LV_EVENT_CLICKED, (void*)(intptr_t)i);
           }
 
 
-  - id: media_player_send_source_to_ha
+  - id: ${widget_name}_media_player_send_source_to_ha
     then:
       - homeassistant.action:
           action: media_player.select_source
           data:
             entity_id: "${media_player_entity}"
             source: !lambda |-
-              auto & list = id(source_list);
-              int idx = id(source_list_index);
+              auto & list = id(${widget_name}_source_list);
+              int idx = id(${widget_name}_source_list_index);
               if (idx >= 0 && idx < (int)list.size()) return list[idx];
               return std::string("");
 
 
 
   # MAIN -> SOURCE
-  - id: animate_mp_to_source
+  - id: ${widget_name}_animate_mp_to_source
     then:
       - lambda: |-
           // ШАГ 1: Кнопки уезжают, круг вниз, виджет исчезает
-          lv_anim_t anim_prev_btn, anim_next_btn, anim_circle, anim_main_fade, anim_secondary_btns_fade;
+          lv_anim_t anim_prev_btn, anim_next_btn, anim_circle, anim_main_fade,
+                    anim_off_btn, anim_repeat_btn, anim_source_btn, 
+                    anim_mute_btn, anim_vol_down_btn, anim_vol_up_btn;
           
+          // PREV/NEXT кнопки (горизонтально)
           lv_anim_init(&anim_prev_btn);
-          lv_anim_set_var(&anim_prev_btn, id(media_player_prev_btn));
+          lv_anim_set_var(&anim_prev_btn, id(${widget_name}_media_player_prev_btn));
           lv_anim_set_values(&anim_prev_btn, 30, -150);
           lv_anim_set_time(&anim_prev_btn, 600);
           lv_anim_set_exec_cb(&anim_prev_btn, [](void * var, int32_t v) {
@@ -1043,7 +1078,7 @@ script:
           lv_anim_start(&anim_prev_btn);
           
           lv_anim_init(&anim_next_btn);
-          lv_anim_set_var(&anim_next_btn, id(media_player_next_btn));
+          lv_anim_set_var(&anim_next_btn, id(${widget_name}_media_player_next_btn));
           lv_anim_set_values(&anim_next_btn, -30, 150);
           lv_anim_set_time(&anim_next_btn, 600);
           lv_anim_set_exec_cb(&anim_next_btn, [](void * var, int32_t v) {
@@ -1052,8 +1087,70 @@ script:
           lv_anim_set_path_cb(&anim_next_btn, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_next_btn);
           
+          // НИЖНИЕ КНОПКИ (вертикально вниз)
+          lv_anim_init(&anim_off_btn);
+          lv_anim_set_var(&anim_off_btn, id(${widget_name}_media_player_off_btn));
+          lv_anim_set_values(&anim_off_btn, 0, 150);
+          lv_anim_set_time(&anim_off_btn, 600);
+          lv_anim_set_exec_cb(&anim_off_btn, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_off_btn, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_off_btn);
+          
+          lv_anim_init(&anim_repeat_btn);
+          lv_anim_set_var(&anim_repeat_btn, id(${widget_name}_media_player_repeat_btn));
+          lv_anim_set_values(&anim_repeat_btn, 0, 150);
+          lv_anim_set_time(&anim_repeat_btn, 600);
+          lv_anim_set_exec_cb(&anim_repeat_btn, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_repeat_btn, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_repeat_btn);
+          
+          lv_anim_init(&anim_source_btn);
+          lv_anim_set_var(&anim_source_btn, id(${widget_name}_media_player_source_btn));
+          lv_anim_set_values(&anim_source_btn, 0, 150);
+          lv_anim_set_time(&anim_source_btn, 600);
+          lv_anim_set_exec_cb(&anim_source_btn, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_source_btn, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_source_btn);
+          
+          lv_anim_init(&anim_mute_btn);
+          lv_anim_set_var(&anim_mute_btn, id(${widget_name}_media_player_mute_btn));
+          lv_anim_set_values(&anim_mute_btn, 0, 150);
+          lv_anim_set_time(&anim_mute_btn, 600);
+          lv_anim_set_exec_cb(&anim_mute_btn, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_mute_btn, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_mute_btn);
+          
+          lv_anim_init(&anim_vol_down_btn);
+          lv_anim_set_var(&anim_vol_down_btn, id(${widget_name}_media_player_vol_down_btn));
+          lv_anim_set_values(&anim_vol_down_btn, 0, 150);
+          lv_anim_set_time(&anim_vol_down_btn, 600);
+          lv_anim_set_exec_cb(&anim_vol_down_btn, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_vol_down_btn, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_vol_down_btn);
+          
+          lv_anim_init(&anim_vol_up_btn);
+          lv_anim_set_var(&anim_vol_up_btn, id(${widget_name}_media_player_vol_up_btn));
+          lv_anim_set_values(&anim_vol_up_btn, 0, 150);
+          lv_anim_set_time(&anim_vol_up_btn, 600);
+          lv_anim_set_exec_cb(&anim_vol_up_btn, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_vol_up_btn, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_vol_up_btn);
+          
+          // КРУГ вниз
           lv_anim_init(&anim_circle);
-          lv_anim_set_var(&anim_circle, id(media_player_circle_background));
+          lv_anim_set_var(&anim_circle, id(${widget_name}_media_player_circle_background));
           lv_anim_set_values(&anim_circle, 40, 400);
           lv_anim_set_time(&anim_circle, 600);
           lv_anim_set_exec_cb(&anim_circle, [](void * var, int32_t v) {
@@ -1062,8 +1159,9 @@ script:
           lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_circle);
           
+          // ВИДЖЕТ исчезает
           lv_anim_init(&anim_main_fade);
-          lv_anim_set_var(&anim_main_fade, id(media_widget_background));
+          lv_anim_set_var(&anim_main_fade, id(${widget_name}_media_widget_background));
           lv_anim_set_values(&anim_main_fade, 255, 0);
           lv_anim_set_time(&anim_main_fade, 600);
           lv_anim_set_exec_cb(&anim_main_fade, [](void * var, int32_t v) {
@@ -1072,16 +1170,6 @@ script:
           lv_anim_set_path_cb(&anim_main_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_main_fade);
 
-          // lv_anim_init(&anim_secondary_btns_fade);
-          // lv_anim_set_var(&anim_secondary_btns_fade, id(media_player_secondary_controls_background));
-          // lv_anim_set_values(&anim_secondary_btns_fade, 255, 0);
-          // lv_anim_set_time(&anim_secondary_btns_fade, 600);
-          // lv_anim_set_exec_cb(&anim_secondary_btns_fade, [](void * var, int32_t v) {
-          //   lv_obj_set_style_opa((lv_obj_t*)var, v, 0);
-          // });
-          // lv_anim_set_path_cb(&anim_secondary_btns_fade, lv_anim_path_ease_in_out);
-          // lv_anim_start(&anim_secondary_btns_fade);
-
       - delay: 600ms
       
       - lambda: |-
@@ -1089,7 +1177,7 @@ script:
           lv_anim_t anim_middle_expand, anim_middle_move_up, anim_radius;
           
           lv_anim_init(&anim_middle_expand);
-          lv_anim_set_var(&anim_middle_expand, id(media_player_primary_controls_background));
+          lv_anim_set_var(&anim_middle_expand, id(${widget_name}_media_player_primary_controls_background));
           lv_anim_set_values(&anim_middle_expand, 100, 160);
           lv_anim_set_time(&anim_middle_expand, 350);
           lv_anim_set_exec_cb(&anim_middle_expand, [](void * var, int32_t v) {
@@ -1099,7 +1187,7 @@ script:
           lv_anim_start(&anim_middle_expand);
           
           lv_anim_init(&anim_middle_move_up);
-          lv_anim_set_var(&anim_middle_move_up, id(media_player_primary_controls_background));
+          lv_anim_set_var(&anim_middle_move_up, id(${widget_name}_media_player_primary_controls_background));
           lv_anim_set_values(&anim_middle_move_up, 230, 200);
           lv_anim_set_time(&anim_middle_move_up, 350);
           lv_anim_set_exec_cb(&anim_middle_move_up, [](void * var, int32_t v) {
@@ -1108,9 +1196,8 @@ script:
           lv_anim_set_path_cb(&anim_middle_move_up, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_move_up);
           
-          // ✅ АНИМАЦИЯ РАДИУСА (20 -> 0)
           lv_anim_init(&anim_radius);
-          lv_anim_set_var(&anim_radius, id(media_player_primary_controls_background));
+          lv_anim_set_var(&anim_radius, id(${widget_name}_media_player_primary_controls_background));
           lv_anim_set_values(&anim_radius, 20, 0);
           lv_anim_set_time(&anim_radius, 350);
           lv_anim_set_exec_cb(&anim_radius, [](void * var, int32_t v) {
@@ -1123,13 +1210,13 @@ script:
       
       - lambda: |-
           // ШАГ 3: Показываем панель источников
-          lv_obj_clear_flag(id(media_player_source_panel), LV_OBJ_FLAG_HIDDEN);
-          lv_obj_set_style_opa(id(media_player_source_panel), 0, 0);
+          lv_obj_clear_flag(id(${widget_name}_media_player_source_panel), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_set_style_opa(id(${widget_name}_media_player_source_panel), 0, 0);
           
           lv_anim_t anim_source_panel_fade;
           
           lv_anim_init(&anim_source_panel_fade);
-          lv_anim_set_var(&anim_source_panel_fade, id(media_player_source_panel));
+          lv_anim_set_var(&anim_source_panel_fade, id(${widget_name}_media_player_source_panel));
           lv_anim_set_values(&anim_source_panel_fade, 0, 255);
           lv_anim_set_time(&anim_source_panel_fade, 400);
           lv_anim_set_exec_cb(&anim_source_panel_fade, [](void * var, int32_t v) {
@@ -1141,20 +1228,20 @@ script:
       - delay: 400ms
       
       - lambda: |-
-          id(is_animating) = false;
+          id(${widget_name}_is_animating) = false;
 
 
   # SOURCE -> MAIN
-  - id: animate_source_to_mp
+  - id: ${widget_name}_animate_source_to_mp
     then:
       - lambda: |-
-          id(is_animating) = true;
+          id(${widget_name}_is_animating) = true;
           
           // ШАГ 1: Скрываем панель источников
           lv_anim_t anim_source_panel_fade;
           
           lv_anim_init(&anim_source_panel_fade);
-          lv_anim_set_var(&anim_source_panel_fade, id(media_player_source_panel));
+          lv_anim_set_var(&anim_source_panel_fade, id(${widget_name}_media_player_source_panel));
           lv_anim_set_values(&anim_source_panel_fade, 255, 0);
           lv_anim_set_time(&anim_source_panel_fade, 400);
           lv_anim_set_exec_cb(&anim_source_panel_fade, [](void * var, int32_t v) {
@@ -1162,7 +1249,7 @@ script:
           });
           lv_anim_set_path_cb(&anim_source_panel_fade, lv_anim_path_ease_in_out);
           lv_anim_set_ready_cb(&anim_source_panel_fade, [](lv_anim_t * a) {
-            lv_obj_add_flag(id(media_player_source_panel), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(${widget_name}_media_player_source_panel), LV_OBJ_FLAG_HIDDEN);
           });
           lv_anim_start(&anim_source_panel_fade);
 
@@ -1173,7 +1260,7 @@ script:
           lv_anim_t anim_middle_shrink, anim_middle_move_down, anim_radius;
           
           lv_anim_init(&anim_middle_shrink);
-          lv_anim_set_var(&anim_middle_shrink, id(media_player_primary_controls_background));
+          lv_anim_set_var(&anim_middle_shrink, id(${widget_name}_media_player_primary_controls_background));
           lv_anim_set_values(&anim_middle_shrink, 160, 100);
           lv_anim_set_time(&anim_middle_shrink, 350);
           lv_anim_set_exec_cb(&anim_middle_shrink, [](void * var, int32_t v) {
@@ -1183,7 +1270,7 @@ script:
           lv_anim_start(&anim_middle_shrink);
           
           lv_anim_init(&anim_middle_move_down);
-          lv_anim_set_var(&anim_middle_move_down, id(media_player_primary_controls_background));
+          lv_anim_set_var(&anim_middle_move_down, id(${widget_name}_media_player_primary_controls_background));
           lv_anim_set_values(&anim_middle_move_down, 200, 230);
           lv_anim_set_time(&anim_middle_move_down, 350);
           lv_anim_set_exec_cb(&anim_middle_move_down, [](void * var, int32_t v) {
@@ -1192,9 +1279,8 @@ script:
           lv_anim_set_path_cb(&anim_middle_move_down, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_move_down);
           
-          // ✅ АНИМАЦИЯ РАДИУСА (0 -> 20)
           lv_anim_init(&anim_radius);
-          lv_anim_set_var(&anim_radius, id(media_player_primary_controls_background));
+          lv_anim_set_var(&anim_radius, id(${widget_name}_media_player_primary_controls_background));
           lv_anim_set_values(&anim_radius, 0, 20);
           lv_anim_set_time(&anim_radius, 350);
           lv_anim_set_exec_cb(&anim_radius, [](void * var, int32_t v) {
@@ -1207,10 +1293,13 @@ script:
       
       - lambda: |-
           // ШАГ 3: Кнопки возвращаются, круг вверх, виджет появляется
-          lv_anim_t anim_prev_btn, anim_next_btn, anim_circle, anim_main_fade, anim_secondary_btns_fade;
+          lv_anim_t anim_prev_btn, anim_next_btn, anim_circle, anim_main_fade,
+                    anim_off_btn, anim_repeat_btn, anim_source_btn, 
+                    anim_mute_btn, anim_vol_down_btn, anim_vol_up_btn;
           
+          // PREV/NEXT кнопки (горизонтально)
           lv_anim_init(&anim_prev_btn);
-          lv_anim_set_var(&anim_prev_btn, id(media_player_prev_btn));
+          lv_anim_set_var(&anim_prev_btn, id(${widget_name}_media_player_prev_btn));
           lv_anim_set_values(&anim_prev_btn, -150, 30);
           lv_anim_set_time(&anim_prev_btn, 600);
           lv_anim_set_exec_cb(&anim_prev_btn, [](void * var, int32_t v) {
@@ -1220,7 +1309,7 @@ script:
           lv_anim_start(&anim_prev_btn);
           
           lv_anim_init(&anim_next_btn);
-          lv_anim_set_var(&anim_next_btn, id(media_player_next_btn));
+          lv_anim_set_var(&anim_next_btn, id(${widget_name}_media_player_next_btn));
           lv_anim_set_values(&anim_next_btn, 150, -30);
           lv_anim_set_time(&anim_next_btn, 600);
           lv_anim_set_exec_cb(&anim_next_btn, [](void * var, int32_t v) {
@@ -1229,8 +1318,70 @@ script:
           lv_anim_set_path_cb(&anim_next_btn, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_next_btn);
           
+          // НИЖНИЕ КНОПКИ (вертикально вверх)
+          lv_anim_init(&anim_off_btn);
+          lv_anim_set_var(&anim_off_btn, id(${widget_name}_media_player_off_btn));
+          lv_anim_set_values(&anim_off_btn, 150, 0);
+          lv_anim_set_time(&anim_off_btn, 600);
+          lv_anim_set_exec_cb(&anim_off_btn, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_off_btn, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_off_btn);
+          
+          lv_anim_init(&anim_repeat_btn);
+          lv_anim_set_var(&anim_repeat_btn, id(${widget_name}_media_player_repeat_btn));
+          lv_anim_set_values(&anim_repeat_btn, 150, 0);
+          lv_anim_set_time(&anim_repeat_btn, 600);
+          lv_anim_set_exec_cb(&anim_repeat_btn, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_repeat_btn, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_repeat_btn);
+          
+          lv_anim_init(&anim_source_btn);
+          lv_anim_set_var(&anim_source_btn, id(${widget_name}_media_player_source_btn));
+          lv_anim_set_values(&anim_source_btn, 150, 0);
+          lv_anim_set_time(&anim_source_btn, 600);
+          lv_anim_set_exec_cb(&anim_source_btn, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_source_btn, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_source_btn);
+          
+          lv_anim_init(&anim_mute_btn);
+          lv_anim_set_var(&anim_mute_btn, id(${widget_name}_media_player_mute_btn));
+          lv_anim_set_values(&anim_mute_btn, 150, 0);
+          lv_anim_set_time(&anim_mute_btn, 600);
+          lv_anim_set_exec_cb(&anim_mute_btn, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_mute_btn, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_mute_btn);
+          
+          lv_anim_init(&anim_vol_down_btn);
+          lv_anim_set_var(&anim_vol_down_btn, id(${widget_name}_media_player_vol_down_btn));
+          lv_anim_set_values(&anim_vol_down_btn, 150, 0);
+          lv_anim_set_time(&anim_vol_down_btn, 600);
+          lv_anim_set_exec_cb(&anim_vol_down_btn, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_vol_down_btn, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_vol_down_btn);
+          
+          lv_anim_init(&anim_vol_up_btn);
+          lv_anim_set_var(&anim_vol_up_btn, id(${widget_name}_media_player_vol_up_btn));
+          lv_anim_set_values(&anim_vol_up_btn, 150, 0);
+          lv_anim_set_time(&anim_vol_up_btn, 600);
+          lv_anim_set_exec_cb(&anim_vol_up_btn, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_vol_up_btn, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_vol_up_btn);
+          
+          // КРУГ вверх
           lv_anim_init(&anim_circle);
-          lv_anim_set_var(&anim_circle, id(media_player_circle_background));
+          lv_anim_set_var(&anim_circle, id(${widget_name}_media_player_circle_background));
           lv_anim_set_values(&anim_circle, 400, 40);
           lv_anim_set_time(&anim_circle, 600);
           lv_anim_set_exec_cb(&anim_circle, [](void * var, int32_t v) {
@@ -1239,8 +1390,9 @@ script:
           lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_circle);
           
+          // ВИДЖЕТ появляется
           lv_anim_init(&anim_main_fade);
-          lv_anim_set_var(&anim_main_fade, id(media_widget_background));
+          lv_anim_set_var(&anim_main_fade, id(${widget_name}_media_widget_background));
           lv_anim_set_values(&anim_main_fade, 0, 255);
           lv_anim_set_time(&anim_main_fade, 600);
           lv_anim_set_exec_cb(&anim_main_fade, [](void * var, int32_t v) {
@@ -1249,18 +1401,10 @@ script:
           lv_anim_set_path_cb(&anim_main_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_main_fade);
 
-          // lv_anim_init(&anim_secondary_btns_fade);
-          // lv_anim_set_var(&anim_secondary_btns_fade, id(media_player_secondary_controls_background));
-          // lv_anim_set_values(&anim_secondary_btns_fade, 0, 255);
-          // lv_anim_set_time(&anim_secondary_btns_fade, 600);
-          // lv_anim_set_exec_cb(&anim_secondary_btns_fade, [](void * var, int32_t v) {
-          //   lv_obj_set_style_opa((lv_obj_t*)var, v, 0);
-          // });
-          // lv_anim_set_path_cb(&anim_secondary_btns_fade, lv_anim_path_ease_in_out);
-          // lv_anim_start(&anim_secondary_btns_fade);
-
       - delay: 600ms
       
       - lambda: |-
-          id(is_animating) = false;
+          id(${widget_name}_is_animating) = false;
+
+
 
