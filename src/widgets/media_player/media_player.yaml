@@ -46,7 +46,7 @@ globals:
     type: int
     restore_value: no
     initial_value: '0'
-  - id: source_switch
+  - id: source_available
     type: bool
     restore_value: no
     initial_value: 'false'
@@ -191,7 +191,9 @@ text_sensor:
       - lambda: |-
           std::vector<std::string> sl;
           std::string input = x;
-          if (!input.empty() && input != "unknown") {
+          bool has_sources = false;
+          
+          if (!input.empty() && input != "unknown" && input != "unavailable") {
             input.erase(std::remove(input.begin(), input.end(), '['), input.end());
             input.erase(std::remove(input.begin(), input.end(), ']'), input.end());
             input.erase(std::remove(input.begin(), input.end(), '\''), input.end());
@@ -204,13 +206,33 @@ text_sensor:
                 item.erase(item.find_last_not_of(" \t") + 1);
               if (!item.empty()) sl.push_back(item);
             }
+            has_sources = !sl.empty();
           }
+          
           id(source_list) = sl;
+          id(source_available) = has_sources;
+          
           int sel = id(source_list_index);
           if (sel < 0 || sel >= (int)sl.size()) sel = 0;
           id(source_list_index) = sel;
-          ESP_LOGI("MP_PANEL","Parsed %d sources (sel=%d)", (int)sl.size(), sel);
-          id(media_player_build_source_panel).execute();
+          
+          ESP_LOGI("MP_PANEL","Parsed %d sources (sel=%d, available=%d)", (int)sl.size(), sel, has_sources);
+          
+          // Обновляем состояние кнопки
+          lv_obj_t* btn = id(media_player_source_btn);
+          lv_obj_t* label = id(media_player_source_label);
+          
+          if (has_sources) {
+            lv_obj_clear_state(btn, LV_STATE_DISABLED);
+            lv_obj_set_style_opa(btn, LV_OPA_COVER, 0);
+            lv_obj_set_style_text_opa(label, LV_OPA_COVER, 0);
+            id(media_player_build_source_panel).execute();
+          } else {
+            lv_obj_add_state(btn, LV_STATE_DISABLED);
+            lv_obj_set_style_opa(btn, LV_OPA_30, 0);
+            lv_obj_set_style_text_opa(label, LV_OPA_30, 0);
+          }
+
 
   # MEDIA PLAYER SOURCE
   - platform: homeassistant
@@ -620,6 +642,8 @@ lvgl:
                               text: "${media_source}"
                         on_click:
                           - lambda: |-
+                              // Проверяем доступность источников
+                              if (!id(source_available)) return;
                               if (id(is_animating)) return;
                               id(is_animating) = true;
                           - script.execute: animate_mp_to_source
