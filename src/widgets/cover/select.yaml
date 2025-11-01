@@ -1,0 +1,211 @@
+lvgl:
+  on_boot:
+    then:
+      - script.execute: get_cover_amount_btn
+      - lvgl.obj.update:
+          id: ${cover_widget_name_1}_btn
+          shadow_color: color_misty_blue
+
+  top_layer:
+    widgets:
+      - obj:
+          id: cover_select_widget
+          hidden: true
+          y: -60
+          width: 440
+          height: 100
+          align: bottom_mid
+          pad_all: 0
+          bg_opa: transp
+          border_opa: transp
+          border_width: 0
+          scrollable: false
+          radius: 20
+          widgets:
+            - obj:
+                id: cover_select_widget_cont
+                width: 440
+                height: 60
+                align: center
+                bg_opa: transp
+                border_opa: transp
+                border_width: 0
+                pad_all: 0
+                layout:
+                  type: flex
+                  flex_align_main: space_around
+                  flex_align_cross: center
+                  flex_align_track: center
+                widgets:
+                  - obj:
+                      id: ${cover_widget_name_1}_btn
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: ${cover_widget_name_1}_icon
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${cover_icon_opened_1}"
+                      on_press:
+                        - lvgl.page.show: ${cover_widget_name_1}_cover_page
+                        - lvgl.obj.update:
+                            id: ${cover_widget_name_1}_btn
+                            shadow_color: color_misty_blue
+                        - lvgl.obj.update:
+                            id: ${cover_widget_name_2}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${cover_widget_name_3}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${cover_widget_name_4}_btn
+                            shadow_color: color_black
+
+                  - obj:
+                      id: ${cover_widget_name_2}_btn
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: ${cover_widget_name_2}_icon
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${cover_icon_opened_2}"
+                      on_press:
+                        - lvgl.page.show: ${cover_widget_name_2}_cover_page
+                        - lvgl.obj.update:
+                            id: ${cover_widget_name_1}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${cover_widget_name_2}_btn
+                            shadow_color: color_misty_blue
+                        - lvgl.obj.update:
+                            id: ${cover_widget_name_3}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${cover_widget_name_4}_btn
+                            shadow_color: color_black
+
+                  - obj:
+                      id: ${cover_widget_name_3}_btn
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: ${cover_widget_name_3}_icon
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${cover_icon_opened_3}"
+                      on_press:
+                        - lvgl.page.show: ${cover_widget_name_3}_cover_page
+                        - lvgl.obj.update:
+                            id: ${cover_widget_name_1}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${cover_widget_name_2}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${cover_widget_name_3}_btn
+                            shadow_color: color_misty_blue
+                        - lvgl.obj.update:
+                            id: ${cover_widget_name_4}_btn
+                            shadow_color: color_black
+
+                  - obj:
+                      id: ${cover_widget_name_4}_btn
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: ${cover_widget_name_4}_icon
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${cover_icon_opened_4}"
+                      on_press:
+                        - lvgl.page.show: ${cover_widget_name_4}_cover_page
+                        - lvgl.obj.update:
+                            id: ${cover_widget_name_1}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${cover_widget_name_2}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${cover_widget_name_3}_btn
+                            shadow_color: color_black
+                        - lvgl.obj.update:
+                            id: ${cover_widget_name_4}_btn
+                            shadow_color: color_misty_blue
+
+script:
+  - id: get_cover_amount_btn
+    then:
+      - lambda: |-
+          int covers = ${covers_amount};
+          
+          if (covers >= 2) {
+            // lv_obj_set_width(id(cover_select_widget_cont), 290);
+            lv_obj_clear_flag(id(${cover_widget_name_1}_btn), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(id(${cover_widget_name_2}_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(${cover_widget_name_1}_btn), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(${cover_widget_name_2}_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          if (covers >= 3) {
+            // lv_obj_set_width(id(cover_select_widget_cont), 345);
+            lv_obj_clear_flag(id(${cover_widget_name_3}_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(${cover_widget_name_3}_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          if (covers >= 4) {
+            // lv_obj_set_width(id(cover_select_widget_cont), 400);
+            lv_obj_clear_flag(id(${cover_widget_name_4}_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(${cover_widget_name_4}_btn), LV_OBJ_FLAG_HIDDEN);
+          }

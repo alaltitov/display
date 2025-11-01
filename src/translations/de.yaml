@@ -92,3 +92,12 @@ vacuum:
     on: "An"
     paused: "Pausiert"
     returning: "Zurück zur Station"
+
+cover:
+  name: "Abdeckung"
+  state:
+    closed: Geschlossen
+    closing: Wird geschlossen
+    open: Geöffnet
+    opening: Wird geöffnet
+    stopped: Gestoppt

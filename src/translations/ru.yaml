@@ -92,3 +92,12 @@ vacuum:
     on: "Включено"
     paused: "Пауза"
     returning: "Возвращается к док-станции"
+
+cover:
+  name: "Заслон"
+  state:
+    closed: Закрыто
+    closing: Закрывается
+    open: Открыто
+    opening: Открывается
+    stopped: Остановлено

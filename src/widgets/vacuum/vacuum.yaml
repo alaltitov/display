@@ -103,8 +103,6 @@ text_sensor:
             condition:
               lambda: 'return (x == "paused" || x == "idle");'
             then:
-              - lambda: |-
-                  ESP_LOGD("vacuum", "State: %s - static image", x.c_str());
               - script.execute: vacuum_start_paused_animation
 
 
@@ -642,8 +640,6 @@ script:
   - id: vacuum_stop_all_animations
     then:
       - lambda: |-
-          ESP_LOGD("vacuum", "Stopping all animations and resetting to initial state");
-          
           lv_obj_t* img = id(vacuum_state_image);
           lv_obj_t* sleep_icon = id(vacuum_sleep_icon);
           
@@ -671,7 +667,6 @@ script:
           // ═══════════════════════════════════════════════════════════════
           lv_obj_add_flag(sleep_icon, LV_OBJ_FLAG_HIDDEN);
           
-          ESP_LOGD("vacuum", "Reset complete: angle=0°, zoom=100%%, opacity=100%%, pos=(0,-100)");
 
   # ═══════════════════════════════════════════════════════════════════════════
   # СКРИПТ: Анимация уборки (поворот → движение → пауза)

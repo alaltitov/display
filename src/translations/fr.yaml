@@ -92,3 +92,12 @@ vacuum:
     on: "Allumé"
     paused: "En pause"
     returning: "Retour à la station d'accueil"
+
+cover:
+  name: "Ouverture"
+  state:
+    closed: Fermé
+    closing: Fermeture
+    open: Ouvert
+    opening: Ouverture
+    stopped: Arrêté

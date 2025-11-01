@@ -82,8 +82,6 @@ switch:
           locale: "${secondary_language}"
       - lambda: |-
           id(current_language) = "${secondary_language}";
-          ESP_LOGI("TEST", "Current locale i18n: %s", id(i18n_translations).get_current_locale().c_str());
-          ESP_LOGI("TEST", "Current locale global: %s", id(current_language).c_str());
       - lvgl.image.update:
           id: circle_settings_widget_lang_flag
           src: !lambda return id(flag_icon_mapping).get(id(i18n_translations).get_current_locale());
@@ -95,8 +93,6 @@ switch:
           locale: "en"
       - lambda: |-
           id(current_language) = "en";
-          ESP_LOGI("TEST", "Current locale i18n: %s", id(i18n_translations).get_current_locale().c_str());
-          ESP_LOGI("TEST", "Current locale global: %s", id(current_language).c_str());
       - lvgl.image.update:
           id: circle_settings_widget_lang_flag
           src: !lambda return id(flag_icon_mapping).get(id(i18n_translations).get_current_locale());
@@ -840,9 +836,7 @@ lvgl:
                                     - globals.set:
                                         id: display_timeout
                                         value: !lambda return x;
-                                    - delay: 300ms
-                                    - lambda: |-
-                                        ESP_LOGI("TEST", "Current DT global: %d", id(display_timeout));
+
 
         - obj:
             id: weather_state_images
@@ -1788,166 +1782,8 @@ script:
                   bool is_hidden = lv_obj_has_flag(widget, LV_OBJ_FLAG_HIDDEN);
                   lv_style_value_t val = lv_obj_get_style_prop(widget, LV_PART_MAIN, LV_STYLE_OPA);
                   lv_opa_t opa_value = val.num;
-
-                  ESP_LOGD("Widget Status", "ID: %s -> Hidden: %s, Opa: %d", 
-                          name, 
-                          is_hidden ? "true" : "false", 
-                          opa_value);
-              } else {
-                  ESP_LOGD("Widget Status", "Ошибка: виджет %s не найден (указатель nullptr).", name);
-              }
+              } 
           }
-
-
-
-
-
-
-
-
-##### TESTS #####
-  - id: run_random_mode_tests
-    then:
-      - lambda: |-
-          ESP_LOGI("TEST", "Random mode test started");
-      - repeat:
-          count: 30
-          then:
-            - lambda: |-
-                // Выбираем случайный целевой режим (0..3), не равный текущему
-                int current = id(current_mode);
-                int target = current;
-                int attempts = 0;
-                while (target == current && attempts < 10) {
-                  target = (int)(esp_random() % 4);
-                  attempts++;
-                }
-                ESP_LOGI("TEST", "Switch %d -> %d", current, target);
-                id(switch_to_mode)->execute(target);
-            - wait_until:
-                condition: 
-                  lambda: 'return !id(is_animating);'
-                timeout: 3s
-            # Небольшая пауза после окончания анимации, чтобы стили успели примениться
-            - delay: 60ms
-            - script.execute: validate_mode_state
-      - lambda: |-
-          ESP_LOGI("TEST", "Random mode test finished");
-
-  - id: validate_mode_state
-    then:
-      - lambda: |-
-          auto is_visible = [](lv_obj_t* w)->bool{
-            if (!w) return false;
-            bool hidden = lv_obj_has_flag(w, LV_OBJ_FLAG_HIDDEN);
-            if (hidden) return false;
-            lv_style_value_t val = lv_obj_get_style_prop(w, LV_PART_MAIN, LV_STYLE_OPA);
-            lv_opa_t opa_value = val.num;
-            return opa_value > 0; // считаем видимым при любой ненулевой непрозрачности
-          };
-
-          int m = id(current_mode);
-          bool ok = true;
-
-          // Если режим HOME, дайте стилистике чуть больше времени стабилизироваться
-          if (m == 0) {
-            // небольшой локальный sleep без блокировки LVGL (если доступно)
-            // иначе просто ничего: LVGL уже в основном потоке.
-          }
-
-          // Должны быть видимы
-          std::vector<std::pair<lv_obj_t*, const char*>> must;
-
-          if (m == 0) { // HOME
-            must = {
-              { id(main_widget_background), "main_widget_background" },
-              { id(weather_time_widget), "weather_time_widget" },
-              { id(datetime_widget), "datetime_widget" },
-              { id(weather_state_images), "weather_state_images" },
-              { id(circle_home_widget), "circle_home_widget" },
-            };
-          } else if (m == 1) { // WEATHER
-            must = {
-              { id(main_widget_background), "main_widget_background" },
-              { id(weather_time_widget), "weather_time_widget" },
-              { id(weather_widget), "weather_widget" },
-              { id(weather_state_images), "weather_state_images" },
-              { id(middle_weather_controls), "middle_weather_controls" },
-            };
-          } else if (m == 2) { // INFO
-            must = {
-              { id(main_widget_background), "main_widget_background" },
-              { id(info_widget), "info_widget" },
-              { id(circle_info_widget), "circle_info_widget" },
-            };
-          } else if (m == 3) { // SETTINGS
-            must = {
-              { id(main_widget_background), "main_widget_background" },
-              { id(settings_widget), "settings_widget" },
-              { id(circle_settings_widget), "circle_settings_widget" },
-            };
-          }
-
-          for (auto &p : must) {
-            bool vis = is_visible(p.first);
-            if (!vis) {
-              ok = false;
-              ESP_LOGE("VALIDATE", "VISIBLE expected but not: %s", p.second);
-            }
-          }
-
-          // Проверка «лишние» скрыты (или opa=0)
-          auto soft_hidden = [&](lv_obj_t* w)->bool{
-            if (!w) return true;
-            bool hidden = lv_obj_has_flag(w, LV_OBJ_FLAG_HIDDEN);
-            if (hidden) return true;
-            lv_style_value_t val = lv_obj_get_style_prop(w, LV_PART_MAIN, LV_STYLE_OPA);
-            lv_opa_t opa_value = val.num;
-            return opa_value == 0;
-          };
-
-          // Карта всех контролируемых
-          std::vector<std::pair<lv_obj_t*, const char*>> all = {
-            { id(main_widget_background), "main_widget_background" },
-            { id(weather_time_widget), "weather_time_widget" },
-            { id(datetime_widget), "datetime_widget" },
-            { id(weather_widget), "weather_widget" },
-            { id(info_widget), "info_widget" },
-            { id(settings_widget), "settings_widget" },
-            { id(weather_state_images), "weather_state_images" },
-            { id(middle_weather_controls), "middle_weather_controls" },
-            { id(circle_home_widget), "circle_home_widget" },
-            { id(circle_info_widget), "circle_info_widget" },
-            { id(circle_settings_widget), "circle_settings_widget" },
-          };
-
-          auto is_must = [&](lv_obj_t* w)->bool{
-            for (auto &p : must) if (p.first == w) return true;
-            return false;
-          };
-
-          for (auto &p : all) {
-            if (is_must(p.first)) continue; // уже проверен как видимый
-
-            // В режимах INFO (2) и SETTINGS (3) НЕ требуем скрывать weather_state_images — он может «уезжать»
-            if ((m == 2 || m == 3) && p.first == id(weather_state_images)) {
-              continue;
-            }
-
-            // В режиме WEATHER (1) не требуем скрывать circle_home_widget (он может быть видим как декоративный элемент)
-            if (m == 1 && p.first == id(circle_home_widget)) {
-              continue;
-            }
-
-            // остальное должно быть скрыто или прозрачно
-            if (!soft_hidden(p.first)) {
-              ok = false;
-              ESP_LOGE("VALIDATE", "Should be hidden/transparent: %s", p.second);
-            }
-          }
-
-          if (ok) ESP_LOGI("VALIDATE", "Mode %d: OK", m);
-          else    ESP_LOGE("VALIDATE", "Mode %d: FAILED", m);
 
 
 ###########################
@@ -1996,7 +1832,6 @@ script:
   - id: parse_daily_forecasts
     then:
       - lambda: |-
-          ESP_LOGI("weather", "=== Parsing DAILY Forecasts ===");
           
           std::string json_str = id(weather_forecast_daily_sensor).state;
           
@@ -2005,8 +1840,6 @@ script:
             id(forecast_daily_count) = 0;
             return;
           }
-          
-          ESP_LOGI("weather", "Daily JSON: %d bytes", json_str.length());
           
           JsonDocument doc;
           DeserializationError error = deserializeJson(doc, json_str);
@@ -2027,8 +1860,6 @@ script:
           int count = std::min((int)forecasts.size(), 6);
           id(forecast_daily_count) = count;
           
-          ESP_LOGI("weather", "Processing %d daily forecasts", count);
-          
           // Вычисляем offset ОДИН РАЗ
           auto local_now = id(sntp_time).now();
           auto utc_now = id(sntp_time).utcnow();
@@ -2041,16 +1872,12 @@ script:
                             (local_now.minute - utc_now.minute) * 60 + 
                             (local_now.second - utc_now.second);
           
-          ESP_LOGI("parse_debug", "Detected TZ offset: %+d seconds (%+d hours)", 
-                  tz_offset, offset_hours);
           
           for (int i = 0; i < count; i++) {
             JsonObject forecast = forecasts[i];
             const char* dt_str = forecast["datetime"];
             
             if (dt_str) {
-              ESP_LOGI("parse_debug", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-              ESP_LOGI("parse_debug", "📅 Raw datetime: %s", dt_str);
               
               struct tm tm = {};
               if (strptime(dt_str, "%Y-%m-%dT%H:%M:%S", &tm)) {
@@ -2062,30 +1889,14 @@ script:
                 
                 id(forecast_daily_timestamps)[i] = utc_timestamp;
                 
-                ESP_LOGI("parse_debug", "🕐 Parsed time: %04d-%02d-%02d %02d:%02d:%02d",
-                        tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-                        tm.tm_hour, tm.tm_min, tm.tm_sec);
-                ESP_LOGI("parse_debug", "   mktime result (as MSK): %ld", local_ts);
-                ESP_LOGI("parse_debug", "✅ UTC Timestamp: %ld (offset: %+d)", 
-                        utc_timestamp, tz_offset);
-                
                 // Проверка: конвертируем обратно
                 struct tm check_utc;
                 gmtime_r(&utc_timestamp, &check_utc);
-                ESP_LOGI("parse_debug", "   Check UTC: %04d-%02d-%02d %02d:%02d:%02d (wday: %d)",
-                        check_utc.tm_year + 1900, check_utc.tm_mon + 1, check_utc.tm_mday,
-                        check_utc.tm_hour, check_utc.tm_min, check_utc.tm_sec,
-                        check_utc.tm_wday);
                 
                 time_t local_display = utc_timestamp + tz_offset;
                 struct tm check_local;
                 gmtime_r(&local_display, &check_local);
-                ESP_LOGI("parse_debug", "   Check Local: %04d-%02d-%02d %02d:%02d:%02d (wday: %d)",
-                        check_local.tm_year + 1900, check_local.tm_mon + 1, check_local.tm_mday,
-                        check_local.tm_hour, check_local.tm_min, check_local.tm_sec,
-                        check_local.tm_wday);
-                
-                ESP_LOGI("parse_debug", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
               } else {
                 ESP_LOGE("parse_debug", "❌ Failed to parse: %s", dt_str);
                 id(forecast_daily_timestamps)[i] = 0;
@@ -2098,12 +1909,7 @@ script:
             id(forecast_daily_temps)[i] = forecast["temperature"] | 0.0f;
             id(forecast_daily_conditions)[i] = forecast["condition"] | "sunny";
             
-            ESP_LOGD("weather", "[%d] %.1f°C, %s", 
-                    i, id(forecast_daily_temps)[i], 
-                    id(forecast_daily_conditions)[i].c_str());
           }
-          
-          ESP_LOGI("weather", "✅ Daily parsing complete");
           
       - script.execute: update_daily_display
 
@@ -2115,8 +1921,6 @@ script:
   - id: parse_hourly_forecasts
     then:
       - lambda: |-
-          ESP_LOGI("weather", "=== Parsing HOURLY Forecasts ===");
-          
           std::string json_str = id(weather_forecast_hourly_sensor).state;
           
           if (json_str.empty() || json_str == "unknown") {
@@ -2124,8 +1928,6 @@ script:
             id(forecast_hourly_count) = 0;
             return;
           }
-          
-          ESP_LOGI("weather", "Hourly JSON: %d bytes", json_str.length());
           
           JsonDocument doc;
           DeserializationError error = deserializeJson(doc, json_str);
@@ -2146,8 +1948,6 @@ script:
           int count = forecasts.size();
           id(forecast_hourly_count) = count;
           
-          ESP_LOGI("weather", "Processing %d hourly forecasts", count);
-          
           // Вычисляем offset ОДИН РАЗ
           auto local_now = id(sntp_time).now();
           auto utc_now = id(sntp_time).utcnow();
@@ -2160,16 +1960,11 @@ script:
                             (local_now.minute - utc_now.minute) * 60 + 
                             (local_now.second - utc_now.second);
           
-          ESP_LOGI("parse_debug", "Detected TZ offset: %+d seconds (%+d hours)", 
-                  tz_offset, offset_hours);
-          
           for (int i = 0; i < count; i++) {
             JsonObject forecast = forecasts[i];
             const char* dt_str = forecast["datetime"];
             
             if (dt_str) {
-              ESP_LOGI("parse_debug", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-              ESP_LOGI("parse_debug", "📅 Raw datetime: %s", dt_str);
               
               struct tm tm = {};
               if (strptime(dt_str, "%Y-%m-%dT%H:%M:%S", &tm)) {
@@ -2182,28 +1977,14 @@ script:
                 
                 id(forecast_hourly_timestamps)[i] = utc_timestamp;
                 
-                ESP_LOGI("parse_debug", "🕐 Parsed time: %04d-%02d-%02d %02d:%02d:%02d",
-                        tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-                        tm.tm_hour, tm.tm_min, tm.tm_sec);
-                ESP_LOGI("parse_debug", "   mktime result (as MSK): %ld", local_ts);
-                ESP_LOGI("parse_debug", "✅ UTC Timestamp: %ld (offset: %+d)", 
-                        utc_timestamp, tz_offset);
-                
                 // Проверка: конвертируем обратно
                 struct tm check_utc;
                 gmtime_r(&utc_timestamp, &check_utc);
-                ESP_LOGI("parse_debug", "   Check UTC: %04d-%02d-%02d %02d:%02d:%02d",
-                        check_utc.tm_year + 1900, check_utc.tm_mon + 1, check_utc.tm_mday,
-                        check_utc.tm_hour, check_utc.tm_min, check_utc.tm_sec);
                 
                 time_t local_display = utc_timestamp + tz_offset;
                 struct tm check_local;
                 gmtime_r(&local_display, &check_local);
-                ESP_LOGI("parse_debug", "   Check Local: %04d-%02d-%02d %02d:%02d:%02d",
-                        check_local.tm_year + 1900, check_local.tm_mon + 1, check_local.tm_mday,
-                        check_local.tm_hour, check_local.tm_min, check_local.tm_sec);
-                
-                ESP_LOGI("parse_debug", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
               } else {
                 ESP_LOGE("parse_debug", "❌ Failed to parse: %s", dt_str);
                 id(forecast_hourly_timestamps)[i] = 0;
@@ -2216,14 +1997,8 @@ script:
             id(forecast_hourly_temps)[i] = forecast["temperature"] | 0.0f;
             id(forecast_hourly_conditions)[i] = forecast["condition"] | "sunny";
             
-            ESP_LOGD("weather", "[%d] %s: %.1f°C, %s", 
-                    i, dt_str ? dt_str : "unknown",
-                    id(forecast_hourly_temps)[i], 
-                    id(forecast_hourly_conditions)[i].c_str());
           }
-          
-          ESP_LOGI("weather", "✅ Hourly parsing complete");
-          
+               
       - script.execute: update_hourly_display
 
 
@@ -2236,8 +2011,6 @@ script:
   - id: update_daily_display
     then:
       - lambda: |-
-          ESP_LOGI("weather", "=== Updating DAILY Display ===");
-          
           if (id(forecast_daily_count) == 0) return;
           if (!id(weather_forecast_daily)) return;
           
@@ -2329,8 +2102,6 @@ script:
             }
           }
           
-          ESP_LOGI("weather", "✅ Created %d daily items", id(forecast_daily_count));
-
 
   # ========================================
   # 4️⃣ UPDATE HOURLY DISPLAY (ИСПРАВЛЕН)
@@ -2338,8 +2109,6 @@ script:
   - id: update_hourly_display
     then:
       - lambda: |-
-          ESP_LOGI("weather", "=== Updating HOURLY Display ===");
-          
           if (id(forecast_hourly_count) == 0) return;
           if (!id(weather_forecast_hourly)) return;
           
@@ -2449,53 +2218,3 @@ script:
             }
           }
           
-          ESP_LOGI("weather", "✅ Created %d hourly items with scroll", id(forecast_hourly_count));
-
-
-
-
-
-  - id: test_timezone
-    then:
-      - lambda: |-
-          ESP_LOGI("TZ_TEST", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-          
-          // System timezone
-          char* tz_env = getenv("TZ");
-          ESP_LOGI("TZ_TEST", "System TZ env: %s", tz_env ? tz_env : "NOT SET");
-          
-          // ESPHome timezone
-          ESP_LOGI("TZ_TEST", "ESPHome timezone: %s", id(sntp_time).get_timezone().c_str());
-          
-          // Time valid?
-          ESP_LOGI("TZ_TEST", "Time valid: %s", id(sntp_time).now().is_valid() ? "YES" : "NO");
-          ESP_LOGI("TZ_TEST", "Timestamp: %ld", id(sntp_time).now().timestamp);
-          
-          // Local time
-          auto local = id(sntp_time).now();
-          ESP_LOGI("TZ_TEST", "Local: %04d-%02d-%02d %02d:%02d:%02d (ts: %ld)",
-                  local.year, local.month, local.day_of_month,
-                  local.hour, local.minute, local.second,
-                  local.timestamp);
-          
-          // UTC time
-          auto utc = id(sntp_time).utcnow();
-          ESP_LOGI("TZ_TEST", "UTC:   %04d-%02d-%02d %02d:%02d:%02d (ts: %ld)",
-                  utc.year, utc.month, utc.day_of_month,
-                  utc.hour, utc.minute, utc.second,
-                  utc.timestamp);
-          
-          // ✅ ПРАВИЛЬНЫЙ РАСЧЁТ OFFSET
-          int32_t offset_hours = local.hour - utc.hour;
-          int32_t offset_minutes = local.minute - utc.minute;
-          int32_t offset_seconds = local.second - utc.second;
-          
-          // Учитываем переход через полночь
-          if (offset_hours > 12) offset_hours -= 24;
-          if (offset_hours < -12) offset_hours += 24;
-          
-          int32_t total_offset = offset_hours * 3600 + offset_minutes * 60 + offset_seconds;
-          
-          ESP_LOGI("TZ_TEST", "Offset: %+d seconds (%+d hours)", 
-                  total_offset, offset_hours);
-          ESP_LOGI("TZ_TEST", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");

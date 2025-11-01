@@ -92,3 +92,12 @@ vacuum:
     on: "Aan"
     paused: "Gepauzeerd"
     returning: "Terugkeren naar dock"
+
+cover:
+  name: "Raambekleding"
+  state:
+    closed: Gesloten
+    closing: Sluiten
+    open: Open
+    opening: Openen
+    stopped: Gestopt

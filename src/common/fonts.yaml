@@ -282,6 +282,14 @@
     "\U000F18DD", # ceiling light multiple
     "\U000F08DD", # floor lamp
     "\U000F11E1", # vanity light
+    "\U000F1846", # curtains_opened
+    "\U000F1847", # curtains_closed
+    "\U000F111C", # shutter_closed
+    "\U000F111E", # shutter_opened
+    "\U000F12D3", # garage_closed
+    "\U000F12D4", # garage_opened
+    "\U000F00AC", # blinds_closed 
+    "\U000F1011", # blinds_opened
   ]
 
 
@@ -343,6 +351,16 @@
     "\U000F0498", # shield
     "\U000F04AE", # previous track
     "\U000F04AD", # next track
+    "\U000F19B2", # arrow up
+    "\U000F19B3", # arrow down
+    "\U000F1846", # curtains_opened
+    "\U000F1847", # curtains_closed
+    "\U000F111C", # shutter_closed
+    "\U000F111E", # shutter_opened
+    "\U000F12D3", # garage_closed
+    "\U000F12D4", # garage_opened
+    "\U000F00AC", # blinds_closed 
+    "\U000F1011", # blinds_opened
   ]
 
 - file: "assets/fonts/materialdesignicons-webfont.ttf"
@@ -360,5 +378,8 @@
     "\U000F1A46", # away
     "\U000F040A", # play
     "\U000F03E4", # pause
+    "\U000F04DB", # stop
     "\U000F04B2", # sleep
   ]
+
+  

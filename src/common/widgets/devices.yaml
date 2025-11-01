@@ -42,6 +42,29 @@ lvgl:
                   on_click:
                     - lvgl.page.show: climate_page
 
+              # Cover button
+              - button:
+                  id: devices_cover_btn
+                  width: 130
+                  height: 40
+                  bg_opa: transp
+                  shadow_opa: transp
+                  border_opa: transp
+                  widgets:
+                    - label:
+                        align: center
+                        text_font: nunito_18
+                        text_color: color_misty_blue
+                        text: "Cover"
+                  on_click:
+                    - lvgl.page.show: ${cover_widget_name_1}_cover_page
+                    - delay: 250ms
+                    - lambda: |-
+                        int covers = ${covers_amount};
+                        if (covers >= 2) {
+                          lv_obj_clear_flag(id(cover_select_widget), LV_OBJ_FLAG_HIDDEN);
+                        }
+
               # Media Player button
               - button:
                   id: devices_media_player_btn

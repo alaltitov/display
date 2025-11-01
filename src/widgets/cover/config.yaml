@@ -1,0 +1,36 @@
+substitutions: !include substitutions.yaml
+
+packages:
+  select: !include select.yaml
+
+  cover_1: !include
+    file: cover.yaml
+    vars:
+      cover_entity: "${cover_entity_1}"
+      widget_name: "${cover_widget_name_1}"
+      cover_icon_open: "${cover_icon_opened_1}"
+      cover_icon_close: "${cover_icon_closed_1}"
+
+  cover_2: !include
+    file: cover.yaml
+    vars:
+      cover_entity: "${cover_entity_2}"
+      widget_name: "${cover_widget_name_2}"
+      cover_icon_open: "${cover_icon_opened_2}"
+      cover_icon_close: "${cover_icon_closed_2}"
+
+  cover_3: !include
+    file: cover.yaml
+    vars:
+      cover_entity: "${cover_entity_3}"
+      widget_name: "${cover_widget_name_3}"
+      cover_icon_open: "${cover_icon_opened_3}"
+      cover_icon_close: "${cover_icon_closed_3}"
+
+  cover_4: !include
+    file: cover.yaml
+    vars:
+      cover_entity: "${cover_entity_4}"
+      widget_name: "${cover_widget_name_4}"
+      cover_icon_open: "${cover_icon_opened_4}"
+      cover_icon_close: "${cover_icon_closed_4}"

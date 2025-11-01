@@ -6,6 +6,7 @@ packages:
   climate: !include widgets/climate/climate.yaml
   media_player: !include widgets/media_player/media_player.yaml
   vacuum: !include widgets/vacuum/vacuum.yaml
+  cover: !include widgets/cover/config.yaml
 
 
 substitutions: !include common/substitutions.yaml
@@ -18,7 +19,7 @@ http_request:
   verify_ssl: false
 
 external_components:
-  - source: github://alaltitov/esphome@main
+  - source: github://alaltitov/esphome@dev
     components: [i18n]
 
 i18n:
@@ -34,6 +35,7 @@ i18n:
     - translations/it.yaml
     - translations/de.yaml
   default_locale: en
+  use_psram: true
 
 esphome:
   name: ${display_name}
@@ -54,17 +56,7 @@ esphome:
         - lvgl.roller.update:
             id: backlight_settings_sleep_time_roller
             selected_index: !lambda return id(display_timeout);
-        - lambda: |-
-            ESP_LOGI("TEST", "Current locale i18n: %s", id(i18n_translations).get_current_locale().c_str());
-            ESP_LOGI("TEST", "Current locale global: %s", id(current_language).c_str());
-            ESP_LOGI("TEST", "Current DT global: %d", id(display_timeout));
-        - delay: 5s
-        - script.execute: test_timezone
-        - lambda: |-
-            ESP_LOGW("TEST", "OUR GLOBAL ON BOOT: %s", id(display_lock) ? "true" : "false");
-            ESP_LOGW("TEST", "Current locale i18n: %s", id(i18n_translations).get_current_locale().c_str());
-            ESP_LOGW("TEST", "Current locale global: %s", id(current_language).c_str());
-            ESP_LOGI("TEST", "Current DT global: %d", id(display_timeout));
+
 esp32:
   board: esp32-s3-devkitc-1
   variant: esp32s3
@@ -76,10 +68,14 @@ esp32:
       # CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: y
       # CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
       # CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
+      # CONFIG_ESP_MAIN_TASK_STACK_SIZE: "131072"
       CONFIG_SPIRAM_FETCH_INSTRUCTIONS: y
       CONFIG_SPIRAM_RODATA: y
+      CONFIG_ESP_TASK_WDT_TIMEOUT_S: "60"
       # CONFIG_FREERTOS_USE_TRACE_FACILITY: "y"
       # CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS: "y"
+      # CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS: "y"
+      # CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER: "y"
 
 psram:
   mode: octal
@@ -88,6 +84,9 @@ psram:
 
 logger:
   level: debug
+  # logs:
+  #   lvgl: info
+  # hardware_uart: UART0
 
 
 api:

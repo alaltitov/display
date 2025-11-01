@@ -150,13 +150,7 @@ api:
               id: ha_status
               text_color: color_blue
           - script.execute: on_ha_connected
-          - delay: 5000ms
-          - lambda: |-
-              ESP_LOGW("TEST", "OUR CURRENT GLOBAL FOR SWITCH: %s", id(display_lock) ? "true" : "false");
-          - lambda: |-
-              ESP_LOGW("TEST", "OCC Current locale i18n: %s", id(i18n_translations).get_current_locale().c_str());
-              ESP_LOGW("TEST", "OCC Current locale global: %s", id(current_language).c_str());
-              ESP_LOGI("TEST", "Current DT global: %d", id(display_timeout));
+
 
   on_client_disconnected:
     - if:

@@ -92,3 +92,12 @@ vacuum:
     on: "włączono"
     paused: "wstrzymano"
     returning: "wraca do stacji dokującej"
+
+cover:
+  name: "Roleta"
+  state:
+    closed: zamknięto
+    closing: zamykanie
+    open: otwarto
+    opening: otwieranie
+    stopped: Stopped

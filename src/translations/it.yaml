@@ -92,3 +92,12 @@ vacuum:
     on: "Acceso"
     paused: "In pausa"
     returning: "Ritornando alla base"
+
+cover:
+  name: "Copertura"
+  state:
+    closed: Chiuso/a
+    closing: In chiusura
+    open: Aperto/a
+    opening: In apertura
+    stopped: Fermato/a

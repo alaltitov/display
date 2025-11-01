@@ -92,3 +92,12 @@ vacuum:
     on: "On"
     paused: "Paused"
     returning: "Returning to dock"
+
+cover:
+  name: "Cover"
+  state:
+    closed: Closed
+    closing: Closing
+    open: Open
+    opening: Opening
+    stopped: Stopped
