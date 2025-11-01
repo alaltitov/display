@@ -80,5 +80,5 @@
 - [ESPHome LVGL 8.4](https://esphome.io/components/lvgl/)
 
 ## 🤝 Thanks for your help
-
+- Thanks to [ZHNovell](https://github.com/ZHNovell) for financial support of the project, as well as for help with testing and ideas.
 - Thanks, [сlydebarrow](https://github.com/clydebarrow), [jesserockz](https://github.com/jesserockz), [ssieb](https://github.com/ssieb) for helping me with the project!
