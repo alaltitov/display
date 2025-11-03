@@ -1,0 +1,927 @@
+packages:
+  animations: !include animations.yaml
+
+
+
+globals:
+  - id: ${widget_name}_supported_features
+    type: int
+    restore_value: no
+    initial_value: '63'  # По умолчанию все функции
+
+  - id: ${widget_name}_current_mode
+    type: int
+    initial_value: '0'
+
+  - id: ${widget_name}_pending_action
+    type: std::string
+    restore_value: no
+    initial_value: ""
+
+
+sensor:
+  - platform: homeassistant
+    id: ${widget_name}_supported_features_sensor
+    entity_id: "${alarm_panel_entity}"
+    attribute: supported_features
+    on_value:
+      - lambda: |-
+          id(${widget_name}_supported_features) = x;
+      - script.execute: ${widget_name}_visibility_buttons
+
+
+text_sensor:
+  - platform: homeassistant
+    id: ${widget_name}_state_sensor
+    entity_id: "${alarm_panel_entity}"
+    on_value:
+      - script.execute: ${widget_name}_update_translations
+      - lambda: |-
+          std::string new_state = x;
+          std::string old_state = id(${widget_name}_pending_action);
+          
+          ESP_LOGI("AP", "State changed: '%s' -> '%s'", old_state.c_str(), new_state.c_str());
+          
+          // Сохраняем новое состояние
+          id(${widget_name}_pending_action) = new_state;
+          
+          // Определяем, это первая загрузка или изменение состояния
+          bool is_first_boot = (old_state == "" || old_state == new_state);
+          
+          // Определяем категории состояний
+          bool new_is_disarmed = (new_state == "disarmed");
+          bool new_is_armed = (new_state == "armed_home" || 
+                               new_state == "armed_away" || 
+                               new_state == "armed_night" || 
+                               new_state == "armed_custom_bypass" || 
+                               new_state == "armed_vacation");
+          
+          bool old_is_disarmed = (old_state == "disarmed");
+          bool old_is_armed = (old_state == "armed_home" || 
+                               old_state == "armed_away" || 
+                               old_state == "armed_night" || 
+                               old_state == "armed_custom_bypass" || 
+                               old_state == "armed_vacation");
+
+      # ARMING - мигающая желтая иконка (через LVGL анимацию)
+      - if:
+          condition:
+            lambda: 'return id(${widget_name}_state_sensor).state == "arming";'
+          then:
+            - lvgl.obj.update:
+                id: ${widget_name}_state_icon_bg
+                bg_color: color_yellow
+            - lvgl.label.update:
+                id: ${widget_name}_state_icon
+                text_color: color_yellow
+                text: "${shield_arming_icon}"
+            - script.execute: ${widget_name}_blink
+
+      # TRIGGERED
+      - if:
+          condition:
+            lambda: 'return id(${widget_name}_state_sensor).state == "triggered";'
+          then:
+            - lvgl.obj.update:
+                id: ${widget_name}_state_icon_bg
+                bg_color: color_red
+            - lvgl.label.update:
+                id: ${widget_name}_state_icon
+                text_color: color_red
+                text: "${shield_arming_icon}"
+            - script.execute: ${widget_name}_blink
+
+      # Обновляем иконки для всех состояний
+      - if:
+          condition:
+            lambda: 'return id(${widget_name}_state_sensor).state == "disarmed";'
+          then:
+            - lvgl.obj.update:
+                id: ${widget_name}_state_icon_bg
+                bg_color: color_dark_blue
+            - lvgl.label.update:
+                id: ${widget_name}_state_icon
+                text_color: color_dark_blue
+                text: "${shield_disarmed_icon}"
+            - script.execute: ${widget_name}_blink_stop
+
+      - if:
+          condition:
+            lambda: 'return id(${widget_name}_state_sensor).state == "armed_home";'
+          then:
+            - lvgl.obj.update:
+                id: ${widget_name}_state_icon_bg
+                bg_color: color_green
+            - lvgl.label.update:
+                id: ${widget_name}_state_icon
+                text_color: color_green
+                text: "${shield_home_icon}"
+            - script.execute: ${widget_name}_blink_stop
+
+      - if:
+          condition:
+            lambda: 'return id(${widget_name}_state_sensor).state == "armed_away";'
+          then:
+            - lvgl.obj.update:
+                id: ${widget_name}_state_icon_bg
+                bg_color: color_green
+            - lvgl.label.update:
+                id: ${widget_name}_state_icon
+                text_color: color_green
+                text: "${shield_away_icon}"
+            - script.execute: ${widget_name}_blink_stop
+
+      - if:
+          condition:
+            lambda: 'return id(${widget_name}_state_sensor).state == "armed_night";'
+          then:
+            - lvgl.obj.update:
+                id: ${widget_name}_state_icon_bg
+                bg_color: color_green
+            - lvgl.label.update:
+                id: ${widget_name}_state_icon
+                text_color: color_green
+                text: "${shield_night_icon}"
+            - script.execute: ${widget_name}_blink_stop
+
+      - if:
+          condition:
+            lambda: 'return id(${widget_name}_state_sensor).state == "armed_custom_bypass";'
+          then:
+            - lvgl.obj.update:
+                id: ${widget_name}_state_icon_bg
+                bg_color: color_green
+            - lvgl.label.update:
+                id: ${widget_name}_state_icon
+                text_color: color_green
+                text: "${shield_custom_icon}"
+            - script.execute: ${widget_name}_blink_stop
+
+      - if:
+          condition:
+            lambda: 'return id(${widget_name}_state_sensor).state == "armed_vacation";'
+          then:
+            - lvgl.obj.update:
+                id: ${widget_name}_state_icon_bg
+                bg_color: color_green
+            - lvgl.label.update:
+                id: ${widget_name}_state_icon
+                text_color: color_green
+                text: "${shield_vacation_icon}"
+            - script.execute: ${widget_name}_blink_stop
+
+      # Логика анимации
+      - lambda: |-
+          std::string new_state = id(${widget_name}_state_sensor).state;
+          std::string old_state = id(${widget_name}_pending_action);
+          
+          bool is_first_boot = (old_state == "" || old_state == new_state);
+          
+          bool new_is_disarmed = (new_state == "disarmed");
+          bool new_is_armed = (new_state == "armed_home" || 
+                               new_state == "armed_away" || 
+                               new_state == "armed_night" || 
+                               new_state == "armed_custom_bypass" || 
+                               new_state == "armed_vacation");
+          
+          bool old_is_disarmed = (old_state == "disarmed");
+          bool old_is_armed = (old_state == "armed_home" || 
+                               old_state == "armed_away" || 
+                               old_state == "armed_night" || 
+                               old_state == "armed_custom_bypass" || 
+                               old_state == "armed_vacation");
+          
+          if (is_first_boot) {
+            // Первая загрузка
+            if (new_is_disarmed) {
+              id(${widget_name}_switch_to_mode).execute(6);  // INIT -> DISARMED
+            } else if (new_is_armed) {
+              id(${widget_name}_switch_to_mode).execute(7);  // INIT -> ARMED
+            }
+          } else {
+            // Изменение состояния
+            if (old_is_disarmed && new_is_armed) {
+              // DISARMED -> ARMED (прямой переход из HA)
+              id(${widget_name}_switch_to_mode).execute(4);
+            } else if (old_is_armed && new_is_disarmed) {
+              // ARMED -> DISARMED (прямой переход из HA)
+              id(${widget_name}_switch_to_mode).execute(5);
+            } else if (old_is_armed && new_is_armed) {
+              // ARMED -> ARMED (смена режима охраны, просто обновляем иконку)
+              // Анимация уже не нужна, иконка обновлена выше
+              ESP_LOGI("AP", "Armed mode changed, icon updated");
+            }
+          }
+
+
+  - platform: homeassistant
+    id: ${widget_name}_name_sensor
+    entity_id: "${alarm_panel_entity}"
+    attribute: friendly_name
+    on_value:
+      - lvgl.label.update:
+          id: ${widget_name}_name_label
+          text: !lambda return x;
+
+
+
+lvgl:
+
+  pages:
+    - id: ${widget_name}_page
+      bg_color: color_black
+      scrollable: false
+      widgets:
+
+        - label:
+            id: ${widget_name}_name_label
+            y: 15
+            align: top_mid
+            text_font: nunito_20
+            text_color: color_misty_blue
+            text: "My Alarm Panel"
+
+        - obj:
+            id: ${widget_name}_main_background
+            y: 60
+            width: 440
+            height: 180
+            align: top_mid
+            clickable: false
+            scrollable: false
+            radius: 20
+            pad_all: 0
+            bg_color: color_slate_blue_gray
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              - obj:
+                  id: ${widget_name}_state_widget
+                  width: 440
+                  height: 100
+                  align: center
+                  clickable: false
+                  radius: 20
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    # ICON
+                    - obj:
+                        id: ${widget_name}_state_icon_bg
+                        x: 20
+                        width: 80
+                        height: 80
+                        align: left_mid
+                        bg_color: color_misty_blue
+                        bg_opa: 20%
+                        border_opa: transp
+                        shadow_opa: transp
+                        radius: 60
+                        widgets:
+                          - label:
+                              id: ${widget_name}_state_icon
+                              align: center
+                              text_font: mdi_icons_40
+                              text_color: color_misty_blue
+                              text: "${shield_arming_icon}"
+
+                    # STATE INFO
+                    - obj:
+                        width: 300
+                        height: 100
+                        align: right_mid
+                        bg_color: color_steel_blue
+                        bg_opa: transp
+                        border_opa: transp
+                        border_width: 0
+                        shadow_opa: transp
+                        radius: 10
+                        widgets:
+                          - label:
+                              id: ${widget_name}_state_label
+                              height: 40
+                              width: 260
+                              long_mode: DOT
+                              y: 5
+                              align: CENTER
+                              text_color: color_misty_blue
+                              text_font: nunito_20
+                              text: "Disarmed"
+
+
+              - obj:
+                  id: ${widget_name}_keypad_widget
+                  hidden: true
+                  width: 440
+                  height: 290
+                  pad_all: 0
+                  align: top_left
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_opa: transp
+                  radius: 20
+                  widgets:
+                    - obj:
+                        y: 20
+                        width: 300
+                        height: 40
+                        align: top_mid
+                        pad_all: 0
+                        bg_opa: transp
+                        border_opa: transp
+                        shadow_color: color_black
+                        shadow_spread: 2
+                        shadow_width: 8
+                        radius: 10
+                        widgets:
+                          - label:
+                              id: ${widget_name}_keypad_code_label
+                              align: center
+                              text_font: nunito_18
+                              text: "Enter code"
+                              text_color: color_misty_blue
+                              text_align: center
+
+                    - buttonmatrix:
+                        id: ${widget_name}_keypad
+                        width: 300
+                        height: 220
+                        pad_all: 20
+                        bg_opa: transp
+                        border_opa: transp
+                        y: 30
+                        align: center
+                        items:
+                          radius: 30
+                          bg_opa: transp
+                          border_opa: transp
+                          shadow_width: 8
+                          shadow_spread: 2
+                          shadow_ofs_y: 0
+                          shadow_color: color_black
+                          shadow_opa: cover
+                          text_font: montserrat_20
+                          text_color: color_misty_blue
+                          pressed:
+                            bg_color: color_black
+                            shadow_width: 4
+                        pad_column: 50
+                        rows:
+                          - buttons:
+                              - text: 1
+                                control:
+                                  no_repeat: true
+                              - text: 2
+                                control:
+                                  no_repeat: true
+                              - text: 3
+                                control:
+                                  no_repeat: true
+                          - buttons:
+                              - text: 4
+                                control:
+                                  no_repeat: true
+                              - text: 5
+                                control:
+                                  no_repeat: true
+                              - text: 6
+                                control:
+                                  no_repeat: true
+                          - buttons:
+                              - text: 7
+                                control:
+                                  no_repeat: true
+                              - text: 8
+                                control:
+                                  no_repeat: true
+                              - text: 9
+                                control:
+                                  no_repeat: true
+                          - buttons:
+                              - text: "\uF55A"
+                                key_code: "*"
+                                control:
+                                  no_repeat: true
+                              - text: 0
+                                control:
+                                  no_repeat: true
+                              - text: "\uF00C"
+                                key_code: "#"
+                                control:
+                                  no_repeat: true
+
+
+
+        - obj:
+            id: ${widget_name}_primary_buttons_background
+            y: 250
+            width: 440
+            height: 100
+            align: top_mid
+            clickable: false
+            scrollable: false
+            radius: 20
+            pad_all: 0
+            bg_color: color_slate_blue_gray
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+
+              - obj:
+                  id: ${widget_name}_primary_buttons_container
+                  hidden: true
+                  width: 440
+                  height: 100
+                  align: center
+                  clickable: false
+                  scrollable: false
+                  radius: 20
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  layout:
+                    type: flex
+                    flex_flow: row
+                    flex_align_main: space_evenly
+                    flex_align_cross: center
+                    flex_align_track: center
+                  widgets:
+
+                    # HOME
+                    - obj:
+                        id: ${widget_name}_home_btn
+                        width: 54
+                        height: 54
+                        pad_all: 0
+                        radius: 30
+                        bg_opa: transp
+                        border_opa: transp
+                        shadow_width: 5
+                        shadow_spread: 1
+                        shadow_color: color_black
+                        pressed:
+                          bg_color: color_black
+                          shadow_width: 4
+                        widgets:
+                          - label:
+                              align: center
+                              text_font: mdi_icons_28
+                              text_color: color_misty_blue
+                              text: "${shield_home_icon}"
+                        on_press:
+                          - lambda: |-
+                              id(${widget_name}_pending_action) = std::string("armed_home");
+                          - script.execute:
+                              id: ${widget_name}_switch_to_mode
+                              target_mode: 2
+
+                    # AWAY
+                    - obj:
+                        id: ${widget_name}_away_btn
+                        width: 54
+                        height: 54
+                        pad_all: 0
+                        radius: 30
+                        bg_opa: transp
+                        border_opa: transp
+                        shadow_width: 5
+                        shadow_spread: 1
+                        shadow_color: color_black
+                        pressed:
+                          bg_color: color_black
+                          shadow_width: 4
+                        widgets:
+                          - label:
+                              align: center
+                              text_font: mdi_icons_28
+                              text_color: color_misty_blue
+                              text: "${shield_away_icon}"
+                        on_press:
+                          - lambda: |-
+                              id(${widget_name}_pending_action) = std::string("armed_away");
+                          - script.execute:
+                              id: ${widget_name}_switch_to_mode
+                              target_mode: 2
+
+                    # NIGHT
+                    - obj:
+                        id: ${widget_name}_night_btn
+                        width: 54
+                        height: 54
+                        pad_all: 0
+                        radius: 30
+                        bg_opa: transp
+                        border_opa: transp
+                        shadow_width: 5
+                        shadow_spread: 1
+                        shadow_color: color_black
+                        pressed:
+                          bg_color: color_black
+                          shadow_width: 4
+                        widgets:
+                          - label:
+                              align: center
+                              text_font: mdi_icons_28
+                              text_color: color_misty_blue
+                              text: "${shield_night_icon}"
+                        on_press:
+                          - lambda: |-
+                              id(${widget_name}_pending_action) = std::string("armed_night");
+                          - script.execute:
+                              id: ${widget_name}_switch_to_mode
+                              target_mode: 2
+
+                    # CUSTOM
+                    - obj:
+                        id: ${widget_name}_custom_btn
+                        width: 54
+                        height: 54
+                        pad_all: 0
+                        radius: 30
+                        bg_opa: transp
+                        border_opa: transp
+                        shadow_width: 5
+                        shadow_spread: 1
+                        shadow_color: color_black
+                        pressed:
+                          bg_color: color_black
+                          shadow_width: 4
+                        widgets:
+                          - label:
+                              align: center
+                              text_font: mdi_icons_28
+                              text_color: color_misty_blue
+                              text: "${shield_custom_icon}"
+                        on_press:
+                          - lambda: |-
+                              id(${widget_name}_pending_action) = std::string("armed_custom_bypass");
+                          - script.execute:
+                              id: ${widget_name}_switch_to_mode
+                              target_mode: 2
+
+                    # VACATION
+                    - obj:
+                        id: ${widget_name}_vacation_btn
+                        width: 54
+                        height: 54
+                        pad_all: 0
+                        radius: 30
+                        bg_opa: transp
+                        border_opa: transp
+                        shadow_width: 5
+                        shadow_spread: 1
+                        shadow_color: color_black
+                        pressed:
+                          bg_color: color_black
+                          shadow_width: 4
+                        widgets:
+                          - label:
+                              align: center
+                              text_font: mdi_icons_28
+                              text_color: color_misty_blue
+                              text: "${shield_vacation_icon}"
+                        on_press:
+                          - lambda: |-
+                              id(${widget_name}_pending_action) = std::string("armed_vacation");
+                          - script.execute:
+                              id: ${widget_name}_switch_to_mode
+                              target_mode: 2
+
+
+        - obj:
+            id: ${widget_name}_secondary_buttons_background
+            y: 360
+            width: 440
+            height: 60
+            align: top_mid
+            clickable: false
+            scrollable: false
+            radius: 20
+            pad_all: 0
+            bg_color: color_slate_blue_gray
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+
+
+        # CIRCLE
+        - obj:
+            id: ${widget_name}_circle_background
+            y: 60
+            width: 150
+            height: 150
+            align: center
+            clickable: false
+            radius: 75
+            pad_all: 0
+            bg_color: color_black
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              - obj:
+                  width: 100
+                  height: 100
+                  pad_all: 0
+                  align: center
+                  clickable: false
+                  radius: 50
+                  border_opa: transp
+                  bg_color: color_slate_blue_gray
+
+
+              - obj:
+                  width: 150
+                  height: 150
+                  align: center
+                  clickable: false
+                  radius: 75
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  widgets:
+                    - arc:
+                        id: ${widget_name}_arc
+                        clickable: false
+                        adjustable: true
+                        adv_hittest: true
+                        align: center
+                        width: 130
+                        height: 130
+                        min_value: 0
+                        max_value: 100
+                        start_angle: 0
+                        end_angle: 360
+                        rotation: 0
+                        arc_width: 5
+                        arc_color: color_steel_blue
+                        arc_rounded: false
+                        indicator:
+                          arc_width: 5
+                          arc_color: color_steel_blue
+                        knob:
+                          bg_opa: transp
+
+                    - obj:
+                        width: 100
+                        height: 100
+                        pad_all: 0
+                        align: center
+                        clickable: false
+                        radius: 50
+                        border_opa: transp
+                        bg_opa: transp
+                        widgets:
+                          - label:
+                              id: ${widget_name}_disarmed_icon
+                              align: CENTER
+                              text_color: color_misty_blue
+                              text_font: mdi_icons_52
+                              text: "${shield_disarmed_icon}"
+                              on_press:
+                                - lambda: |-
+                                    id(${widget_name}_pending_action) = std::string("disarmed");
+                                - script.execute:
+                                    id: ${widget_name}_switch_to_mode
+                                    target_mode: 0
+
+
+        # back
+        - obj:
+            y: 0
+            width: 80
+            height: 70
+            align: bottom_mid
+            bg_opa: transp
+            pad_all: 0
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            radius: 0
+            widgets:
+              - obj:
+                  y: -20
+                  width: 80
+                  height: 5
+                  align: bottom_mid
+                  bg_color: color_steel_blue
+                  pad_all: 0
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  radius: 15 
+            on_click:
+              - lvgl.widget.hide: alarm_panel_select_widget
+              - lvgl.page.show: devices_page
+
+key_collector:
+  - source_id: ${widget_name}_keypad
+    min_length: 4
+    max_length: 4
+    end_keys: "#"
+    end_key_required: true
+    back_keys: "*"
+    allowed_keys: "0123456789*#"
+    timeout: 5s
+    on_progress:
+      - if:
+          condition:
+            lambda: return (0 != x.compare(std::string{""}));
+          then:
+            - lvgl.label.update:
+                id: ${widget_name}_keypad_code_label
+                text: !lambda 'return x.c_str();'
+          else:
+            - lvgl.label.update:
+                id: ${widget_name}_keypad_code_label
+                text_font: nunito_18
+                text_color: color_misty_blue
+                text: "Enter code"
+
+    on_result:
+      - if:
+          condition:
+            lambda: 'return x == "${pin_code}";'
+          then:
+            - if:
+                condition:
+                  lambda: 'return id(${widget_name}_pending_action) == "disarmed";'
+                then:
+                  - homeassistant.action:
+                      action: alarm_control_panel.alarm_disarm
+                      data:
+                        entity_id: "${alarm_panel_entity}"
+                        code: "${pin_code}"
+                  - script.execute:
+                      id: ${widget_name}_switch_to_mode
+                      target_mode: 1
+                  - lambda: |-
+                      ESP_LOGI("AP", "I am in THEN, state sensor: %s, state global: %s", id(${widget_name}_state_sensor).state.c_str(), id(${widget_name}_pending_action).c_str());
+                else:
+                  - if:
+                      condition:
+                        lambda: 'return id(${widget_name}_pending_action) == "armed_home";'
+                      then:
+                        - lambda: |-
+                            ESP_LOGI("AP", "I am in ARM HOME, state sensor: %s, state global: %s", id(${widget_name}_state_sensor).state.c_str(), id(${widget_name}_pending_action).c_str());
+                        - homeassistant.action:
+                            action: alarm_control_panel.alarm_arm_home
+                            data:
+                              entity_id: "${alarm_panel_entity}"
+                              code: "${pin_code}"
+
+                  - if:
+                      condition:
+                        lambda: 'return id(${widget_name}_pending_action) == "armed_away";'
+                      then:
+                        - homeassistant.action:
+                            action: alarm_control_panel.alarm_arm_away
+                            data:
+                              entity_id: "${alarm_panel_entity}"
+                              code: "${pin_code}"
+
+                  - if:
+                      condition:
+                        lambda: 'return id(${widget_name}_pending_action) == "armed_night";'
+                      then:
+                        - homeassistant.action:
+                            action: alarm_control_panel.alarm_arm_night
+                            data:
+                              entity_id: "${alarm_panel_entity}"
+                              code: "${pin_code}"
+
+                  - if:
+                      condition:
+                        lambda: 'return id(${widget_name}_pending_action) == "armed_custom_bypass";'
+                      then:
+                        - homeassistant.action:
+                            action: alarm_control_panel.alarm_arm_custom_bypass
+                            data:
+                              entity_id: "${alarm_panel_entity}"
+                              code: "${pin_code}"
+
+                  - if:
+                      condition:
+                        lambda: 'return id(${widget_name}_pending_action) == "armed_vacation";'
+                      then:
+                        - homeassistant.action:
+                            action: alarm_control_panel.alarm_arm_vacation
+                            data:
+                              entity_id: "${alarm_panel_entity}"
+                              code: "${pin_code}"
+
+                  - lambda: |-
+                      ESP_LOGI("AP", "I am in ELSE, state sensor: %s, state global: %s", id(${widget_name}_state_sensor).state.c_str(), id(${widget_name}_pending_action).c_str());
+                  - script.execute:
+                      id: ${widget_name}_switch_to_mode
+                      target_mode: 3
+
+# Скрипт для создания кнопок динамически
+script:
+  - id: ${widget_name}_visibility_buttons
+    then:
+      - lambda: |-
+          // Получаем значение supported_features
+          int features = id(${widget_name}_supported_features);
+          
+          ESP_LOGI("alarm", "Updating button visibility, features: %d", features);
+          
+          // Определяем структуру для кнопок
+          struct AlarmButton {
+            int flag;
+            const char* obj_id;
+          };
+          
+          // Массив кнопок с их ID и флагами
+          AlarmButton buttons[] = {
+            {1, "${widget_name}_home_btn"},        // ARM_HOME
+            {2, "${widget_name}_away_btn"},        // ARM_AWAY
+            {4, "${widget_name}_night_btn"},       // ARM_NIGHT
+            {16, "${widget_name}_custom_btn"},     // ARM_CUSTOM_BYPASS
+            {32, "${widget_name}_vacation_btn"}    // ARM_VACATION
+          };
+          
+          // Проверяем каждую кнопку и показываем/скрываем
+          for (int i = 0; i < 5; i++) {
+            bool should_show = (features & buttons[i].flag) != 0;
+            
+            ESP_LOGI("alarm", "Button %s: flag=%d, should_show=%d", 
+                     buttons[i].obj_id, buttons[i].flag, should_show);
+            
+            // Получаем объект кнопки по ID
+            lv_obj_t* btn = nullptr;
+            
+            if (strcmp(buttons[i].obj_id, "${widget_name}_home_btn") == 0) {
+              btn = id(${widget_name}_home_btn);
+            } else if (strcmp(buttons[i].obj_id, "${widget_name}_away_btn") == 0) {
+              btn = id(${widget_name}_away_btn);
+            } else if (strcmp(buttons[i].obj_id, "${widget_name}_night_btn") == 0) {
+              btn = id(${widget_name}_night_btn);
+            } else if (strcmp(buttons[i].obj_id, "${widget_name}_custom_btn") == 0) {
+              btn = id(${widget_name}_custom_btn);
+            } else if (strcmp(buttons[i].obj_id, "${widget_name}_vacation_btn") == 0) {
+              btn = id(${widget_name}_vacation_btn);
+            }
+            
+            // Показываем или скрываем кнопку
+            if (btn != nullptr) {
+              if (should_show) {
+                lv_obj_clear_flag(btn, LV_OBJ_FLAG_HIDDEN);
+              } else {
+                lv_obj_add_flag(btn, LV_OBJ_FLAG_HIDDEN);
+              }
+            }
+          }
+          
+          // Обновляем layout контейнера
+          lv_obj_update_layout(id(${widget_name}_primary_buttons_container));
+
+
+  # Универсальный скрипт мигания (работает с любым цветом)
+  - id: ${widget_name}_blink
+    then:
+      - lambda: |-
+          // Останавливаем все предыдущие анимации на этом объекте
+          lv_anim_del(id(${widget_name}_state_icon_bg), nullptr);
+          
+          // Создаем бесконечную анимацию мигания
+          lv_anim_t anim_blink;
+          lv_anim_init(&anim_blink);
+          lv_anim_set_var(&anim_blink, id(${widget_name}_state_icon_bg));
+          lv_anim_set_values(&anim_blink, LV_OPA_0, LV_OPA_30);
+          lv_anim_set_time(&anim_blink, 500);
+          lv_anim_set_playback_time(&anim_blink, 500);  // Обратная анимация
+          lv_anim_set_repeat_count(&anim_blink, LV_ANIM_REPEAT_INFINITE);  // Бесконечно
+          lv_anim_set_exec_cb(&anim_blink, [](void * var, int32_t v) {
+            lv_obj_set_style_bg_opa((lv_obj_t*)var, v, 0);
+          });
+          lv_anim_set_path_cb(&anim_blink, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_blink);
+
+  # Скрипт остановки мигания
+  - id: ${widget_name}_blink_stop
+    then:
+      - lambda: |-
+          // Останавливаем анимацию мигания
+          lv_anim_del(id(${widget_name}_state_icon_bg), nullptr);
+          // Возвращаем нормальную прозрачность
+          lv_obj_set_style_bg_opa(id(${widget_name}_state_icon_bg), LV_OPA_20, 0);
+
+
+
+  - id: ${widget_name}_update_translations
+    then:
+      - lvgl.label.update:
+          id: ${widget_name}_state_label
+          text: !lambda |-
+            return id(i18n_translations).translate(("alarm_panel.state." + id(${widget_name}_state_sensor).state));

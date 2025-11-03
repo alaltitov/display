@@ -101,3 +101,18 @@ cover:
     open: Open
     opening: Openen
     stopped: Gestopt
+
+alarm_panel:
+  name: "Alarm control panel"
+  state:
+    armed: Armed
+    armed_away: Armed away
+    armed_custom_bypass: Armed custom bypass
+    armed_home: Armed home
+    armed_night: Armed night
+    armed_vacation: Armed vacation
+    arming: Arming
+    disarmed: Disarmed
+    disarming: Disarming
+    pending: Pending
+    triggered: Triggered

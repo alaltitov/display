@@ -1,0 +1,518 @@
+script:
+
+  # Главный скрипт переключения режимов
+  - id: ${widget_name}_switch_to_mode
+    parameters:
+      target_mode: int
+    then:
+      - lambda: |-
+          ESP_LOGI("AP", "Switch to mode: %d, current: %d", target_mode, id(${widget_name}_current_mode));
+          
+          if (id(is_animating)) {
+            ESP_LOGW("MODE", "Switch ignored: animation in progress");
+            return;
+          }
+          
+          int current = id(${widget_name}_current_mode);
+          int target = target_mode;
+          
+          id(is_animating) = true;
+          id(${widget_name}_current_mode) = target;
+
+          // 0 = ARMED -> PIN_PAD
+          // 1 = PIN_PAD -> DISARMED
+          // 2 = DISARMED -> PIN_PAD
+          // 3 = PIN_PAD -> ARMED
+          // 4 = DISARMED -> ARMED (прямой переход)
+          // 5 = ARMED -> DISARMED (прямой переход)
+          // 6 = INIT to DISARMED (первая загрузка)
+          // 7 = INIT to ARMED (первая загрузка)
+
+          if (target == 0) {
+            id(${widget_name}_animate_armed_to_pin_pad).execute();
+          } else if (target == 1) {
+            id(${widget_name}_animate_pin_pad_to_disarmed).execute();
+          } else if (target == 2) {
+            id(${widget_name}_animate_disarmed_to_pin_pad).execute();
+          } else if (target == 3) {
+            id(${widget_name}_animate_pin_pad_to_armed).execute();
+          } else if (target == 4) {
+            id(${widget_name}_animate_disarmed_to_armed_direct).execute();
+          } else if (target == 5) {
+            id(${widget_name}_animate_armed_to_disarmed_direct).execute();
+          } else if (target == 6) {
+            id(${widget_name}_animate_init_to_disarmed).execute();
+          } else if (target == 7) {
+            id(${widget_name}_animate_init_to_armed).execute();
+          }
+
+  # 0. ARMED -> PIN_PAD
+  - id: ${widget_name}_animate_armed_to_pin_pad
+    then:
+      - lambda: |-
+          // Одновременно: кнопки уезжают, круг вниз, datetime исчезает
+          lv_anim_t anim_circle, anim_state_fade;          
+          
+          lv_anim_init(&anim_circle);
+          lv_anim_set_var(&anim_circle, id(${widget_name}_circle_background));
+          lv_anim_set_values(&anim_circle, 60, 400);
+          lv_anim_set_time(&anim_circle, 600);
+          lv_anim_set_exec_cb(&anim_circle, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle);
+          
+          lv_anim_init(&anim_state_fade);
+          lv_anim_set_var(&anim_state_fade, id(${widget_name}_state_widget));
+          lv_anim_set_values(&anim_state_fade, 255, 0);
+          lv_anim_set_time(&anim_state_fade, 600);
+          lv_anim_set_exec_cb(&anim_state_fade, [](void * var, int32_t v) {
+            lv_obj_set_style_opa((lv_obj_t*)var, v, 0);
+          });
+          lv_anim_set_path_cb(&anim_state_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_state_fade);
+
+      - delay: 600ms
+      - lambda: |-
+          // Одновременно изменяем размеры контейнеров И поднимаем middle_widget_background
+          lv_anim_t anim_main_expand, anim_middle_shrink, anim_middle_move_down;
+          
+          lv_anim_init(&anim_main_expand);
+          lv_anim_set_var(&anim_main_expand, id(${widget_name}_main_background));
+          lv_anim_set_values(&anim_main_expand, 180, 290);
+          lv_anim_set_time(&anim_main_expand, 350);
+          lv_anim_set_exec_cb(&anim_main_expand, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_main_expand, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_main_expand);
+          
+          lv_anim_init(&anim_middle_shrink);
+          lv_anim_set_var(&anim_middle_shrink, id(${widget_name}_primary_buttons_background));
+          lv_anim_set_values(&anim_middle_shrink, 100, 0);
+          lv_anim_set_time(&anim_middle_shrink, 350);
+          lv_anim_set_exec_cb(&anim_middle_shrink, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_middle_shrink, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_middle_shrink);
+          
+          // Опускаем ${widget_name}_primary_buttons_background на 100px вниз
+          lv_anim_init(&anim_middle_move_down);
+          lv_anim_set_var(&anim_middle_move_down, id(${widget_name}_primary_buttons_background));
+          lv_anim_set_values(&anim_middle_move_down, lv_obj_get_y(id(${widget_name}_primary_buttons_background)), lv_obj_get_y(id(${widget_name}_primary_buttons_background)) + 100);
+          lv_anim_set_time(&anim_middle_move_down, 350);
+          lv_anim_set_exec_cb(&anim_middle_move_down, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_middle_move_down, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_middle_move_down);
+
+      - delay: 350ms
+      - lambda: |-
+          // Плавно появляется keypad
+          lv_obj_clear_flag(id(${widget_name}_keypad_widget), LV_OBJ_FLAG_HIDDEN);
+
+          lv_obj_set_style_opa(id(${widget_name}_keypad_widget), 0, 0);
+          
+          lv_anim_t anim_keypad_fade;
+          
+          lv_anim_init(&anim_keypad_fade);
+          lv_anim_set_var(&anim_keypad_fade, id(${widget_name}_keypad_widget));
+          lv_anim_set_values(&anim_keypad_fade, 0, 255);
+          lv_anim_set_time(&anim_keypad_fade, 400);
+          lv_anim_set_exec_cb(&anim_keypad_fade, [](void * var, int32_t v) {
+            lv_obj_set_style_opa((lv_obj_t*)var, v, 0);
+          });
+          lv_anim_set_path_cb(&anim_keypad_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_keypad_fade);
+          
+      - delay: 150ms
+      - lambda: |-
+          id(is_animating) = false;
+
+  # 1. PIN_PAD -> DISARMED
+  - id: ${widget_name}_animate_pin_pad_to_disarmed
+    then:
+      - lambda: |-
+          lv_anim_t anim_keypad_fade;
+          
+          lv_anim_init(&anim_keypad_fade);
+          lv_anim_set_var(&anim_keypad_fade, id(${widget_name}_keypad_widget));
+          lv_anim_set_values(&anim_keypad_fade, 255, 0);
+          lv_anim_set_time(&anim_keypad_fade, 400);
+          lv_anim_set_exec_cb(&anim_keypad_fade, [](void * var, int32_t v) {
+            lv_obj_set_style_opa((lv_obj_t*)var, v, 0);
+          });
+          lv_anim_set_path_cb(&anim_keypad_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_keypad_fade);
+
+      - delay: 600ms
+      - lambda: |-
+          // Одновременно изменяем размеры контейнеров И поднимаем middle_widget_background
+          lv_anim_t anim_main_shrink, anim_middle_expand, anim_middle_move_up;
+          
+          lv_anim_init(&anim_main_shrink);
+          lv_anim_set_var(&anim_main_shrink, id(${widget_name}_main_background));
+          lv_anim_set_values(&anim_main_shrink, 290, 180);
+          lv_anim_set_time(&anim_main_shrink, 350);
+          lv_anim_set_exec_cb(&anim_main_shrink, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_main_shrink, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_main_shrink);
+          
+          lv_anim_init(&anim_middle_expand);
+          lv_anim_set_var(&anim_middle_expand, id(${widget_name}_primary_buttons_background));
+          lv_anim_set_values(&anim_middle_expand, 0, 100);
+          lv_anim_set_time(&anim_middle_expand, 350);
+          lv_anim_set_exec_cb(&anim_middle_expand, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_middle_expand, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_middle_expand);
+          
+          // Опускаем ${widget_name}_primary_buttons_background на 100px вниз
+          lv_anim_init(&anim_middle_move_up);
+          lv_anim_set_var(&anim_middle_move_up, id(${widget_name}_primary_buttons_background));
+          lv_anim_set_values(&anim_middle_move_up, lv_obj_get_y(id(${widget_name}_primary_buttons_background)), lv_obj_get_y(id(${widget_name}_primary_buttons_background)) - 100);
+          lv_anim_set_time(&anim_middle_move_up, 350);
+          lv_anim_set_exec_cb(&anim_middle_move_up, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_middle_move_up, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_middle_move_up);
+
+      - delay: 350ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_state_widget), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_primary_buttons_container), LV_OBJ_FLAG_HIDDEN);
+
+          lv_obj_set_style_opa(id(${widget_name}_state_widget), 0, 0);
+          
+          lv_anim_t anim_state_fade;
+          
+          lv_anim_init(&anim_state_fade);
+          lv_anim_set_var(&anim_state_fade, id(${widget_name}_state_widget));
+          lv_anim_set_values(&anim_state_fade, 0, 255);
+          lv_anim_set_time(&anim_state_fade, 600);
+          lv_anim_set_exec_cb(&anim_state_fade, [](void * var, int32_t v) {
+            lv_obj_set_style_opa((lv_obj_t*)var, v, 0);
+          });
+          lv_anim_set_path_cb(&anim_state_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_state_fade);
+          
+      - delay: 150ms
+      - lambda: |-
+          id(is_animating) = false;
+
+  # 2. DISARMED -> PIN_PAD
+  - id: ${widget_name}_animate_disarmed_to_pin_pad
+    then:
+      - lambda: |-
+          // Одновременно: кнопки уезжают, круг вниз, datetime исчезает
+          lv_anim_t anim_state_fade;          
+          
+          lv_anim_init(&anim_state_fade);
+          lv_anim_set_var(&anim_state_fade, id(${widget_name}_state_widget));
+          lv_anim_set_values(&anim_state_fade, 255, 0);
+          lv_anim_set_time(&anim_state_fade, 600);
+          lv_anim_set_exec_cb(&anim_state_fade, [](void * var, int32_t v) {
+            lv_obj_set_style_opa((lv_obj_t*)var, v, 0);
+          });
+          lv_anim_set_path_cb(&anim_state_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_state_fade);
+
+      - delay: 600ms
+      - lambda: |-
+          // Одновременно изменяем размеры контейнеров И поднимаем middle_widget_background
+          lv_anim_t anim_main_expand, anim_middle_shrink, anim_middle_move_down;
+          
+          lv_anim_init(&anim_main_expand);
+          lv_anim_set_var(&anim_main_expand, id(${widget_name}_main_background));
+          lv_anim_set_values(&anim_main_expand, 180, 290);
+          lv_anim_set_time(&anim_main_expand, 350);
+          lv_anim_set_exec_cb(&anim_main_expand, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_main_expand, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_main_expand);
+          
+          lv_anim_init(&anim_middle_shrink);
+          lv_anim_set_var(&anim_middle_shrink, id(${widget_name}_primary_buttons_background));
+          lv_anim_set_values(&anim_middle_shrink, 100, 0);
+          lv_anim_set_time(&anim_middle_shrink, 350);
+          lv_anim_set_exec_cb(&anim_middle_shrink, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_middle_shrink, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_middle_shrink);
+          
+          // Опускаем ${widget_name}_primary_buttons_background на 100px вниз
+          lv_anim_init(&anim_middle_move_down);
+          lv_anim_set_var(&anim_middle_move_down, id(${widget_name}_primary_buttons_background));
+          lv_anim_set_values(&anim_middle_move_down, lv_obj_get_y(id(${widget_name}_primary_buttons_background)), lv_obj_get_y(id(${widget_name}_primary_buttons_background)) + 100);
+          lv_anim_set_time(&anim_middle_move_down, 350);
+          lv_anim_set_exec_cb(&anim_middle_move_down, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_middle_move_down, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_middle_move_down);
+
+      - delay: 350ms
+      - lambda: |-
+          // Плавно появляется keypad
+          lv_obj_clear_flag(id(${widget_name}_keypad_widget), LV_OBJ_FLAG_HIDDEN);
+
+          lv_obj_set_style_opa(id(${widget_name}_keypad_widget), 0, 0);
+          
+          lv_anim_t anim_keypad_fade;
+          
+          lv_anim_init(&anim_keypad_fade);
+          lv_anim_set_var(&anim_keypad_fade, id(${widget_name}_keypad_widget));
+          lv_anim_set_values(&anim_keypad_fade, 0, 255);
+          lv_anim_set_time(&anim_keypad_fade, 400);
+          lv_anim_set_exec_cb(&anim_keypad_fade, [](void * var, int32_t v) {
+            lv_obj_set_style_opa((lv_obj_t*)var, v, 0);
+          });
+          lv_anim_set_path_cb(&anim_keypad_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_keypad_fade);
+          
+      - delay: 150ms
+      - lambda: |-
+          id(is_animating) = false;
+
+  # 3. PIN_PAD -> ARMED
+  - id: ${widget_name}_animate_pin_pad_to_armed
+    then:
+      - lambda: |-
+          lv_obj_add_flag(id(${widget_name}_primary_buttons_container), LV_OBJ_FLAG_HIDDEN);
+
+          lv_anim_t anim_keypad_fade;
+          
+          lv_anim_init(&anim_keypad_fade);
+          lv_anim_set_var(&anim_keypad_fade, id(${widget_name}_keypad_widget));
+          lv_anim_set_values(&anim_keypad_fade, 255, 0);
+          lv_anim_set_time(&anim_keypad_fade, 400);
+          lv_anim_set_exec_cb(&anim_keypad_fade, [](void * var, int32_t v) {
+            lv_obj_set_style_opa((lv_obj_t*)var, v, 0);
+          });
+          lv_anim_set_path_cb(&anim_keypad_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_keypad_fade);
+
+      - delay: 600ms
+      - lambda: |-
+          // Одновременно изменяем размеры контейнеров И поднимаем middle_widget_background
+          lv_anim_t anim_main_shrink, anim_middle_expand, anim_middle_move_up;
+          
+          lv_anim_init(&anim_main_shrink);
+          lv_anim_set_var(&anim_main_shrink, id(${widget_name}_main_background));
+          lv_anim_set_values(&anim_main_shrink, 290, 180);
+          lv_anim_set_time(&anim_main_shrink, 350);
+          lv_anim_set_exec_cb(&anim_main_shrink, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_main_shrink, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_main_shrink);
+          
+          lv_anim_init(&anim_middle_expand);
+          lv_anim_set_var(&anim_middle_expand, id(${widget_name}_primary_buttons_background));
+          lv_anim_set_values(&anim_middle_expand, 0, 100);
+          lv_anim_set_time(&anim_middle_expand, 350);
+          lv_anim_set_exec_cb(&anim_middle_expand, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_middle_expand, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_middle_expand);
+          
+          // Опускаем ${widget_name}_primary_buttons_background на 100px вниз
+          lv_anim_init(&anim_middle_move_up);
+          lv_anim_set_var(&anim_middle_move_up, id(${widget_name}_primary_buttons_background));
+          lv_anim_set_values(&anim_middle_move_up, lv_obj_get_y(id(${widget_name}_primary_buttons_background)), lv_obj_get_y(id(${widget_name}_primary_buttons_background)) - 100);
+          lv_anim_set_time(&anim_middle_move_up, 350);
+          lv_anim_set_exec_cb(&anim_middle_move_up, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_middle_move_up, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_middle_move_up);
+
+      - delay: 350ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_state_widget), LV_OBJ_FLAG_HIDDEN);
+
+          lv_obj_set_style_opa(id(${widget_name}_state_widget), 0, 0);
+          
+          lv_anim_t anim_state_fade, anim_circle;
+          
+          lv_anim_init(&anim_state_fade);
+          lv_anim_set_var(&anim_state_fade, id(${widget_name}_state_widget));
+          lv_anim_set_values(&anim_state_fade, 0, 255);
+          lv_anim_set_time(&anim_state_fade, 600);
+          lv_anim_set_exec_cb(&anim_state_fade, [](void * var, int32_t v) {
+            lv_obj_set_style_opa((lv_obj_t*)var, v, 0);
+          });
+          lv_anim_set_path_cb(&anim_state_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_state_fade);
+      
+          
+          lv_anim_init(&anim_circle);
+          lv_anim_set_var(&anim_circle, id(${widget_name}_circle_background));
+          lv_anim_set_values(&anim_circle, 400, 60);
+          lv_anim_set_time(&anim_circle, 600);
+          lv_anim_set_exec_cb(&anim_circle, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle);
+          
+      - delay: 150ms
+      - lambda: |-
+          id(is_animating) = false;
+
+  # 4. DISARMED -> ARMED (прямой переход, без PIN_PAD)
+  - id: ${widget_name}_animate_disarmed_to_armed_direct
+    then:
+      - lambda: |-
+          ESP_LOGI("AP", "Direct transition: DISARMED -> ARMED");
+          
+          // Скрываем кнопки
+          lv_obj_add_flag(id(${widget_name}_primary_buttons_container), LV_OBJ_FLAG_HIDDEN);
+          
+          // Анимация исчезновения state_widget
+          lv_anim_t anim_state_fade;
+          lv_anim_init(&anim_state_fade);
+          lv_anim_set_var(&anim_state_fade, id(${widget_name}_state_widget));
+          lv_anim_set_values(&anim_state_fade, 255, 0);
+          lv_anim_set_time(&anim_state_fade, 300);
+          lv_anim_set_exec_cb(&anim_state_fade, [](void * var, int32_t v) {
+            lv_obj_set_style_opa((lv_obj_t*)var, v, 0);
+          });
+          lv_anim_set_path_cb(&anim_state_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_state_fade);
+
+      - delay: 300ms
+      - lambda: |-
+          // Обновляем иконку и цвет (уже обновлено в text_sensor)
+          // Анимация появления state_widget с новой иконкой
+          lv_obj_set_style_opa(id(${widget_name}_state_widget), 0, 0);
+          
+          lv_anim_t anim_state_appear, anim_circle;
+          
+          lv_anim_init(&anim_state_appear);
+          lv_anim_set_var(&anim_state_appear, id(${widget_name}_state_widget));
+          lv_anim_set_values(&anim_state_appear, 0, 255);
+          lv_anim_set_time(&anim_state_appear, 300);
+          lv_anim_set_exec_cb(&anim_state_appear, [](void * var, int32_t v) {
+            lv_obj_set_style_opa((lv_obj_t*)var, v, 0);
+          });
+          lv_anim_set_path_cb(&anim_state_appear, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_state_appear);
+          
+          // Круг поднимается вверх
+          lv_anim_init(&anim_circle);
+          lv_anim_set_var(&anim_circle, id(${widget_name}_circle_background));
+          lv_anim_set_values(&anim_circle, lv_obj_get_y(id(${widget_name}_circle_background)), 60);
+          lv_anim_set_time(&anim_circle, 600);
+          lv_anim_set_exec_cb(&anim_circle, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle);
+          
+      - delay: 600ms
+      - lambda: |-
+          id(is_animating) = false;
+
+  # 5. ARMED -> DISARMED (прямой переход, без PIN_PAD)
+  - id: ${widget_name}_animate_armed_to_disarmed_direct
+    then:
+      - lambda: |-
+          ESP_LOGI("AP", "Direct transition: ARMED -> DISARMED");
+          
+          // Круг опускается вниз
+          lv_anim_t anim_circle, anim_state_fade;
+          
+          lv_anim_init(&anim_circle);
+          lv_anim_set_var(&anim_circle, id(${widget_name}_circle_background));
+          lv_anim_set_values(&anim_circle, 60, 400);
+          lv_anim_set_time(&anim_circle, 600);
+          lv_anim_set_exec_cb(&anim_circle, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle);
+          
+          // Исчезновение state_widget
+          lv_anim_init(&anim_state_fade);
+          lv_anim_set_var(&anim_state_fade, id(${widget_name}_state_widget));
+          lv_anim_set_values(&anim_state_fade, 255, 0);
+          lv_anim_set_time(&anim_state_fade, 300);
+          lv_anim_set_exec_cb(&anim_state_fade, [](void * var, int32_t v) {
+            lv_obj_set_style_opa((lv_obj_t*)var, v, 0);
+          });
+          lv_anim_set_path_cb(&anim_state_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_state_fade);
+
+      - delay: 300ms
+      - lambda: |-
+          // Обновляем иконку (уже обновлено в text_sensor)
+          // Появление state_widget с новой иконкой
+          lv_obj_clear_flag(id(${widget_name}_primary_buttons_container), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_set_style_opa(id(${widget_name}_state_widget), 0, 0);
+          
+          lv_anim_t anim_state_appear;
+          
+          lv_anim_init(&anim_state_appear);
+          lv_anim_set_var(&anim_state_appear, id(${widget_name}_state_widget));
+          lv_anim_set_values(&anim_state_appear, 0, 255);
+          lv_anim_set_time(&anim_state_appear, 300);
+          lv_anim_set_exec_cb(&anim_state_appear, [](void * var, int32_t v) {
+            lv_obj_set_style_opa((lv_obj_t*)var, v, 0);
+          });
+          lv_anim_set_path_cb(&anim_state_appear, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_state_appear);
+          
+      - delay: 300ms
+      - lambda: |-
+          id(is_animating) = false;
+
+  # 6. INIT -> DISARMED (первая загрузка в состоянии DISARMED)
+  - id: ${widget_name}_animate_init_to_disarmed
+    then:
+      - lambda: |-
+          ESP_LOGI("AP", "Init to DISARMED");
+          
+          // Устанавливаем начальные позиции без анимации
+          lv_obj_set_y(id(${widget_name}_circle_background), 400);  // Круг внизу
+          lv_obj_set_height(id(${widget_name}_main_background), 180);
+          lv_obj_set_height(id(${widget_name}_primary_buttons_background), 100);
+          
+          // Показываем нужные элементы
+          lv_obj_clear_flag(id(${widget_name}_state_widget), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_primary_buttons_container), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_keypad_widget), LV_OBJ_FLAG_HIDDEN);
+          
+          lv_obj_set_style_opa(id(${widget_name}_state_widget), 255, 0);
+          
+          id(is_animating) = false;
+
+  # 7. INIT -> ARMED (первая загрузка в состоянии ARMED)
+  - id: ${widget_name}_animate_init_to_armed
+    then:
+      - lambda: |-
+          ESP_LOGI("AP", "Init to ARMED");
+          
+          // Устанавливаем начальные позиции без анимации
+          lv_obj_set_y(id(${widget_name}_circle_background), 60);  // Круг вверху
+          lv_obj_set_height(id(${widget_name}_main_background), 180);
+          lv_obj_set_height(id(${widget_name}_primary_buttons_background), 100);
+          
+          // Показываем нужные элементы
+          lv_obj_clear_flag(id(${widget_name}_state_widget), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_primary_buttons_container), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_keypad_widget), LV_OBJ_FLAG_HIDDEN);
+          
+          lv_obj_set_style_opa(id(${widget_name}_state_widget), 255, 0);
+          
+          id(is_animating) = false;

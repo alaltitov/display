@@ -6,14 +6,14 @@ packages:
   climate: !include widgets/climate/climate.yaml
   media_player: !include widgets/media_player/media_player.yaml
   vacuum: !include widgets/vacuum/vacuum.yaml
-  cover: !include widgets/cover/config.yaml
+  # cover: !include widgets/cover/config.yaml
+  alarm_panel: !include widgets/alarm_panel/config.yaml
 
 
 substitutions: !include common/substitutions.yaml
 image: !include common/image.yaml
 font: !include common/fonts.yaml
 color: !include common/colors.yaml
-
 
 http_request:
   verify_ssl: false
@@ -36,6 +36,7 @@ i18n:
     - translations/de.yaml
   default_locale: en
   use_psram: true
+  buffer_size: "512"
 
 esphome:
   name: ${display_name}
@@ -68,7 +69,7 @@ esp32:
       # CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: y
       # CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
       # CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
-      # CONFIG_ESP_MAIN_TASK_STACK_SIZE: "131072"
+      # CONFIG_ESP_MAIN_TASK_STACK_SIZE: "16384"
       CONFIG_SPIRAM_FETCH_INSTRUCTIONS: y
       CONFIG_SPIRAM_RODATA: y
       CONFIG_ESP_TASK_WDT_TIMEOUT_S: "60"
@@ -83,10 +84,10 @@ psram:
 
 
 logger:
-  level: debug
-  # logs:
-  #   lvgl: info
-  # hardware_uart: UART0
+  level: info
+  logs:
+    lvgl: info
+  hardware_uart: UART0
 
 
 api:
@@ -352,3 +353,21 @@ display:
         - 6          # B3
         - 7          # B4
         - 15         # B5
+
+
+interval:
+  - interval: 5s
+    then:
+      - lambda: |-
+          static uint32_t min_stack = UINT32_MAX;
+          UBaseType_t current = uxTaskGetStackHighWaterMark(NULL);
+          uint32_t bytes = current * sizeof(StackType_t);
+          
+          if (bytes < min_stack) {
+            min_stack = bytes;
+            ESP_LOGW("stack", "New minimum stack: %d bytes", min_stack);
+          }
+          
+          if (bytes < 512) {
+            ESP_LOGE("stack", "CRITICAL: Only %d bytes left!", bytes);
+          }

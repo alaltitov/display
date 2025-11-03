@@ -330,6 +330,13 @@
     "\U000F05F8", # home locate
     "\U000F0A77", # target variant
     "\U000F034E", # map marker
+    "\U000F068A", # shield home
+    "\U000F1828", # shield moon
+    "\U000F099D", # shield lock
+    "\U000F06BB", # shield plane
+    "\U000F0483", # shield custom
+    "\U000F099E", # shield off
+    "\U000F0498", # shield
   ]
 
 - file: "assets/fonts/materialdesignicons-webfont.ttf"
@@ -347,6 +354,7 @@
     "\U000F1828", # shield moon
     "\U000F099D", # shield lock
     "\U000F06BB", # shield plane
+    "\U000F0483", # shield custom
     "\U000F099E", # shield off
     "\U000F0498", # shield
     "\U000F04AE", # previous track
@@ -372,6 +380,7 @@
     "\U000F1828", # shield moon
     "\U000F099D", # shield lock
     "\U000F06BB", # shield plane
+    "\U000F0483", # shield custom
     "\U000F099E", # shield off
     "\U000F0498", # shield
     "\U000F0826", # home

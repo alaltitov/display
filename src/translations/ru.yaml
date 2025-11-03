@@ -101,3 +101,18 @@ cover:
     open: Открыто
     opening: Открывается
     stopped: Остановлено
+
+alarm_panel:
+  name: "Панель сигнализации"
+  state:
+    armed: Под охраной
+    armed_away: Охрана (не дома)
+    armed_custom_bypass: Охрана с исключениями
+    armed_home: Охрана (дома)
+    armed_night: Охрана (ночь)
+    armed_vacation: Охрана (отпуск)
+    arming: Постановка на охрану
+    disarmed: Снято с охраны
+    disarming: Снятие с охраны
+    pending: Ожидание
+    triggered: Тревога

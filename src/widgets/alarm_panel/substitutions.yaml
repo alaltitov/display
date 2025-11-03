@@ -1,0 +1,10 @@
+alarm_panels_amount: "2" # choise 1 or 2
+
+alarm_panel_entity_1: "alarm_control_panel.security"
+alarm_panel_entity_2: "alarm_control_panel.home_alarm"
+
+alarm_panel_widget_name_1: "alarm_panel1"
+alarm_panel_widget_name_2: "alarm_panel2"
+
+pin_code_1: "1234"
+pin_code_2: "5678"

@@ -1,0 +1,19 @@
+substitutions: !include substitutions.yaml
+
+packages:
+  select: !include select.yaml
+
+  alarm_panel_1: !include
+    file: alarm_panel.yaml
+    vars:
+      alarm_panel_entity: "${alarm_panel_entity_1}"
+      widget_name: "${alarm_panel_widget_name_1}"
+      pin_code: "${pin_code_1}"
+
+  alarm_panel_2: !include
+    file: alarm_panel.yaml
+    vars:
+      alarm_panel_entity: "${alarm_panel_entity_2}"
+      widget_name: "${alarm_panel_widget_name_2}"
+      pin_code: "${pin_code_2}"
+
