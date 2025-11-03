@@ -1,28 +1,10 @@
 substitutions: !include substitutions.yaml
 
-
+# ✅ ОПТИМИЗИРОВАННЫЕ GLOBALS - только примитивные типы!
 globals:
-  - id: repeat_modes
-    type: std::vector<std::string>
-    initial_value: '{"all", "one", "off"}'
-  - id: repeat_icons
-    type: std::vector<std::string>
-    initial_value: '{"${repeat_all_icon}", "${repeat_one_icon}", "${repeat_off_icon}"}'
   - id: current_repeat_mode_idx
     type: int
     initial_value: '0'
-  - id: tmp_repeat_mode
-    type: std::string
-    restore_value: no
-    initial_value: '"all"'
-  - id: tmp_repeat_icon
-    type: std::string
-    restore_value: no
-    initial_value: '"${repeat_all_icon}"'
-  - id: cover_url
-    type: std::string
-    restore_value: no
-    initial_value: '""'
   - id: duration_slider_user_interaction
     type: bool
     restore_value: no
@@ -31,17 +13,6 @@ globals:
     type: float
     restore_value: no
     initial_value: '0.0'
-  - id: pending_cover_url
-    type: std::string
-    restore_value: no
-    initial_value: '""'
-  - id: pending_repeat_value
-    type: std::string
-    restore_value: no
-    initial_value: '""'
-  - id: source_list
-    type: std::vector<std::string>
-    restore_value: no
   - id: source_list_index
     type: int
     restore_value: no
@@ -51,6 +22,14 @@ globals:
     restore_value: no
     initial_value: 'false'
 
+  - id: selected_source_str
+    type: std::string
+    restore_value: no
+    initial_value: '""'
+  - id: mode_to_send_str
+    type: std::string
+    restore_value: no
+    initial_value: '""'
 
 online_image:
   - url: "https://www.example.com/example.jpeg"
@@ -62,7 +41,6 @@ online_image:
       - lvgl.obj.update:
           id: media_player_cover
           bg_image_src: media_image_jpeg
-
 
 sensor:
   - platform: homeassistant
@@ -95,7 +73,6 @@ sensor:
                 id: media_player_duration_pos_slider
                 value: !lambda return x;
 
-
 binary_sensor:
   - platform: homeassistant
     id: media_player_is_volume_muted
@@ -114,9 +91,7 @@ binary_sensor:
                 id: media_player_mute_label
                 text: "${volume_on_icon}"
 
-
 text_sensor:
-
   - platform: homeassistant
     id: media_player_state_sensor
     entity_id: "${media_player_entity}"
@@ -140,8 +115,6 @@ text_sensor:
     entity_id: "${media_player_entity}"
     attribute: entity_picture
     on_value:
-      - lambda: |-
-          id(pending_cover_url) = x;
       - script.execute: update_cover_script
 
   - platform: homeassistant
@@ -178,45 +151,27 @@ text_sensor:
     entity_id: "${media_player_entity}"
     attribute: repeat
     on_value:
-      - lambda: |-
-          id(pending_repeat_value) = x;
       - script.execute: update_repeat_mode_script
 
-  # MEDIA PLAYER SOURCE LIST
+  # MEDIA PLAYER SOURCE LIST - ✅ ОПТИМИЗИРОВАНО
   - platform: homeassistant
     id: media_player_source_list_sensor
     entity_id: "${media_player_entity}"
     attribute: source_list
     on_value:
       - lambda: |-
-          std::vector<std::string> sl;
-          std::string input = x;
+          // ✅ НЕ создаём вектор, только проверяем наличие
           bool has_sources = false;
           
-          if (!input.empty() && input != "unknown" && input != "unavailable") {
-            input.erase(std::remove(input.begin(), input.end(), '['), input.end());
-            input.erase(std::remove(input.begin(), input.end(), ']'), input.end());
-            input.erase(std::remove(input.begin(), input.end(), '\''), input.end());
-            input.erase(std::remove(input.begin(), input.end(), '"'), input.end());
-            std::stringstream ss(input);
-            std::string item;
-            while (std::getline(ss, item, ',')) {
-              item.erase(0, item.find_first_not_of(" \t"));
-              if (!item.empty())
-                item.erase(item.find_last_not_of(" \t") + 1);
-              if (!item.empty()) sl.push_back(item);
-            }
-            has_sources = !sl.empty();
+          if (!x.empty() && x != "unknown" && x != "unavailable") {
+            // Простая проверка: есть ли запятые или длина > 4
+            has_sources = (x.find(',') != std::string::npos) || 
+                          (x.length() > 4 && x.find('[') != std::string::npos);
           }
           
-          id(source_list) = sl;
           id(source_available) = has_sources;
           
-          int sel = id(source_list_index);
-          if (sel < 0 || sel >= (int)sl.size()) sel = 0;
-          id(source_list_index) = sel;
-          
-          ESP_LOGI("MP_PANEL","Parsed %d sources (sel=%d, available=%d)", (int)sl.size(), sel, has_sources);
+          ESP_LOGI("MP_PANEL", "Sources available: %d", has_sources);
           
           // Обновляем состояние кнопки
           lv_obj_t* btn = id(media_player_source_btn);
@@ -226,13 +181,11 @@ text_sensor:
             lv_obj_clear_state(btn, LV_STATE_DISABLED);
             lv_obj_set_style_opa(btn, LV_OPA_COVER, 0);
             lv_obj_set_style_text_opa(label, LV_OPA_COVER, 0);
-            id(media_player_build_source_panel).execute();
           } else {
             lv_obj_add_state(btn, LV_STATE_DISABLED);
             lv_obj_set_style_opa(btn, LV_OPA_30, 0);
             lv_obj_set_style_text_opa(label, LV_OPA_30, 0);
           }
-
 
   # MEDIA PLAYER SOURCE
   - platform: homeassistant
@@ -241,19 +194,12 @@ text_sensor:
     attribute: source
     on_value:
       - lambda: |-
-          if (!id(source_list).empty() && !x.empty()) {
-            for (int i = 0; i < (int)id(source_list).size(); ++i) {
-              if (id(source_list)[i] == x) {
-                id(source_list_index) = i;
-                ESP_LOGD("MP_PANEL","Sync source -> index %d (%s)", i, x.c_str());
-                break;
-              }
-            }
+          // Сохраняем текущий источник для синхронизации
+          if (!x.empty()) {
+            ESP_LOGD("MP_PANEL", "Current source: %s", x.c_str());
           }
 
-
 lvgl:
-
   pages:
     - id: media_player_page
       bg_color: color_black
@@ -642,7 +588,6 @@ lvgl:
                               text: "${media_source}"
                         on_click:
                           - lambda: |-
-                              // Проверяем доступность источников
                               if (!id(source_available)) return;
                               if (id(is_animating)) return;
                               id(is_animating) = true;
@@ -719,7 +664,6 @@ lvgl:
                                     data:
                                       entity_id: "${media_player_entity}"
 
-
                     # volume +
                     - obj:
                         id: media_player_vol_plus_btn
@@ -749,7 +693,6 @@ lvgl:
                                     action: media_player.volume_up
                                     data:
                                       entity_id: "${media_player_entity}"
-                    
 
         # CIRCLE
         - obj:
@@ -775,7 +718,6 @@ lvgl:
                   radius: 50
                   border_opa: transp
                   bg_color: color_slate_blue_gray
-
 
               - obj:
                   width: 150
@@ -887,12 +829,10 @@ lvgl:
               - lvgl.page.show: home_page
 
 script:
+  # ✅ ОПТИМИЗИРОВАНО - читаем напрямую из сенсора
   - id: update_cover_script
     mode: restart
     then:
-      - lambda: |-
-          std::string url = id(pending_cover_url);
-          id(cover_url) = url;
       - homeassistant.action:
           action: display_tools.save_media_cover
           data:
@@ -904,46 +844,66 @@ script:
           id: media_image_jpeg
           url: "${ha_server}/local/display_tools/cover.jpeg"
 
+  # ✅ ОПТИМИЗИРОВАНО - статические массивы вместо глобальных векторов
   - id: update_repeat_mode_script
     mode: restart
     then:
       - lambda: |-
-          std::string x = id(pending_repeat_value);
-          auto modes = id(repeat_modes);
-          auto icons = id(repeat_icons);
-          for (int i = 0; i < modes.size(); i++) {
-            if (modes[i] == x) {
+          // ✅ Статические массивы - не занимают стек
+          static const char* REPEAT_MODES[] = {"all", "one", "off"};
+          static const char* REPEAT_ICONS[] = {
+            "${repeat_all_icon}", 
+            "${repeat_one_icon}", 
+            "${repeat_off_icon}"
+          };
+          static const int MODES_COUNT = 3;
+          
+          std::string current_mode = id(media_player_repeat_sensor).state;
+          
+          // Найти индекс режима
+          for (int i = 0; i < MODES_COUNT; i++) {
+            if (current_mode == REPEAT_MODES[i]) {
               id(current_repeat_mode_idx) = i;
-              id(tmp_repeat_mode) = modes[i];
-              id(tmp_repeat_icon) = icons[i];
+              lv_label_set_text(id(media_player_repeat_label), REPEAT_ICONS[i]);
+              ESP_LOGD("MP_PANEL", "Repeat mode: %s (idx=%d)", REPEAT_MODES[i], i);
               break;
             }
           }
-      - lvgl.label.update:
-          id: media_player_repeat_label
-          text: !lambda 'return id(tmp_repeat_icon);'
 
   - id: handle_repeat_press_script
     mode: restart
     then:
       - lambda: |-
+          static const char* REPEAT_MODES[] = {"all", "one", "off"};
+          static const char* REPEAT_ICONS[] = {
+            "${repeat_all_icon}", 
+            "${repeat_one_icon}", 
+            "${repeat_off_icon}"
+          };
+          static const int MODES_COUNT = 3;
+          
           int idx = id(current_repeat_mode_idx);
-          auto modes = id(repeat_modes);
-          auto icons = id(repeat_icons);
-          idx = (idx + 1) % modes.size();
+          idx = (idx + 1) % MODES_COUNT;
           id(current_repeat_mode_idx) = idx;
-          std::string new_mode = modes[idx];
-          std::string new_icon = icons[idx];
-          id(tmp_repeat_mode) = new_mode;
-          id(tmp_repeat_icon) = new_icon;
-      - lvgl.label.update:
-          id: media_player_repeat_label
-          text: !lambda 'return id(tmp_repeat_icon);'
+          
+          const char* new_mode = REPEAT_MODES[idx];
+          const char* new_icon = REPEAT_ICONS[idx];
+          
+          lv_label_set_text(id(media_player_repeat_label), new_icon);
+          
+          ESP_LOGD("MP_PANEL", "Switching to repeat mode: %s", new_mode);
+          
+          // ✅ ИСПОЛЬЗУЕМ ГЛОБАЛЬНУЮ ПЕРЕМЕННУЮ
+          id(mode_to_send_str) = new_mode;
+          
       - homeassistant.action:
           action: media_player.repeat_set
           data:
             entity_id: "${media_player_entity}"
-            repeat: !lambda 'return id(tmp_repeat_mode);'
+            repeat: !lambda |-
+              return id(mode_to_send_str);
+
+
 
   - id: handle_duration_slider_release_script
     mode: restart
@@ -957,7 +917,6 @@ script:
       - lambda: |-
           id(duration_slider_user_interaction) = false;
 
-
   - id: media_player_build_source_panel
     then:
       - lambda: |-
@@ -966,51 +925,73 @@ script:
           lv_obj_t * cont = id(media_player_source_panel);
           if (!cont) return;
 
-          while (lv_obj_get_child_cnt(cont) > 0) {
-            lv_obj_t * child = lv_obj_get_child(cont, 0);
-            lv_obj_del(child);
+          lv_obj_clean(cont);
+
+          std::string input = id(media_player_source_list_sensor).state;
+          
+          if (input.empty() || input == "unknown" || input == "unavailable") {
+            ESP_LOGW("MP_PANEL", "No sources available");
+            return;
           }
 
-          auto & list = id(source_list);
-          int sel = id(source_list_index);
+          input.erase(std::remove(input.begin(), input.end(), '['), input.end());
+          input.erase(std::remove(input.begin(), input.end(), ']'), input.end());
+          input.erase(std::remove(input.begin(), input.end(), '\''), input.end());
+          input.erase(std::remove(input.begin(), input.end(), '"'), input.end());
+
+          std::string current_source = id(media_player_source_sensor).state;
 
           const lv_color_t COLOR_DEFAULT = lv_color_hex(0x9BA2BC);
           const lv_color_t COLOR_ACTIVE  = lv_color_hex(0x2ECC71);
 
-          for (int i = 0; i < (int)list.size(); ++i) {
+          std::stringstream ss(input);
+          std::string item;
+          int idx = 0;
+
+          while (std::getline(ss, item, ',')) {
+            item.erase(0, item.find_first_not_of(" \t"));
+            if (!item.empty()) {
+              item.erase(item.find_last_not_of(" \t") + 1);
+            }
+
+            if (item.empty()) continue;
+
             lv_obj_t * btn = lv_obj_create(cont);
             lv_obj_set_size(btn, 120, 30);
             lv_obj_add_flag(btn, LV_OBJ_FLAG_CLICKABLE);
             lv_obj_clear_flag(btn, LV_OBJ_FLAG_SCROLLABLE);
             lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
             lv_obj_set_style_border_width(btn, 0, 0);
-            lv_obj_set_style_pad_left(btn, 10, 0);
-            lv_obj_set_style_pad_top(btn, 10, 0);
-            lv_obj_set_style_pad_bottom(btn, 10, 0);
-            lv_obj_set_style_pad_column(btn, 10, 0);
+            lv_obj_set_style_pad_all(btn, 10, 0);
 
             lv_obj_set_flex_flow(btn, LV_FLEX_FLOW_ROW);
-            lv_obj_set_flex_align(btn,
-                                  LV_FLEX_ALIGN_START,
-                                  LV_FLEX_ALIGN_CENTER,
-                                  LV_FLEX_ALIGN_CENTER);
+            lv_obj_set_flex_align(btn, LV_FLEX_ALIGN_START, 
+                                  LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
             lv_obj_t * txt = lv_label_create(btn);
-            std::string caption = list[i];
-            if (!caption.empty())
+            std::string caption = item;
+            if (!caption.empty()) {
               caption[0] = (char)std::toupper((unsigned char)caption[0]);
+            }
             lv_label_set_text(txt, caption.c_str());
             lv_obj_set_style_text_font(txt, fe_nunito_16.get_lv_font(), 0);
 
-            lv_color_t c = (i == sel) ? COLOR_ACTIVE : COLOR_DEFAULT;
+            bool is_active = (item == current_source);
+            lv_color_t c = is_active ? COLOR_ACTIVE : COLOR_DEFAULT;
             lv_obj_set_style_text_color(txt, c, 0);
 
-            lv_obj_add_event_cb(btn, [](lv_event_t * e){
-              int idx = (int)(intptr_t) lv_event_get_user_data(e);
-              auto & list = id(source_list);
-              if (idx < 0 || idx >= (int)list.size()) return;
+            char* source_name = (char*)malloc(item.length() + 1);
+            strcpy(source_name, item.c_str());
 
-              id(source_list_index) = idx;
+            lv_obj_add_event_cb(btn, [](lv_event_t * e) {
+              char* source = (char*)lv_event_get_user_data(e);
+              if (!source) return;
+
+              ESP_LOGI("MP_PANEL", "Selected source: %s", source);
+
+              // ✅ ИСПОЛЬЗУЕМ ГЛОБАЛЬНУЮ ПЕРЕМЕННУЮ
+              id(selected_source_str) = source;
+
               id(media_player_send_source_to_ha).execute();
 
               lv_obj_t * parent = id(media_player_source_panel);
@@ -1020,9 +1001,10 @@ script:
                   lv_obj_t * b = lv_obj_get_child(parent, j);
                   if (lv_obj_get_child_cnt(b) >= 1) {
                     lv_obj_t * label = lv_obj_get_child(b, 0);
-                    lv_color_t c = (j == idx) ? lv_color_hex(0x2ECC71) : lv_color_hex(0x9BA2BC);
+                    char* btn_source = (char*)lv_obj_get_user_data(b);
+                    bool active = (btn_source && strcmp(btn_source, source) == 0);
+                    lv_color_t c = active ? lv_color_hex(0x2ECC71) : lv_color_hex(0x9BA2BC);
                     lv_obj_set_style_text_color(label, c, 0);
-                    lv_obj_set_style_bg_opa(b, LV_OPA_TRANSP, 0);
                   }
                 }
               }
@@ -1031,9 +1013,12 @@ script:
                 id(is_animating) = true;
                 id(animate_source_to_mp).execute();
               }
-            }, LV_EVENT_CLICKED, (void*)(intptr_t)i);
+            }, LV_EVENT_CLICKED, source_name);
+
+            idx++;
           }
 
+          ESP_LOGI("MP_PANEL", "Created %d source buttons", idx);
 
   - id: media_player_send_source_to_ha
     then:
@@ -1042,19 +1027,14 @@ script:
           data:
             entity_id: "${media_player_entity}"
             source: !lambda |-
-              auto & list = id(source_list);
-              int idx = id(source_list_index);
-              if (idx >= 0 && idx < (int)list.size()) return list[idx];
-              return std::string("");
-
-
+              return id(selected_source_str);
 
   # MAIN -> SOURCE
   - id: animate_mp_to_source
     then:
       - lambda: |-
           // ШАГ 1: Кнопки уезжают, круг вниз, виджет исчезает
-          lv_anim_t anim_prev_btn, anim_next_btn, anim_circle, anim_main_fade, anim_secondary_btns_fade;
+          lv_anim_t anim_prev_btn, anim_next_btn, anim_circle, anim_main_fade;
           
           lv_anim_init(&anim_prev_btn);
           lv_anim_set_var(&anim_prev_btn, id(media_player_prev_btn));
@@ -1095,16 +1075,6 @@ script:
           });
           lv_anim_set_path_cb(&anim_main_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_main_fade);
-
-          // lv_anim_init(&anim_secondary_btns_fade);
-          // lv_anim_set_var(&anim_secondary_btns_fade, id(media_player_secondary_controls_background));
-          // lv_anim_set_values(&anim_secondary_btns_fade, 255, 0);
-          // lv_anim_set_time(&anim_secondary_btns_fade, 600);
-          // lv_anim_set_exec_cb(&anim_secondary_btns_fade, [](void * var, int32_t v) {
-          //   lv_obj_set_style_opa((lv_obj_t*)var, v, 0);
-          // });
-          // lv_anim_set_path_cb(&anim_secondary_btns_fade, lv_anim_path_ease_in_out);
-          // lv_anim_start(&anim_secondary_btns_fade);
 
       - delay: 600ms
       
@@ -1161,12 +1131,14 @@ script:
           });
           lv_anim_set_path_cb(&anim_source_panel_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_source_panel_fade);
+          
+          // ✅ Строим панель источников ПОСЛЕ показа
+          id(media_player_build_source_panel).execute();
 
       - delay: 400ms
       
       - lambda: |-
           id(is_animating) = false;
-
 
   # SOURCE -> MAIN
   - id: animate_source_to_mp
@@ -1231,7 +1203,7 @@ script:
       
       - lambda: |-
           // ШАГ 3: Кнопки возвращаются, круг вверх, виджет появляется
-          lv_anim_t anim_prev_btn, anim_next_btn, anim_circle, anim_main_fade, anim_secondary_btns_fade;
+          lv_anim_t anim_prev_btn, anim_next_btn, anim_circle, anim_main_fade;
           
           lv_anim_init(&anim_prev_btn);
           lv_anim_set_var(&anim_prev_btn, id(media_player_prev_btn));
@@ -1273,18 +1245,9 @@ script:
           lv_anim_set_path_cb(&anim_main_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_main_fade);
 
-          // lv_anim_init(&anim_secondary_btns_fade);
-          // lv_anim_set_var(&anim_secondary_btns_fade, id(media_player_secondary_controls_background));
-          // lv_anim_set_values(&anim_secondary_btns_fade, 0, 255);
-          // lv_anim_set_time(&anim_secondary_btns_fade, 600);
-          // lv_anim_set_exec_cb(&anim_secondary_btns_fade, [](void * var, int32_t v) {
-          //   lv_obj_set_style_opa((lv_obj_t*)var, v, 0);
-          // });
-          // lv_anim_set_path_cb(&anim_secondary_btns_fade, lv_anim_path_ease_in_out);
-          // lv_anim_start(&anim_secondary_btns_fade);
-
       - delay: 600ms
       
       - lambda: |-
           id(is_animating) = false;
+
 

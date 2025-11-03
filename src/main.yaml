@@ -3,10 +3,10 @@ packages:
   home: !include widgets/home/home.yaml
   light: !include widgets/light/config.yaml
   devices: !include common/widgets/devices.yaml
-  climate: !include widgets/climate/climate.yaml
+  # climate: !include widgets/climate/climate.yaml
   media_player: !include widgets/media_player/media_player.yaml
   vacuum: !include widgets/vacuum/vacuum.yaml
-  # cover: !include widgets/cover/config.yaml
+  cover: !include widgets/cover/config.yaml
   alarm_panel: !include widgets/alarm_panel/config.yaml
 
 
