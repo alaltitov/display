@@ -104,6 +104,8 @@ cover:
 
 alarm_panel:
   name: "Панель сигнализации"
+  enter_pass: "Введите пароль"
+  wrong_pass: "Неверный пароль"
   state:
     armed: Под охраной
     armed_away: Охрана (не дома)

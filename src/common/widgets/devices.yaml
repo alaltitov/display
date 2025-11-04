@@ -63,8 +63,8 @@ lvgl:
                         text_font: nunito_18
                         text_color: color_misty_blue
                         text: "Climate"
-                  # on_click:
-                  #   - lvgl.page.show: climate_page
+                  on_click:
+                    - lvgl.page.show: climate_page
 
               # Cover button
               - button:

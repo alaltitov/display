@@ -11,7 +11,7 @@ lvgl:
       - obj:
           id: cover_select_widget
           hidden: true
-          y: -60
+          y: -45
           width: 440
           height: 100
           align: bottom_mid
@@ -165,7 +165,7 @@ lvgl:
                             align: center
                             text_font: mdi_icons_24
                             text_color: color_misty_blue
-                            text: "${cover_icon_opened_4}"
+                            text: "${cover_icon_closed_4}"
                       on_press:
                         - lvgl.page.show: ${cover_widget_name_4}_cover_page
                         - lvgl.obj.update:
@@ -188,7 +188,6 @@ script:
           int covers = ${covers_amount};
           
           if (covers >= 2) {
-            // lv_obj_set_width(id(cover_select_widget_cont), 290);
             lv_obj_clear_flag(id(${cover_widget_name_1}_btn), LV_OBJ_FLAG_HIDDEN);
             lv_obj_clear_flag(id(${cover_widget_name_2}_btn), LV_OBJ_FLAG_HIDDEN);
           } else {
@@ -197,14 +196,12 @@ script:
           }
           
           if (covers >= 3) {
-            // lv_obj_set_width(id(cover_select_widget_cont), 345);
             lv_obj_clear_flag(id(${cover_widget_name_3}_btn), LV_OBJ_FLAG_HIDDEN);
           } else {
             lv_obj_add_flag(id(${cover_widget_name_3}_btn), LV_OBJ_FLAG_HIDDEN);
           }
           
           if (covers >= 4) {
-            // lv_obj_set_width(id(cover_select_widget_cont), 400);
             lv_obj_clear_flag(id(${cover_widget_name_4}_btn), LV_OBJ_FLAG_HIDDEN);
           } else {
             lv_obj_add_flag(id(${cover_widget_name_4}_btn), LV_OBJ_FLAG_HIDDEN);

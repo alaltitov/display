@@ -103,16 +103,18 @@ cover:
     stopped: Gestopt
 
 alarm_panel:
-  name: "Alarm control panel"
+  name: "Alarmbedieningspaneel"
+  enter_pass: "Voer wachtwoord in"
+  wrong_pass: "Verkeerd wachtwoord"
   state:
-    armed: Armed
-    armed_away: Armed away
-    armed_custom_bypass: Armed custom bypass
-    armed_home: Armed home
-    armed_night: Armed night
-    armed_vacation: Armed vacation
-    arming: Arming
-    disarmed: Disarmed
-    disarming: Disarming
-    pending: Pending
-    triggered: Triggered
+    armed: Ingeschakeld
+    armed_away: Ingeschakeld afwezig
+    armed_custom_bypass: Ingeschakeld met overbrugging
+    armed_home: Ingeschakeld thuis
+    armed_night: Ingeschakeld nacht
+    armed_vacation: Ingeschakeld vakantie
+    arming: Schakelt in
+    disarmed: Uitgeschakeld
+    disarming: Schakelt uit
+    pending: In behandeling
+    triggered: Getriggerd

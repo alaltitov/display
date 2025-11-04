@@ -117,15 +117,24 @@ script:
       - delay: 1s
       - lvgl.bar.update:
           id: boot_synchronization_bar
+          value: 25
+
+      - delay: 1s
+      - lvgl.bar.update:
+          id: boot_synchronization_bar
           value: 50
+
+      - delay: 1s
+      - lvgl.bar.update:
+          id: boot_synchronization_bar
+          value: 75
 
       - delay: 1s
       - lvgl.bar.update:
           id: boot_synchronization_bar
           value: 100
 
-      - delay: 500ms
-
+      - delay: 1s
       - lvgl.widget.hide: loading_page
 
 

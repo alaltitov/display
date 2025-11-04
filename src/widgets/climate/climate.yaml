@@ -1194,6 +1194,9 @@ lvgl:
             flex_flow: column
             flex_align_main: center
             flex_align_cross: center
+          widgets:
+            - container:
+                hidden: true
 
       # SWING MODES PANEL
       - obj:
@@ -1220,6 +1223,9 @@ lvgl:
             pad_row: 0
             flex_align_main: center
             flex_align_cross: center
+          widgets:
+            - container:
+                hidden: true
 
   pages:
     - id: climate_page

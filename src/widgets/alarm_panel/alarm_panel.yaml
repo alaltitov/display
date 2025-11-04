@@ -232,7 +232,6 @@ lvgl:
       bg_color: color_black
       scrollable: false
       widgets:
-
         - label:
             id: ${widget_name}_name_label
             y: 15
@@ -259,8 +258,8 @@ lvgl:
               - obj:
                   id: ${widget_name}_state_widget
                   width: 440
-                  height: 100
-                  align: center
+                  height: 180
+                  align: top_mid
                   clickable: false
                   radius: 20
                   pad_all: 0
@@ -272,10 +271,10 @@ lvgl:
                     # ICON
                     - obj:
                         id: ${widget_name}_state_icon_bg
-                        x: 20
+                        y: 20
                         width: 80
                         height: 80
-                        align: left_mid
+                        align: top_mid
                         bg_color: color_misty_blue
                         bg_opa: 20%
                         border_opa: transp
@@ -291,9 +290,11 @@ lvgl:
 
                     # STATE INFO
                     - obj:
-                        width: 300
-                        height: 100
-                        align: right_mid
+                        y: 34
+                        width: 400
+                        height: 30
+                        align: center
+                        pad_all: 0
                         bg_color: color_steel_blue
                         bg_opa: transp
                         border_opa: transp
@@ -303,11 +304,11 @@ lvgl:
                         widgets:
                           - label:
                               id: ${widget_name}_state_label
-                              height: 40
-                              width: 260
+                              height: 30
+                              width: 400
                               long_mode: DOT
-                              y: 5
-                              align: CENTER
+                              align: center
+                              text_align: center
                               text_color: color_misty_blue
                               text_font: nunito_20
                               text: "Disarmed"
@@ -342,7 +343,7 @@ lvgl:
                               id: ${widget_name}_keypad_code_label
                               align: center
                               text_font: nunito_18
-                              text: "Enter code"
+                              text: "Enter password"
                               text_color: color_misty_blue
                               text_align: center
 
@@ -435,7 +436,7 @@ lvgl:
               - obj:
                   id: ${widget_name}_primary_buttons_container
                   hidden: true
-                  width: 440
+                  width: 400
                   height: 100
                   align: center
                   clickable: false
@@ -449,150 +450,355 @@ lvgl:
                   layout:
                     type: flex
                     flex_flow: row
-                    flex_align_main: space_evenly
+                    flex_align_main: space_around
                     flex_align_cross: center
                     flex_align_track: center
                   widgets:
 
                     # HOME
                     - obj:
-                        id: ${widget_name}_home_btn
-                        width: 54
-                        height: 54
+                        id: ${widget_name}_home_btn_bg
+                        width: 80
+                        height: 80
+                        align: left_mid
                         pad_all: 0
-                        radius: 30
                         bg_opa: transp
+                        shadow_opa: transp
                         border_opa: transp
-                        shadow_width: 5
-                        shadow_spread: 1
-                        shadow_color: color_black
-                        pressed:
-                          bg_color: color_black
-                          shadow_width: 4
                         widgets:
-                          - label:
+                          - button:
+                              id: ${widget_name}_home_btn
+                              width: 60
+                              height: 60
                               align: center
-                              text_font: mdi_icons_28
-                              text_color: color_misty_blue
-                              text: "${shield_home_icon}"
-                        on_press:
-                          - lambda: |-
-                              id(${widget_name}_pending_action) = std::string("armed_home");
-                          - script.execute:
-                              id: ${widget_name}_switch_to_mode
-                              target_mode: 2
+                              clickable: true
+                              radius: 50
+                              pad_all: 0
+                              bg_opa: transp
+                              border_opa: transp
+                              border_width: 0
+                              shadow_width: 8
+                              shadow_spread: 2
+                              shadow_ofs_y: 0
+                              shadow_color: color_black
+                              shadow_opa: cover
+                              pressed:
+                                bg_color: color_steel_blue
+                                shadow_width: 4
+                              on_click:
+                                - lambda: |-
+                                    id(${widget_name}_pending_action) = std::string("armed_home");
+                                - script.execute:
+                                    id: ${widget_name}_switch_to_mode
+                                    target_mode: 2
+
+                          - obj:
+                              width: 50
+                              height: 50
+                              align: center
+                              clickable: false
+                              radius: 45
+                              pad_all: 0
+                              bg_opa: transp 
+                              border_opa: transp
+                              shadow_width: 4
+                              shadow_color: 0xFFFFFF
+                              shadow_ofs_x: -4
+                              shadow_ofs_y: -2
+                              shadow_opa: 30%
+
+                          - obj:
+                              width: 55
+                              height: 55
+                              pad_all: 0
+                              align: center
+                              clickable: false
+                              radius: 50
+                              border_opa: transp
+                              bg_color: color_slate_blue_gray
+                              widgets:
+                                - label:
+                                    align: center
+                                    text_font: mdi_icons_28
+                                    text_color: color_misty_blue
+                                    text: "${shield_home_icon}"
 
                     # AWAY
                     - obj:
-                        id: ${widget_name}_away_btn
-                        width: 54
-                        height: 54
+                        id: ${widget_name}_away_btn_bg
+                        width: 80
+                        height: 80
+                        align: left_mid
                         pad_all: 0
-                        radius: 30
                         bg_opa: transp
+                        shadow_opa: transp
                         border_opa: transp
-                        shadow_width: 5
-                        shadow_spread: 1
-                        shadow_color: color_black
-                        pressed:
-                          bg_color: color_black
-                          shadow_width: 4
                         widgets:
-                          - label:
+                          - button:
+                              id: ${widget_name}_away_btn
+                              width: 60
+                              height: 60
                               align: center
-                              text_font: mdi_icons_28
-                              text_color: color_misty_blue
-                              text: "${shield_away_icon}"
-                        on_press:
-                          - lambda: |-
-                              id(${widget_name}_pending_action) = std::string("armed_away");
-                          - script.execute:
-                              id: ${widget_name}_switch_to_mode
-                              target_mode: 2
+                              clickable: true
+                              radius: 50
+                              pad_all: 0
+                              bg_opa: transp
+                              border_opa: transp
+                              border_width: 0
+                              shadow_width: 8
+                              shadow_spread: 2
+                              shadow_ofs_y: 0
+                              shadow_color: color_black
+                              shadow_opa: cover
+                              pressed:
+                                bg_color: color_steel_blue
+                                shadow_width: 4
+                              on_click:
+                                - lambda: |-
+                                    id(${widget_name}_pending_action) = std::string("armed_away");
+                                - script.execute:
+                                    id: ${widget_name}_switch_to_mode
+                                    target_mode: 2
+
+
+                          - obj:
+                              width: 50
+                              height: 50
+                              align: center
+                              clickable: false
+                              radius: 45
+                              pad_all: 0
+                              bg_opa: transp 
+                              border_opa: transp
+                              shadow_width: 4
+                              shadow_color: 0xFFFFFF
+                              shadow_ofs_x: -4
+                              shadow_ofs_y: -2
+                              shadow_opa: 30%
+
+                          - obj:
+                              width: 55
+                              height: 55
+                              pad_all: 0
+                              align: center
+                              clickable: false
+                              radius: 50
+                              border_opa: transp
+                              bg_color: color_slate_blue_gray
+                              widgets:
+                                - label:
+                                    align: center
+                                    text_font: mdi_icons_28
+                                    text_color: color_misty_blue
+                                    text: "${shield_away_icon}"
+                  
 
                     # NIGHT
                     - obj:
-                        id: ${widget_name}_night_btn
-                        width: 54
-                        height: 54
+                        id: ${widget_name}_night_btn_bg
+                        width: 80
+                        height: 80
+                        align: left_mid
                         pad_all: 0
-                        radius: 30
                         bg_opa: transp
+                        shadow_opa: transp
                         border_opa: transp
-                        shadow_width: 5
-                        shadow_spread: 1
-                        shadow_color: color_black
-                        pressed:
-                          bg_color: color_black
-                          shadow_width: 4
                         widgets:
-                          - label:
+                          - button:
+                              id: ${widget_name}_night_btn
+                              width: 60
+                              height: 60
                               align: center
-                              text_font: mdi_icons_28
-                              text_color: color_misty_blue
-                              text: "${shield_night_icon}"
-                        on_press:
-                          - lambda: |-
-                              id(${widget_name}_pending_action) = std::string("armed_night");
-                          - script.execute:
-                              id: ${widget_name}_switch_to_mode
-                              target_mode: 2
+                              clickable: true
+                              radius: 50
+                              pad_all: 0
+                              bg_opa: transp
+                              border_opa: transp
+                              border_width: 0
+                              shadow_width: 8
+                              shadow_spread: 2
+                              shadow_ofs_y: 0
+                              shadow_color: color_black
+                              shadow_opa: cover
+                              pressed:
+                                bg_color: color_steel_blue
+                                shadow_width: 4
+                              on_click:
+                                - lambda: |-
+                                    id(${widget_name}_pending_action) = std::string("armed_night");
+                                - script.execute:
+                                    id: ${widget_name}_switch_to_mode
+                                    target_mode: 2
+
+                          - obj:
+                              width: 50
+                              height: 50
+                              align: center
+                              clickable: false
+                              radius: 45
+                              pad_all: 0
+                              bg_opa: transp 
+                              border_opa: transp
+                              shadow_width: 4
+                              shadow_color: 0xFFFFFF
+                              shadow_ofs_x: -4
+                              shadow_ofs_y: -2
+                              shadow_opa: 30%
+
+                          - obj:
+                              width: 55
+                              height: 55
+                              pad_all: 0
+                              align: center
+                              clickable: false
+                              radius: 50
+                              border_opa: transp
+                              bg_color: color_slate_blue_gray
+                              widgets:
+                                - label:
+                                    align: center
+                                    text_font: mdi_icons_28
+                                    text_color: color_misty_blue
+                                    text: "${shield_night_icon}"
+
 
                     # CUSTOM
                     - obj:
-                        id: ${widget_name}_custom_btn
-                        width: 54
-                        height: 54
+                        id: ${widget_name}_custom_btn_bg
+                        width: 80
+                        height: 80
+                        align: left_mid
                         pad_all: 0
-                        radius: 30
                         bg_opa: transp
+                        shadow_opa: transp
                         border_opa: transp
-                        shadow_width: 5
-                        shadow_spread: 1
-                        shadow_color: color_black
-                        pressed:
-                          bg_color: color_black
-                          shadow_width: 4
                         widgets:
-                          - label:
+                          - button:
+                              id: ${widget_name}_custom_btn
+                              width: 60
+                              height: 60
                               align: center
-                              text_font: mdi_icons_28
-                              text_color: color_misty_blue
-                              text: "${shield_custom_icon}"
-                        on_press:
-                          - lambda: |-
-                              id(${widget_name}_pending_action) = std::string("armed_custom_bypass");
-                          - script.execute:
-                              id: ${widget_name}_switch_to_mode
-                              target_mode: 2
+                              clickable: true
+                              radius: 50
+                              pad_all: 0
+                              bg_opa: transp
+                              border_opa: transp
+                              border_width: 0
+                              shadow_width: 8
+                              shadow_spread: 2
+                              shadow_ofs_y: 0
+                              shadow_color: color_black
+                              shadow_opa: cover
+                              pressed:
+                                bg_color: color_steel_blue
+                                shadow_width: 4
+                              on_click:
+                                - lambda: |-
+                                    id(${widget_name}_pending_action) = std::string("armed_custom_bypass");
+                                - script.execute:
+                                    id: ${widget_name}_switch_to_mode
+                                    target_mode: 2
+
+                          - obj:
+                              width: 50
+                              height: 50
+                              align: center
+                              clickable: false
+                              radius: 45
+                              pad_all: 0
+                              bg_opa: transp 
+                              border_opa: transp
+                              shadow_width: 4
+                              shadow_color: 0xFFFFFF
+                              shadow_ofs_x: -4
+                              shadow_ofs_y: -2
+                              shadow_opa: 30%
+
+                          - obj:
+                              width: 55
+                              height: 55
+                              pad_all: 0
+                              align: center
+                              clickable: false
+                              radius: 50
+                              border_opa: transp
+                              bg_color: color_slate_blue_gray
+                              widgets:
+                                - label:
+                                    align: center
+                                    text_font: mdi_icons_28
+                                    text_color: color_misty_blue
+                                    text: "${shield_custom_icon}"
+
 
                     # VACATION
                     - obj:
-                        id: ${widget_name}_vacation_btn
-                        width: 54
-                        height: 54
+                        id: ${widget_name}_vacation_btn_bg
+                        width: 80
+                        height: 80
+                        align: left_mid
                         pad_all: 0
-                        radius: 30
                         bg_opa: transp
+                        shadow_opa: transp
                         border_opa: transp
-                        shadow_width: 5
-                        shadow_spread: 1
-                        shadow_color: color_black
-                        pressed:
-                          bg_color: color_black
-                          shadow_width: 4
                         widgets:
-                          - label:
+                          - button:
+                              id: ${widget_name}_vacation_btn
+                              width: 60
+                              height: 60
                               align: center
-                              text_font: mdi_icons_28
-                              text_color: color_misty_blue
-                              text: "${shield_vacation_icon}"
-                        on_press:
-                          - lambda: |-
-                              id(${widget_name}_pending_action) = std::string("armed_vacation");
-                          - script.execute:
-                              id: ${widget_name}_switch_to_mode
-                              target_mode: 2
+                              clickable: true
+                              radius: 50
+                              pad_all: 0
+                              bg_opa: transp
+                              border_opa: transp
+                              border_width: 0
+                              shadow_width: 8
+                              shadow_spread: 2
+                              shadow_ofs_y: 0
+                              shadow_color: color_black
+                              shadow_opa: cover
+                              pressed:
+                                bg_color: color_steel_blue
+                                shadow_width: 4
+                              on_click:
+                                - lambda: |-
+                                    id(${widget_name}_pending_action) = std::string("armed_vacation");
+                                - script.execute:
+                                    id: ${widget_name}_switch_to_mode
+                                    target_mode: 2
+
+                          - obj:
+                              width: 50
+                              height: 50
+                              align: center
+                              clickable: false
+                              radius: 45
+                              pad_all: 0
+                              bg_opa: transp 
+                              border_opa: transp
+                              shadow_width: 4
+                              shadow_color: 0xFFFFFF
+                              shadow_ofs_x: -4
+                              shadow_ofs_y: -2
+                              shadow_opa: 30%
+
+                          - obj:
+                              width: 55
+                              height: 55
+                              pad_all: 0
+                              align: center
+                              clickable: false
+                              radius: 50
+                              border_opa: transp
+                              bg_color: color_slate_blue_gray
+                              widgets:
+                                - label:
+                                    align: center
+                                    text_font: mdi_icons_28
+                                    text_color: color_misty_blue
+                                    text: "${shield_vacation_icon}"
+
 
 
         - obj:
@@ -609,8 +815,6 @@ lvgl:
             border_opa: transp
             border_width: 0
             shadow_opa: transp
-            widgets:
-
 
         # CIRCLE
         - obj:
@@ -722,7 +926,7 @@ lvgl:
                   radius: 15 
             on_click:
               - lvgl.widget.hide: alarm_panel_select_widget
-              - lvgl.page.show: devices_page
+              - lvgl.page.show: home_page
 
 key_collector:
   - source_id: ${widget_name}_keypad
@@ -741,12 +945,6 @@ key_collector:
             - lvgl.label.update:
                 id: ${widget_name}_keypad_code_label
                 text: !lambda 'return x.c_str();'
-          else:
-            - lvgl.label.update:
-                id: ${widget_name}_keypad_code_label
-                text_font: nunito_18
-                text_color: color_misty_blue
-                text: "Enter code"
 
     on_result:
       - if:
@@ -826,6 +1024,19 @@ key_collector:
                       id: ${widget_name}_switch_to_mode
                       target_mode: 3
 
+          else:
+            - lvgl.label.update:
+                id: ${widget_name}_keypad_code_label
+                text_color: color_red
+                text: !lambda |-
+                  return id(i18n_translations).translate("alarm_panel.wrong_pass");
+            - delay: 1s
+            - lvgl.label.update:
+                id: ${widget_name}_keypad_code_label
+                text_color: color_misty_blue
+                text: !lambda |-
+                  return id(i18n_translations).translate("alarm_panel.enter_pass");
+
 # Скрипт для создания кнопок динамически
 script:
   - id: ${widget_name}_visibility_buttons
@@ -844,11 +1055,11 @@ script:
           
           // Массив кнопок с их ID и флагами
           AlarmButton buttons[] = {
-            {1, "${widget_name}_home_btn"},        // ARM_HOME
-            {2, "${widget_name}_away_btn"},        // ARM_AWAY
-            {4, "${widget_name}_night_btn"},       // ARM_NIGHT
-            {16, "${widget_name}_custom_btn"},     // ARM_CUSTOM_BYPASS
-            {32, "${widget_name}_vacation_btn"}    // ARM_VACATION
+            {1, "${widget_name}_home_btn_bg"},        // ARM_HOME
+            {2, "${widget_name}_away_btn_bg"},        // ARM_AWAY
+            {4, "${widget_name}_night_btn_bg"},       // ARM_NIGHT
+            {16, "${widget_name}_custom_btn_bg"},     // ARM_CUSTOM_BYPASS
+            {32, "${widget_name}_vacation_btn_bg"}    // ARM_VACATION
           };
           
           // Проверяем каждую кнопку и показываем/скрываем
@@ -861,16 +1072,16 @@ script:
             // Получаем объект кнопки по ID
             lv_obj_t* btn = nullptr;
             
-            if (strcmp(buttons[i].obj_id, "${widget_name}_home_btn") == 0) {
-              btn = id(${widget_name}_home_btn);
-            } else if (strcmp(buttons[i].obj_id, "${widget_name}_away_btn") == 0) {
-              btn = id(${widget_name}_away_btn);
-            } else if (strcmp(buttons[i].obj_id, "${widget_name}_night_btn") == 0) {
-              btn = id(${widget_name}_night_btn);
-            } else if (strcmp(buttons[i].obj_id, "${widget_name}_custom_btn") == 0) {
-              btn = id(${widget_name}_custom_btn);
-            } else if (strcmp(buttons[i].obj_id, "${widget_name}_vacation_btn") == 0) {
-              btn = id(${widget_name}_vacation_btn);
+            if (strcmp(buttons[i].obj_id, "${widget_name}_home_btn_bg") == 0) {
+              btn = id(${widget_name}_home_btn_bg);
+            } else if (strcmp(buttons[i].obj_id, "${widget_name}_away_btn_bg") == 0) {
+              btn = id(${widget_name}_away_btn_bg);
+            } else if (strcmp(buttons[i].obj_id, "${widget_name}_night_btn_bg") == 0) {
+              btn = id(${widget_name}_night_btn_bg);
+            } else if (strcmp(buttons[i].obj_id, "${widget_name}_custom_btn_bg") == 0) {
+              btn = id(${widget_name}_custom_btn_bg);
+            } else if (strcmp(buttons[i].obj_id, "${widget_name}_vacation_btn_bg") == 0) {
+              btn = id(${widget_name}_vacation_btn_bg);
             }
             
             // Показываем или скрываем кнопку
@@ -925,3 +1136,7 @@ script:
           id: ${widget_name}_state_label
           text: !lambda |-
             return id(i18n_translations).translate(("alarm_panel.state." + id(${widget_name}_state_sensor).state));
+      - lvgl.label.update:
+          id: ${widget_name}_keypad_code_label
+          text: !lambda |-
+            return id(i18n_translations).translate("alarm_panel.enter_pass");

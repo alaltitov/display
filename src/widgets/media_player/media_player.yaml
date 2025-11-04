@@ -800,6 +800,9 @@ lvgl:
               flex_align_main: center
               flex_align_cross: center
               flex_align_track: center
+            widgets:
+              - container:
+                  hidden: true
 
         # back
         - obj:

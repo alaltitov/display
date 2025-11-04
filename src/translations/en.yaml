@@ -104,6 +104,8 @@ cover:
 
 alarm_panel:
   name: "Alarm control panel"
+  enter_pass: "Enter password"
+  wrong_pass: "Wrong password"
   state:
     armed: Armed
     armed_away: Armed away

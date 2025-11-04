@@ -1,4 +1,4 @@
-covers_amount: "4" # choise 1,2,3 or 4
+covers_amount: "3" # choise 1,2,3 or 4
 
 cover_entity_1: "cover.kitchen_window"
 cover_entity_2: "cover.hall_window"

@@ -81,7 +81,7 @@ lvgl:
       widgets:
         - label:
             id: ${widget_name}_cover_name_label
-            y: 20
+            y: 15
             align: top_mid
             text_font: nunito_20
             text_color: color_misty_blue
@@ -89,9 +89,9 @@ lvgl:
         - obj:
             id: ${widget_name}_cover_widget_background
             hidden: false
-            y: 70
+            y: 60
             width: 440
-            height: 130
+            height: 160
             align: top_mid
             clickable: false
             scrollable: false
@@ -105,10 +105,10 @@ lvgl:
               # ICON
               - obj:
                   id: ${widget_name}_cover_icon_bg
-                  x: 20
-                  width: 80
-                  height: 80
-                  align: left_mid
+                  y: 12
+                  width: 70
+                  height: 70
+                  align: top_mid
                   bg_color: color_misty_blue
                   bg_opa: 20%
                   border_opa: transp
@@ -124,9 +124,11 @@ lvgl:
 
               # STATE/POSITION INFO
               - obj:
-                  width: 300
-                  height: 120
-                  align: right_mid
+                  y: 20
+                  width: 400
+                  height: 70
+                  align: center
+                  pad_all: 0
                   bg_color: color_steel_blue
                   bg_opa: transp
                   border_opa: transp
@@ -136,20 +138,21 @@ lvgl:
                   widgets:
                     - label:
                         id: ${widget_name}_cover_state_label
-                        height: 40
-                        width: 260
+                        height: 25
+                        width: 400
                         long_mode: DOT
-                        y: 5
-                        align: CENTER
+                        align: center
+                        text_align: center
                         text_color: color_misty_blue
                         text_font: nunito_20
                         text: "Open"
                     - label:
                         id: ${widget_name}_cover_pos_label
-                        height: 30
-                        width: 260
                         y: 20
-                        align: CENTER
+                        height: 25
+                        width: 400
+                        align: center
+                        text_align: center
                         text_color: color_misty_blue
                         text_font: nunito_16
                         text: " "
@@ -158,7 +161,7 @@ lvgl:
         # CONTROL BUTTONS
         - obj:
             id: ${widget_name}_cover_controls_background
-            y: 210
+            y: 230
             width: 440
             height: 100
             align: top_mid
@@ -318,23 +321,24 @@ lvgl:
 
         # FOOTER COVER BACKGROUND
         - obj:
-            x: 0
-            y: -60
+            y: 340
             width: 440
-            height: 100
+            height: 80
+            align: top_mid
+            clickable: false
+            scrollable: false
+            radius: 20
             pad_all: 0
-            align: bottom_mid
             bg_color: color_slate_blue_gray
-            shadow_opa: transp
             border_opa: transp
             border_width: 0
-            radius: 20
+            shadow_opa: transp
 
 
         # CIRCLE
         - obj:
             id: ${widget_name}_cover_circle_background
-            y: 20
+            y: 40
             width: 150
             height: 150
             align: center

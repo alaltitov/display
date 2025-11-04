@@ -82,37 +82,41 @@ month:
   december: "December"
 
 vacuum:
-  name: "Vacuum"
+  name: "Sesalnik"
   state:
-    cleaning: "Cleaning"
-    docked: "Docked"
-    error: "Error"
-    idle: "Idle"
-    off: "Off"
-    on: "On"
-    paused: "Paused"
-    returning: "Returning to dock"
+    cleaning: "Čiščenje"
+    docked: "Priključen"
+    error: "Napaka"
+    idle: "Neaktiven"
+    off: "Izklopljen"
+    on: "Vklopljen"
+    paused: "Začasno ustavljeno"
+    returning: "Vračanje na postajo"
+
 
 cover:
-  name: "Cover"
+  name: "Senčilo"
   state:
-    closed: Closed
-    closing: Closing
-    open: Open
-    opening: Opening
-    stopped: Stopped
+    closed: "Zaprto"
+    closing: "Zapiranje"
+    open: "Odprto"
+    opening: "Odpiranje"
+    stopped: "Ustavljeno"
+
 
 alarm_panel:
-  name: "Alarm control panel"
+  name: "Alarmna Plošča"
+  enter_pass: "Vnesite geslo"
+  wrong_pass: "Napačno geslo"
   state:
-    armed: Armed
-    armed_away: Armed away
-    armed_custom_bypass: Armed custom bypass
-    armed_home: Armed home
-    armed_night: Armed night
-    armed_vacation: Armed vacation
-    arming: Arming
-    disarmed: Disarmed
-    disarming: Disarming
-    pending: Pending
-    triggered: Triggered
+    armed: Aktiviran
+    armed_away: Aktiviran (Odsoten)
+    armed_custom_bypass: Aktiviran (Po meri)
+    armed_home: Aktiviran (Doma)
+    armed_night: Aktiviran (Noč)
+    armed_vacation: Aktiviran (Dopust)
+    arming: Aktiviranje
+    disarmed: Deaktiviran
+    disarming: Deaktiviranje
+    pending: V čakanju
+    triggered: Sprožen

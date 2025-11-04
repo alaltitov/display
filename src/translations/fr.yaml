@@ -103,16 +103,18 @@ cover:
     stopped: Arrêté
 
 alarm_panel:
-  name: "Alarm control panel"
+  name: "Centrale d’alarme"
+  enter_pass: "Entrez le mot de passe"
+  wrong_pass: "Mot de passe incorrect"
   state:
-    armed: Armed
-    armed_away: Armed away
-    armed_custom_bypass: Armed custom bypass
-    armed_home: Armed home
-    armed_night: Armed night
-    armed_vacation: Armed vacation
-    arming: Arming
-    disarmed: Disarmed
-    disarming: Disarming
-    pending: Pending
-    triggered: Triggered
+    armed: Activée
+    armed_away: Activée (absence)
+    armed_custom_bypass: Activée (exception personnalisée)
+    armed_home: Activée (présence)
+    armed_night: Activée (nuit)
+    armed_vacation: Activée (vacances)
+    arming: Activation
+    disarmed: Désactivée
+    disarming: Désactivation
+    pending: En suspens
+    triggered: Déclenchée

@@ -1227,6 +1227,9 @@ lvgl:
                           flex_flow: column
                           flex_align_main: center
                           flex_align_cross: center
+                        widgets:
+                          - container:
+                              hidden: true
 
                     - obj:
                         id: weather_forecast_hourly
@@ -1246,6 +1249,9 @@ lvgl:
                           flex_flow: column
                           flex_align_main: center
                           flex_align_cross: center
+                        widgets:
+                          - container:
+                              hidden: true
 
         # SYSTEM BUTTONS (DOWN) 
         - obj:
