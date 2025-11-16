@@ -1,0 +1,16 @@
+boiler_ch_entity:       "climate.diyless_thermostat_3_central_heating"
+boiler_dhw_entity:      "climate.diyless_thermostat_3_domestic_hot_water"
+boiler_manual_entity:   "climate.diyless_thermostat_3_heating_manual_mode"
+
+
+boiler_arc_color:           "color_deep_orange"    # Цвет основной арки (оранжевый)
+boiler_arc_segment_color:   "color_red"    # Цвет сегмента разницы температур (красный)
+boiler_button_color:        "color_deep_orange"    # Цвет кнопок +/- в активном режиме
+
+
+heat_icon:                  "\U000F0238"
+off_icon:                   "\U000F0425"
+plus_icon:                  "\U000F0415"
+minus_icon:                 "\U000F0374"
+faucet_icon:                "\U000F1B29"
+manual_icon:                "\U000F0E47"

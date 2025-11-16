@@ -4,10 +4,12 @@ packages:
   light: !include widgets/light/config.yaml
   devices: !include common/widgets/devices.yaml
   climate: !include widgets/climate/climate.yaml
-  media_player: !include widgets/media_player/media_player.yaml
+  # media_player: !include widgets/media_player/media_player.yaml
   vacuum: !include widgets/vacuum/vacuum.yaml
-  cover: !include widgets/cover/config.yaml
-  alarm_panel: !include widgets/alarm_panel/config.yaml
+  # cover: !include widgets/cover/config.yaml
+  boiler: !include widgets/boiler/config.yaml
+  # alarm_panel: !include widgets/alarm_panel/config.yaml
+  fan: !include widgets/fan/config.yaml
 
 
 substitutions: !include common/substitutions.yaml
@@ -37,7 +39,7 @@ i18n:
     - translations/de.yaml
   default_locale: en
   use_psram: true
-  buffer_size: "1024"
+  buffer_size: "512"
 
 esphome:
   name: ${display_name}
@@ -70,7 +72,7 @@ esp32:
       loop_task_stack_size: 8192
     sdkconfig_options:
       CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: "y"
-      CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: y
+      # CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: y
       # CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
       # CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
       # CONFIG_ESP_MAIN_TASK_STACK_SIZE: "16384"
@@ -91,9 +93,9 @@ psram:
 
 logger:
   level: debug
-  # logs:
-  #   lvgl: info
-  # hardware_uart: UART0
+  logs:
+    lvgl: info
+  hardware_uart: UART0
 
 
 api:
@@ -362,58 +364,58 @@ display:
 
 
 # interval:
-  # - interval: 5s
-  #   then:
-  #     - lambda: |-
-  #         static uint32_t min_stack = UINT32_MAX;
-  #         UBaseType_t current = uxTaskGetStackHighWaterMark(NULL);
-  #         uint32_t bytes = current * sizeof(StackType_t);
+#   - interval: 5s
+#     then:
+#       - lambda: |-
+#           static uint32_t min_stack = UINT32_MAX;
+#           UBaseType_t current = uxTaskGetStackHighWaterMark(NULL);
+#           uint32_t bytes = current * sizeof(StackType_t);
           
-  #         if (bytes < min_stack) {
-  #           min_stack = bytes;
-  #           ESP_LOGW("stack", "New minimum stack: %d bytes", min_stack);
-  #         }
+#           if (bytes < min_stack) {
+#             min_stack = bytes;
+#             ESP_LOGW("stack", "New minimum stack: %d bytes", min_stack);
+#           }
           
-  #         if (bytes < 512) {
-  #           ESP_LOGE("stack", "CRITICAL: Only %d bytes left!", bytes);
-  #         }
+#           if (bytes < 512) {
+#             ESP_LOGE("stack", "CRITICAL: Only %d bytes left!", bytes);
+#           }
 
 
-  # - interval: 30s
-  #   then:
-  #     - lambda: |-
-  #         // Общая информация о памяти
-  #         ESP_LOGI("memory", "Free heap: %d bytes", esp_get_free_heap_size());
-  #         ESP_LOGI("memory", "Free internal heap: %d bytes", esp_get_free_internal_heap_size());
-  #         ESP_LOGI("memory", "Min free heap: %d bytes", esp_get_minimum_free_heap_size());
+#   - interval: 30s
+#     then:
+#       - lambda: |-
+#           // Общая информация о памяти
+#           ESP_LOGI("memory", "Free heap: %d bytes", esp_get_free_heap_size());
+#           ESP_LOGI("memory", "Free internal heap: %d bytes", esp_get_free_internal_heap_size());
+#           ESP_LOGI("memory", "Min free heap: %d bytes", esp_get_minimum_free_heap_size());
           
-  #         // Детальная статистика кучи
-  #         multi_heap_info_t info;
-  #         heap_caps_get_info(&info, MALLOC_CAP_INTERNAL);
-  #         ESP_LOGI("memory", "SRAM total: %d, free: %d, largest_free: %d", 
-  #                  info.total_free_bytes + info.total_allocated_bytes,
-  #                  info.total_free_bytes, 
-  #                  info.largest_free_block);
+#           // Детальная статистика кучи
+#           multi_heap_info_t info;
+#           heap_caps_get_info(&info, MALLOC_CAP_INTERNAL);
+#           ESP_LOGI("memory", "SRAM total: %d, free: %d, largest_free: %d", 
+#                    info.total_free_bytes + info.total_allocated_bytes,
+#                    info.total_free_bytes, 
+#                    info.largest_free_block);
           
-  #         // Статистика по PSRAM
-  #         heap_caps_get_info(&info, MALLOC_CAP_SPIRAM);
-  #         ESP_LOGI("memory", "PSRAM total: %d, free: %d, largest_free: %d", 
-  #                  info.total_free_bytes + info.total_allocated_bytes,
-  #                  info.total_free_bytes, 
-  #                  info.largest_free_block);
+#           // Статистика по PSRAM
+#           heap_caps_get_info(&info, MALLOC_CAP_SPIRAM);
+#           ESP_LOGI("memory", "PSRAM total: %d, free: %d, largest_free: %d", 
+#                    info.total_free_bytes + info.total_allocated_bytes,
+#                    info.total_free_bytes, 
+#                    info.largest_free_block);
 
-  #     - lambda: |-
-  #         ESP_LOGI("stack", "Main task free: %d bytes", 
-  #                  uxTaskGetStackHighWaterMark(xTaskGetHandle("loopTask")));
-  #         ESP_LOGI("stack", "System event free: %d bytes", 
-  #                  uxTaskGetStackHighWaterMark(xTaskGetHandle("sys_evt")));
-  #         ESP_LOGI("stack", "Timer task free: %d bytes", 
-  #                  uxTaskGetStackHighWaterMark(xTaskGetHandle("esp_timer")));
+#       - lambda: |-
+#           ESP_LOGI("stack", "Main task free: %d bytes", 
+#                    uxTaskGetStackHighWaterMark(xTaskGetHandle("loopTask")));
+#           ESP_LOGI("stack", "System event free: %d bytes", 
+#                    uxTaskGetStackHighWaterMark(xTaskGetHandle("sys_evt")));
+#           ESP_LOGI("stack", "Timer task free: %d bytes", 
+#                    uxTaskGetStackHighWaterMark(xTaskGetHandle("esp_timer")));
 
-  #     - lambda: |-
-  #         char* buf = (char*)malloc(1024);
-  #         if (buf) {
-  #           vTaskList(buf);
-  #           ESP_LOGI("stack", "\nTask Name\tState\tPrio\tStack\tNum\n%s", buf);
-  #           free(buf);
-  #         }
+#       - lambda: |-
+#           char* buf = (char*)malloc(1024);
+#           if (buf) {
+#             vTaskList(buf);
+#             ESP_LOGI("stack", "\nTask Name\tState\tPrio\tStack\tNum\n%s", buf);
+#             free(buf);
+#           }

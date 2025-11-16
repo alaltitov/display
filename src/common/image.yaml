@@ -34,6 +34,22 @@
   transparency: alpha_channel
 
   #############################
+  ########### FAN #############
+  #############################
+
+- file: 'assets/images/fan/fan_green.png'
+  id: fan_green_image
+  type: rgb565
+  transparency: alpha_channel
+  resize: 50x50
+
+- file: 'assets/images/fan/fan_misty.png'
+  id: fan_misty_image
+  type: rgb565
+  transparency: alpha_channel
+  resize: 50x50
+
+  #############################
   ########## WEATHER ##########
   #############################
 

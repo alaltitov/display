@@ -1,15 +1,15 @@
 lvgl:
   on_boot:
     then:
-      - script.execute: get_alarm_panel_amount_btn
+      - script.execute: get_fan_amount_btn
       - lvgl.obj.update:
-          id: ${alarm_panel_widget_name_1}_btn
-          outline_opa: cover
+          id: ${fan_widget_name_1}_btn
+          shadow_color: color_misty_blue
 
   top_layer:
     widgets:
       - obj:
-          id: alarm_panel_select_widget
+          id: fan_select_widget
           hidden: true
           y: -40
           width: 440
@@ -23,7 +23,7 @@ lvgl:
           radius: 20
           widgets:
             - obj:
-                id: alarm_panel_select_widget_cont
+                id: fan_select_widget_cont
                 width: 440
                 height: 60
                 align: center
@@ -38,7 +38,7 @@ lvgl:
                   flex_align_track: center
                 widgets:
                   - obj:
-                      id: ${alarm_panel_widget_name_1}_btn
+                      id: ${fan_widget_name_1}_btn
                       width: 40
                       height: 40
                       pad_all: 0
@@ -48,31 +48,28 @@ lvgl:
                       shadow_width: 5
                       shadow_spread: 1
                       shadow_color: color_black
-                      outline_color: color_misty_blue
-                      outline_width: 2
-                      outline_opa: transp
                       pressed:
                         bg_color: color_black
                         shadow_width: 4
                       widgets:
                         - label:
-                            id: ${alarm_panel_widget_name_1}_icon
+                            id: ${fan_widget_name_1}_icon
                             align: center
                             text_font: nunito_20
                             text_color: color_misty_blue
                             text: "1"
                       on_press:
-                        - lvgl.page.show: ${alarm_panel_widget_name_1}_page
+                        - lvgl.page.show: ${fan_widget_name_1}_page
                         - lvgl.obj.update:
-                            id: ${alarm_panel_widget_name_1}_btn
-                            outline_opa: cover
+                            id: ${fan_widget_name_1}_btn
+                            shadow_color: color_misty_blue
                         - lvgl.obj.update:
-                            id: ${alarm_panel_widget_name_2}_btn
-                            outline_opa: transp
+                            id: ${fan_widget_name_2}_btn
+                            shadow_color: color_black
 
 
                   - obj:
-                      id: ${alarm_panel_widget_name_2}_btn
+                      id: ${fan_widget_name_2}_btn
                       width: 40
                       height: 40
                       pad_all: 0
@@ -82,40 +79,37 @@ lvgl:
                       shadow_width: 5
                       shadow_spread: 1
                       shadow_color: color_black
-                      outline_color: color_misty_blue
-                      outline_width: 2
-                      outline_opa: transp
                       pressed:
                         bg_color: color_black
                         shadow_width: 4
                       widgets:
                         - label:
-                            id: ${alarm_panel_widget_name_2}_icon
+                            id: ${fan_widget_name_2}_icon
                             align: center
                             text_font: nunito_20
                             text_color: color_misty_blue
                             text: "2"
                       on_press:
-                        - lvgl.page.show: ${alarm_panel_widget_name_2}_page
+                        - lvgl.page.show: ${fan_widget_name_2}_page
                         - lvgl.obj.update:
-                            id: ${alarm_panel_widget_name_1}_btn
-                            outline_opa: transp
+                            id: ${fan_widget_name_1}_btn
+                            shadow_color: color_black
                         - lvgl.obj.update:
-                            id: ${alarm_panel_widget_name_2}_btn
-                            outline_opa: cover
+                            id: ${fan_widget_name_2}_btn
+                            shadow_color: color_misty_blue
 
 
 script:
-  - id: get_alarm_panel_amount_btn
+  - id: get_fan_amount_btn
     then:
       - lambda: |-
-          int alarm_panels = ${alarm_panels_amount};
+          int fans = ${fans_amount};
           
-          if (alarm_panels >= 2) {
-            lv_obj_clear_flag(id(${alarm_panel_widget_name_1}_btn), LV_OBJ_FLAG_HIDDEN);
-            lv_obj_clear_flag(id(${alarm_panel_widget_name_2}_btn), LV_OBJ_FLAG_HIDDEN);
+          if (fans >= 2) {
+            // lv_obj_set_width(id(fan_select_widget_cont), 290);
+            lv_obj_clear_flag(id(${fan_widget_name_1}_btn), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(id(${fan_widget_name_2}_btn), LV_OBJ_FLAG_HIDDEN);
           } else {
-            lv_obj_add_flag(id(${alarm_panel_widget_name_1}_btn), LV_OBJ_FLAG_HIDDEN);
-            lv_obj_add_flag(id(${alarm_panel_widget_name_2}_btn), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(${fan_widget_name_1}_btn), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(${fan_widget_name_2}_btn), LV_OBJ_FLAG_HIDDEN);
           }
-          

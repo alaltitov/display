@@ -1,0 +1,232 @@
+lvgl:
+  on_boot:
+    then:
+      - script.execute: get_light_amount_btn_${room_prefix}
+      - lvgl.obj.update:
+          id: ${light_widget_name_1}_btn
+          outline_opa: cover
+
+  top_layer:
+    widgets:
+      - obj:
+          id: ${room_prefix}_light_select_widget
+          hidden: true
+          x: 0
+          y: -70
+          width: 400
+          height: 60
+          align: bottom_mid
+          pad_all: 0
+          bg_opa: transp
+          border_opa: transp
+          border_width: 0
+          shadow_opa: transp
+          scrollable: false
+          radius: 40
+          widgets:
+            - obj:
+                id: ${room_prefix}_light_select_widget_cont
+                width: 400
+                height: 60
+                align: center
+                bg_opa: transp
+                border_opa: transp
+                border_width: 0
+                pad_all: 0
+                layout:
+                  type: flex
+                  flex_align_main: space_evenly
+                  flex_align_cross: center
+                  flex_align_track: center
+                widgets:
+                  - obj:
+                      id: ${light_widget_name_1}_btn
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      outline_color: color_misty_blue
+                      outline_width: 2
+                      outline_opa: transp
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: ${light_widget_name_1}_icon
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${light_icon_1}"
+                      on_press:
+                        - lvgl.page.show: 
+                            id: ${light_widget_name_1}_light_page
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_1}_btn
+                            outline_opa: cover
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_2}_btn
+                            outline_opa: transp
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_3}_btn
+                            outline_opa: transp
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_4}_btn
+                            outline_opa: transp
+
+                  - obj:
+                      id: ${light_widget_name_2}_btn
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      outline_color: color_misty_blue
+                      outline_width: 2
+                      outline_opa: transp
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: ${light_widget_name_2}_icon
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${light_icon_2}"
+                      on_press:
+                        - lvgl.page.show:
+                            id: ${light_widget_name_2}_light_page
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_1}_btn
+                            outline_opa: transp
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_2}_btn
+                            outline_opa: cover
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_3}_btn
+                            outline_opa: transp
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_4}_btn
+                            outline_opa: transp
+
+                  - obj:
+                      id: ${light_widget_name_3}_btn
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      outline_color: color_misty_blue
+                      outline_width: 2
+                      outline_opa: transp
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: ${light_widget_name_3}_icon
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${light_icon_3}"
+                      on_press:
+                        - lvgl.page.show:
+                            id: ${light_widget_name_3}_light_page
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_1}_btn
+                            outline_opa: transp
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_2}_btn
+                            outline_opa: transp
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_3}_btn
+                            outline_opa: cover
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_4}_btn
+                            outline_opa: transp
+
+                  - obj:
+                      id: ${light_widget_name_4}_btn
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      outline_color: color_misty_blue
+                      outline_width: 2
+                      outline_opa: transp
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            id: ${light_widget_name_4}_icon
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${light_icon_4}"
+                      on_press:
+                        - lvgl.page.show:
+                            id: ${light_widget_name_4}_light_page
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_1}_btn
+                            outline_opa: transp
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_2}_btn
+                            outline_opa: transp
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_3}_btn
+                            outline_opa: transp
+                        - lvgl.obj.update:
+                            id: ${light_widget_name_4}_btn
+                            outline_opa: cover
+
+script:
+  - id: get_light_amount_btn_${room_prefix}
+    then:
+      - lambda: |-
+          int lights = ${lights_amount};
+          
+          if (lights >= 2) {
+            lv_obj_set_width(id(${room_prefix}_light_select_widget), 190);
+            lv_obj_set_width(id(${room_prefix}_light_select_widget_cont), 130);
+            lv_obj_clear_flag(id(${light_widget_name_1}_btn), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(id(${light_widget_name_2}_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(${light_widget_name_1}_btn), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(${light_widget_name_2}_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          if (lights >= 3) {
+            lv_obj_set_width(id(${room_prefix}_light_select_widget), 245);
+            lv_obj_set_width(id(${room_prefix}_light_select_widget_cont), 185);
+            lv_obj_clear_flag(id(${light_widget_name_3}_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(${light_widget_name_3}_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          if (lights >= 4) {
+            lv_obj_set_width(id(${room_prefix}_light_select_widget), 300);
+            lv_obj_set_width(id(${room_prefix}_light_select_widget_cont), 240);
+            lv_obj_clear_flag(id(${light_widget_name_4}_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(${light_widget_name_4}_btn), LV_OBJ_FLAG_HIDDEN);
+          }

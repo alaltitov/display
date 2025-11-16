@@ -1,0 +1,986 @@
+script:
+
+  # 0. ONOFF -> BRIGHTNESS
+  - id: ${widget_name}_animate_light_onoff_to_brightness
+    then:
+      - lambda: |-
+          ESP_LOGI("LIGHT", "TRIGGERED BLOCK 0");
+      - lambda: |-
+          lv_obj_add_flag(id(${widget_name}_light_arc_state), LV_OBJ_FLAG_HIDDEN);
+
+      - delay: 100ms
+      - lambda: |-
+          lv_anim_t anim_circle, anim_circle_expand, anim_btn_bg, anim_circle_btn_expand, 
+            anim_select_rooms_fade, anim_select_lights_fade;
+          
+          lv_anim_init(&anim_select_rooms_fade);
+          lv_anim_set_var(&anim_select_rooms_fade, id(room_select_widget));
+          lv_anim_set_values(&anim_select_rooms_fade, 0, -80);
+          lv_anim_set_time(&anim_select_rooms_fade, 600);
+          lv_anim_set_exec_cb(&anim_select_rooms_fade, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_select_rooms_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_select_rooms_fade);
+
+          lv_anim_init(&anim_select_lights_fade);
+          lv_anim_set_var(&anim_select_lights_fade, id(${room_prefix}_light_select_widget));
+          lv_anim_set_values(&anim_select_lights_fade, 0, -80);
+          lv_anim_set_time(&anim_select_lights_fade, 600);
+          lv_anim_set_exec_cb(&anim_select_lights_fade, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_select_lights_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_select_lights_fade);
+          
+          lv_anim_init(&anim_circle);
+          lv_anim_set_var(&anim_circle, id(${widget_name}_circle_background));
+          lv_anim_set_values(&anim_circle, 0, 240);
+          lv_anim_set_time(&anim_circle, 600);
+          lv_anim_set_exec_cb(&anim_circle, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle);
+
+          lv_anim_init(&anim_btn_bg);
+          lv_anim_set_var(&anim_btn_bg, id(${widget_name}_circle_btn_bg));
+          lv_anim_set_values(&anim_btn_bg, 0, 240);
+          lv_anim_set_time(&anim_btn_bg, 600);
+          lv_anim_set_exec_cb(&anim_btn_bg, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_btn_bg, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_btn_bg);
+          
+          lv_anim_init(&anim_circle_expand);
+          lv_anim_set_var(&anim_circle_expand, id(${widget_name}_circle_background));
+          lv_anim_set_values(&anim_circle_expand, 230, 380);
+          lv_anim_set_time(&anim_circle_expand, 350);
+          lv_anim_set_exec_cb(&anim_circle_expand, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+            lv_obj_set_width((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle_expand, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle_expand);
+
+          lv_anim_init(&anim_circle_btn_expand);
+          lv_anim_set_var(&anim_circle_btn_expand, id(${widget_name}_circle_btn_bg));
+          lv_anim_set_values(&anim_circle_btn_expand, 120, 290);
+          lv_anim_set_time(&anim_circle_btn_expand, 350);
+          lv_anim_set_exec_cb(&anim_circle_btn_expand, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+            lv_obj_set_width((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle_btn_expand, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle_btn_expand);
+
+      - delay: 600ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_circle_background_secondary), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_light_arc_brightness), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_brightness_color_obj), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_state_icon_bg), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_percentage_label), LV_OBJ_FLAG_HIDDEN);
+
+          lv_anim_t anim_btn;
+
+          lv_anim_init(&anim_btn);
+          lv_anim_set_var(&anim_btn, id(${widget_name}_circle_btn));
+          lv_anim_set_values(&anim_btn, 0, -30);
+          lv_anim_set_time(&anim_btn, 600);
+          lv_anim_set_exec_cb(&anim_btn, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_btn, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_btn);
+
+  # 1. BRIGHTNESS -> ONOFF
+  - id: ${widget_name}_animate_light_brightness_to_onoff
+    then:
+      - lambda: |-
+          ESP_LOGI("LIGHT", "TRIGGERED BLOCK 1");
+      - lambda: |-
+          lv_obj_add_flag(id(${widget_name}_circle_background_secondary), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_light_arc_brightness), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_brightness_color_obj), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_state_icon_bg), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_percentage_label), LV_OBJ_FLAG_HIDDEN);
+
+          lv_anim_t anim_btn;
+
+          lv_anim_init(&anim_btn);
+          lv_anim_set_var(&anim_btn, id(${widget_name}_circle_btn));
+          lv_anim_set_values(&anim_btn, -30, 0);
+          lv_anim_set_time(&anim_btn, 600);
+          lv_anim_set_exec_cb(&anim_btn, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_btn, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_btn);
+
+      - delay: 600ms
+      - lambda: |-
+          lv_anim_t anim_circle, anim_circle_shrink, anim_btn_bg, anim_circle_btn_shrink, 
+            anim_select_rooms_fade, anim_select_lights_fade;
+          
+          lv_anim_init(&anim_select_rooms_fade);
+          lv_anim_set_var(&anim_select_rooms_fade, id(room_select_widget));
+          lv_anim_set_values(&anim_select_rooms_fade, -80, 0);
+          lv_anim_set_time(&anim_select_rooms_fade, 600);
+          lv_anim_set_exec_cb(&anim_select_rooms_fade, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_select_rooms_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_select_rooms_fade);
+
+          lv_anim_init(&anim_select_lights_fade);
+          lv_anim_set_var(&anim_select_lights_fade, id(${room_prefix}_light_select_widget));
+          lv_anim_set_values(&anim_select_lights_fade, -80, 0);
+          lv_anim_set_time(&anim_select_lights_fade, 600);
+          lv_anim_set_exec_cb(&anim_select_lights_fade, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_select_lights_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_select_lights_fade);
+          
+          lv_anim_init(&anim_circle);
+          lv_anim_set_var(&anim_circle, id(${widget_name}_circle_background));
+          lv_anim_set_values(&anim_circle, 240, 0);
+          lv_anim_set_time(&anim_circle, 600);
+          lv_anim_set_exec_cb(&anim_circle, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle);
+
+          lv_anim_init(&anim_btn_bg);
+          lv_anim_set_var(&anim_btn_bg, id(${widget_name}_circle_btn_bg));
+          lv_anim_set_values(&anim_btn_bg, 240, 0);
+          lv_anim_set_time(&anim_btn_bg, 600);
+          lv_anim_set_exec_cb(&anim_btn_bg, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_btn_bg, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_btn_bg);
+          
+          lv_anim_init(&anim_circle_shrink);
+          lv_anim_set_var(&anim_circle_shrink, id(${widget_name}_circle_background));
+          lv_anim_set_values(&anim_circle_shrink, 380, 230);
+          lv_anim_set_time(&anim_circle_shrink, 350);
+          lv_anim_set_exec_cb(&anim_circle_shrink, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+            lv_obj_set_width((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle_shrink, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle_shrink);
+
+          lv_anim_init(&anim_circle_btn_shrink);
+          lv_anim_set_var(&anim_circle_btn_shrink, id(${widget_name}_circle_btn_bg));
+          lv_anim_set_values(&anim_circle_btn_shrink, 290, 120);
+          lv_anim_set_time(&anim_circle_btn_shrink, 350);
+          lv_anim_set_exec_cb(&anim_circle_btn_shrink, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+            lv_obj_set_width((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle_btn_shrink, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle_btn_shrink);
+
+      - delay: 600ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_light_arc_state), LV_OBJ_FLAG_HIDDEN);
+          
+  # 2. ONOFF -> COLOR TEMP
+  - id: ${widget_name}_animate_light_onoff_to_color_temp
+    then:
+      - lambda: |-
+          ESP_LOGI("LIGHT", "TRIGGERED BLOCK 2");
+      - lambda: |-
+          lv_obj_add_flag(id(${widget_name}_light_arc_state), LV_OBJ_FLAG_HIDDEN);
+
+      - delay: 100ms
+      - lambda: |-
+          lv_anim_t anim_circle, anim_circle_expand, anim_btn_bg, anim_circle_btn_expand, 
+            anim_select_rooms_fade, anim_select_lights_fade;
+          
+          lv_anim_init(&anim_select_rooms_fade);
+          lv_anim_set_var(&anim_select_rooms_fade, id(room_select_widget));
+          lv_anim_set_values(&anim_select_rooms_fade, 0, -80);
+          lv_anim_set_time(&anim_select_rooms_fade, 600);
+          lv_anim_set_exec_cb(&anim_select_rooms_fade, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_select_rooms_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_select_rooms_fade);
+
+          lv_anim_init(&anim_select_lights_fade);
+          lv_anim_set_var(&anim_select_lights_fade, id(${room_prefix}_light_select_widget));
+          lv_anim_set_values(&anim_select_lights_fade, 0, -80);
+          lv_anim_set_time(&anim_select_lights_fade, 600);
+          lv_anim_set_exec_cb(&anim_select_lights_fade, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_select_lights_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_select_lights_fade);
+          
+          lv_anim_init(&anim_circle);
+          lv_anim_set_var(&anim_circle, id(${widget_name}_circle_background));
+          lv_anim_set_values(&anim_circle, 0, 240);
+          lv_anim_set_time(&anim_circle, 600);
+          lv_anim_set_exec_cb(&anim_circle, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle);
+
+          lv_anim_init(&anim_btn_bg);
+          lv_anim_set_var(&anim_btn_bg, id(${widget_name}_circle_btn_bg));
+          lv_anim_set_values(&anim_btn_bg, 0, 240);
+          lv_anim_set_time(&anim_btn_bg, 600);
+          lv_anim_set_exec_cb(&anim_btn_bg, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_btn_bg, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_btn_bg);
+          
+          lv_anim_init(&anim_circle_expand);
+          lv_anim_set_var(&anim_circle_expand, id(${widget_name}_circle_background));
+          lv_anim_set_values(&anim_circle_expand, 230, 380);
+          lv_anim_set_time(&anim_circle_expand, 350);
+          lv_anim_set_exec_cb(&anim_circle_expand, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+            lv_obj_set_width((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle_expand, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle_expand);
+
+          lv_anim_init(&anim_circle_btn_expand);
+          lv_anim_set_var(&anim_circle_btn_expand, id(${widget_name}_circle_btn_bg));
+          lv_anim_set_values(&anim_circle_btn_expand, 120, 290);
+          lv_anim_set_time(&anim_circle_btn_expand, 350);
+          lv_anim_set_exec_cb(&anim_circle_btn_expand, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+            lv_obj_set_width((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle_btn_expand, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle_btn_expand);
+
+      - delay: 600ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_circle_background_secondary), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_light_arc_color_temp), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_color_temp_gradient_obj), LV_OBJ_FLAG_HIDDEN);
+
+          lv_anim_t anim_btn, anim_icon, anim_perc, anim_slider;
+
+          lv_anim_init(&anim_btn);
+          lv_anim_set_var(&anim_btn, id(${widget_name}_circle_btn));
+          lv_anim_set_values(&anim_btn, 0, -30);
+          lv_anim_set_time(&anim_btn, 600);
+          lv_anim_set_exec_cb(&anim_btn, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_btn, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_btn);
+
+          lv_anim_init(&anim_icon);
+          lv_anim_set_var(&anim_icon, id(${widget_name}_state_icon_bg));
+          lv_anim_set_values(&anim_icon, -80, -160);
+          lv_anim_set_time(&anim_icon, 600);
+          lv_anim_set_exec_cb(&anim_icon, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_icon, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_icon);
+
+          lv_anim_init(&anim_perc);
+          lv_anim_set_var(&anim_perc, id(${widget_name}_percentage_label));
+          lv_anim_set_values(&anim_perc, -80, -160);
+          lv_anim_set_time(&anim_perc, 600);
+          lv_anim_set_exec_cb(&anim_perc, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_perc, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_perc);
+
+          lv_anim_init(&anim_slider);
+          lv_anim_set_var(&anim_slider, id(${widget_name}_light_brightness_slider));
+          lv_anim_set_values(&anim_slider, -80, -40);
+          lv_anim_set_time(&anim_slider, 600);
+          lv_anim_set_exec_cb(&anim_slider, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_slider, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_slider);
+          
+          lv_obj_clear_flag(id(${widget_name}_light_brightness_slider), LV_OBJ_FLAG_HIDDEN);
+
+      - delay: 600ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_state_icon_bg), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_percentage_label), LV_OBJ_FLAG_HIDDEN);
+
+  # 3. COLOR TEMP -> ONOFF 
+  - id: ${widget_name}_animate_light_color_temp_to_onoff
+    then:
+      - lambda: |-
+          ESP_LOGI("LIGHT", "TRIGGERED BLOCK 3");
+      - lambda: |-
+          lv_obj_add_flag(id(${widget_name}_circle_background_secondary), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_light_arc_color_temp), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_color_temp_gradient_obj), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_state_icon_bg), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_percentage_label), LV_OBJ_FLAG_HIDDEN);
+
+          lv_anim_t anim_btn, anim_icon, anim_perc, anim_slider;
+
+          lv_anim_init(&anim_btn);
+          lv_anim_set_var(&anim_btn, id(${widget_name}_circle_btn));
+          lv_anim_set_values(&anim_btn, -30, 0);
+          lv_anim_set_time(&anim_btn, 600);
+          lv_anim_set_exec_cb(&anim_btn, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_btn, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_btn);
+
+          lv_anim_init(&anim_icon);
+          lv_anim_set_var(&anim_icon, id(${widget_name}_state_icon_bg));
+          lv_anim_set_values(&anim_icon, -160, -80);
+          lv_anim_set_time(&anim_icon, 600);
+          lv_anim_set_exec_cb(&anim_icon, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_icon, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_icon);
+
+          lv_anim_init(&anim_perc);
+          lv_anim_set_var(&anim_perc, id(${widget_name}_percentage_label));
+          lv_anim_set_values(&anim_perc, -160, -80);
+          lv_anim_set_time(&anim_perc, 600);
+          lv_anim_set_exec_cb(&anim_perc, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_perc, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_perc);
+
+          lv_anim_init(&anim_slider);
+          lv_anim_set_var(&anim_slider, id(${widget_name}_light_brightness_slider));
+          lv_anim_set_values(&anim_slider, -40, -80);
+          lv_anim_set_time(&anim_slider, 600);
+          lv_anim_set_exec_cb(&anim_slider, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_slider, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_slider);
+          
+          lv_obj_add_flag(id(${widget_name}_light_brightness_slider), LV_OBJ_FLAG_HIDDEN);
+
+      - delay: 600ms
+      - lambda: |-
+          lv_anim_t anim_circle, anim_circle_shrink, anim_btn_bg, anim_circle_btn_shrink, 
+            anim_select_rooms_fade, anim_select_lights_fade;
+          
+          lv_anim_init(&anim_select_rooms_fade);
+          lv_anim_set_var(&anim_select_rooms_fade, id(room_select_widget));
+          lv_anim_set_values(&anim_select_rooms_fade, -80, 0);
+          lv_anim_set_time(&anim_select_rooms_fade, 600);
+          lv_anim_set_exec_cb(&anim_select_rooms_fade, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_select_rooms_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_select_rooms_fade);
+
+          lv_anim_init(&anim_select_lights_fade);
+          lv_anim_set_var(&anim_select_lights_fade, id(${room_prefix}_light_select_widget));
+          lv_anim_set_values(&anim_select_lights_fade, -80, 0);
+          lv_anim_set_time(&anim_select_lights_fade, 600);
+          lv_anim_set_exec_cb(&anim_select_lights_fade, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_select_lights_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_select_lights_fade);
+          
+          lv_anim_init(&anim_circle);
+          lv_anim_set_var(&anim_circle, id(${widget_name}_circle_background));
+          lv_anim_set_values(&anim_circle, 240, 0);
+          lv_anim_set_time(&anim_circle, 600);
+          lv_anim_set_exec_cb(&anim_circle, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle);
+
+          lv_anim_init(&anim_btn_bg);
+          lv_anim_set_var(&anim_btn_bg, id(${widget_name}_circle_btn_bg));
+          lv_anim_set_values(&anim_btn_bg, 240, 0);
+          lv_anim_set_time(&anim_btn_bg, 600);
+          lv_anim_set_exec_cb(&anim_btn_bg, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_btn_bg, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_btn_bg);
+          
+          lv_anim_init(&anim_circle_shrink);
+          lv_anim_set_var(&anim_circle_shrink, id(${widget_name}_circle_background));
+          lv_anim_set_values(&anim_circle_shrink, 380, 230);
+          lv_anim_set_time(&anim_circle_shrink, 350);
+          lv_anim_set_exec_cb(&anim_circle_shrink, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+            lv_obj_set_width((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle_shrink, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle_shrink);
+
+          lv_anim_init(&anim_circle_btn_shrink);
+          lv_anim_set_var(&anim_circle_btn_shrink, id(${widget_name}_circle_btn_bg));
+          lv_anim_set_values(&anim_circle_btn_shrink, 290, 120);
+          lv_anim_set_time(&anim_circle_btn_shrink, 350);
+          lv_anim_set_exec_cb(&anim_circle_btn_shrink, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+            lv_obj_set_width((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle_btn_shrink, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle_btn_shrink);
+
+      - delay: 600ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_light_arc_state), LV_OBJ_FLAG_HIDDEN);
+
+
+  # 4. ONOFF -> RGB
+  - id: ${widget_name}_animate_light_onoff_to_rgb
+    then:
+      - lambda: |-
+          ESP_LOGI("LIGHT", "TRIGGERED BLOCK 4");
+      - lambda: |-
+          lv_obj_add_flag(id(${widget_name}_light_arc_state), LV_OBJ_FLAG_HIDDEN);
+
+      - delay: 100ms
+      - lambda: |-
+          lv_anim_t anim_circle, anim_circle_expand, anim_btn_bg, anim_circle_btn_expand, 
+            anim_select_rooms_fade, anim_select_lights_fade;
+          
+          lv_anim_init(&anim_select_rooms_fade);
+          lv_anim_set_var(&anim_select_rooms_fade, id(room_select_widget));
+          lv_anim_set_values(&anim_select_rooms_fade, 0, -80);
+          lv_anim_set_time(&anim_select_rooms_fade, 600);
+          lv_anim_set_exec_cb(&anim_select_rooms_fade, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_select_rooms_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_select_rooms_fade);
+
+          lv_anim_init(&anim_select_lights_fade);
+          lv_anim_set_var(&anim_select_lights_fade, id(${room_prefix}_light_select_widget));
+          lv_anim_set_values(&anim_select_lights_fade, 0, -80);
+          lv_anim_set_time(&anim_select_lights_fade, 600);
+          lv_anim_set_exec_cb(&anim_select_lights_fade, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_select_lights_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_select_lights_fade);
+          
+          lv_anim_init(&anim_circle);
+          lv_anim_set_var(&anim_circle, id(${widget_name}_circle_background));
+          lv_anim_set_values(&anim_circle, 0, 240);
+          lv_anim_set_time(&anim_circle, 600);
+          lv_anim_set_exec_cb(&anim_circle, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle);
+
+          lv_anim_init(&anim_btn_bg);
+          lv_anim_set_var(&anim_btn_bg, id(${widget_name}_circle_btn_bg));
+          lv_anim_set_values(&anim_btn_bg, 0, 240);
+          lv_anim_set_time(&anim_btn_bg, 600);
+          lv_anim_set_exec_cb(&anim_btn_bg, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_btn_bg, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_btn_bg);
+          
+          lv_anim_init(&anim_circle_expand);
+          lv_anim_set_var(&anim_circle_expand, id(${widget_name}_circle_background));
+          lv_anim_set_values(&anim_circle_expand, 230, 380);
+          lv_anim_set_time(&anim_circle_expand, 350);
+          lv_anim_set_exec_cb(&anim_circle_expand, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+            lv_obj_set_width((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle_expand, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle_expand);
+
+          lv_anim_init(&anim_circle_btn_expand);
+          lv_anim_set_var(&anim_circle_btn_expand, id(${widget_name}_circle_btn_bg));
+          lv_anim_set_values(&anim_circle_btn_expand, 120, 290);
+          lv_anim_set_time(&anim_circle_btn_expand, 350);
+          lv_anim_set_exec_cb(&anim_circle_btn_expand, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+            lv_obj_set_width((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle_btn_expand, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle_btn_expand);
+
+      - delay: 600ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_circle_background_secondary), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_light_arc_hue), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_hue_gradient_obj), LV_OBJ_FLAG_HIDDEN);
+
+          lv_anim_t anim_btn, anim_icon, anim_perc;
+
+          lv_anim_init(&anim_btn);
+          lv_anim_set_var(&anim_btn, id(${widget_name}_circle_btn));
+          lv_anim_set_values(&anim_btn, 0, -30);
+          lv_anim_set_time(&anim_btn, 600);
+          lv_anim_set_exec_cb(&anim_btn, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_btn, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_btn);
+          
+          lv_anim_init(&anim_icon);
+          lv_anim_set_var(&anim_icon, id(${widget_name}_state_icon_bg));
+          lv_anim_set_values(&anim_icon, -80, -160);
+          lv_anim_set_time(&anim_icon, 600);
+          lv_anim_set_exec_cb(&anim_icon, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_icon, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_icon);
+
+          lv_anim_init(&anim_perc);
+          lv_anim_set_var(&anim_perc, id(${widget_name}_percentage_label));
+          lv_anim_set_values(&anim_perc, -80, -160);
+          lv_anim_set_time(&anim_perc, 600);
+          lv_anim_set_exec_cb(&anim_perc, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_perc, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_perc);
+
+          lv_obj_clear_flag(id(${widget_name}_light_brightness_slider), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_light_saturation_slider), LV_OBJ_FLAG_HIDDEN);
+
+      - delay: 600ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_state_icon_bg), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_percentage_label), LV_OBJ_FLAG_HIDDEN);
+
+  # 5. RGB -> ONOFF 
+  - id: ${widget_name}_animate_light_rgb_to_onoff
+    then:
+      - lambda: |-
+          ESP_LOGI("LIGHT", "TRIGGERED BLOCK 5");
+      - lambda: |-
+          lv_obj_add_flag(id(${widget_name}_circle_background_secondary), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_light_arc_hue), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_hue_gradient_obj), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_state_icon_bg), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_percentage_label), LV_OBJ_FLAG_HIDDEN);
+
+          lv_anim_t anim_btn, anim_icon, anim_perc;
+
+          lv_anim_init(&anim_btn);
+          lv_anim_set_var(&anim_btn, id(${widget_name}_circle_btn));
+          lv_anim_set_values(&anim_btn, -30, 0);
+          lv_anim_set_time(&anim_btn, 600);
+          lv_anim_set_exec_cb(&anim_btn, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_btn, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_btn);
+
+          lv_anim_init(&anim_icon);
+          lv_anim_set_var(&anim_icon, id(${widget_name}_state_icon_bg));
+          lv_anim_set_values(&anim_icon, -160, -80);
+          lv_anim_set_time(&anim_icon, 600);
+          lv_anim_set_exec_cb(&anim_icon, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_icon, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_icon);
+
+          lv_anim_init(&anim_perc);
+          lv_anim_set_var(&anim_perc, id(${widget_name}_percentage_label));
+          lv_anim_set_values(&anim_perc, -160, -80);
+          lv_anim_set_time(&anim_perc, 600);
+          lv_anim_set_exec_cb(&anim_perc, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_perc, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_perc);
+          
+          lv_obj_add_flag(id(${widget_name}_light_brightness_slider), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_light_saturation_slider), LV_OBJ_FLAG_HIDDEN);
+
+      - delay: 600ms
+      - lambda: |-
+          lv_anim_t anim_circle, anim_circle_shrink, anim_btn_bg, anim_circle_btn_shrink, 
+            anim_select_rooms_fade, anim_select_lights_fade;
+          
+          lv_anim_init(&anim_select_rooms_fade);
+          lv_anim_set_var(&anim_select_rooms_fade, id(room_select_widget));
+          lv_anim_set_values(&anim_select_rooms_fade, -80, 0);
+          lv_anim_set_time(&anim_select_rooms_fade, 600);
+          lv_anim_set_exec_cb(&anim_select_rooms_fade, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_select_rooms_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_select_rooms_fade);
+
+          lv_anim_init(&anim_select_lights_fade);
+          lv_anim_set_var(&anim_select_lights_fade, id(${room_prefix}_light_select_widget));
+          lv_anim_set_values(&anim_select_lights_fade, -80, 0);
+          lv_anim_set_time(&anim_select_lights_fade, 600);
+          lv_anim_set_exec_cb(&anim_select_lights_fade, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_select_lights_fade, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_select_lights_fade);
+          
+          lv_anim_init(&anim_circle);
+          lv_anim_set_var(&anim_circle, id(${widget_name}_circle_background));
+          lv_anim_set_values(&anim_circle, 240, 0);
+          lv_anim_set_time(&anim_circle, 600);
+          lv_anim_set_exec_cb(&anim_circle, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle);
+
+          lv_anim_init(&anim_btn_bg);
+          lv_anim_set_var(&anim_btn_bg, id(${widget_name}_circle_btn_bg));
+          lv_anim_set_values(&anim_btn_bg, 240, 0);
+          lv_anim_set_time(&anim_btn_bg, 600);
+          lv_anim_set_exec_cb(&anim_btn_bg, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_btn_bg, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_btn_bg);
+          
+          lv_anim_init(&anim_circle_shrink);
+          lv_anim_set_var(&anim_circle_shrink, id(${widget_name}_circle_background));
+          lv_anim_set_values(&anim_circle_shrink, 380, 230);
+          lv_anim_set_time(&anim_circle_shrink, 350);
+          lv_anim_set_exec_cb(&anim_circle_shrink, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+            lv_obj_set_width((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle_shrink, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle_shrink);
+
+          lv_anim_init(&anim_circle_btn_shrink);
+          lv_anim_set_var(&anim_circle_btn_shrink, id(${widget_name}_circle_btn_bg));
+          lv_anim_set_values(&anim_circle_btn_shrink, 290, 120);
+          lv_anim_set_time(&anim_circle_btn_shrink, 350);
+          lv_anim_set_exec_cb(&anim_circle_btn_shrink, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+            lv_obj_set_width((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_circle_btn_shrink, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_circle_btn_shrink);
+
+      - delay: 600ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_light_arc_state), LV_OBJ_FLAG_HIDDEN);
+
+  # 6. COLOR_TEMP -> BRIGHTNESS
+  - id: ${widget_name}_animate_light_color_temp_to_brightness
+    then:
+      - lambda: |-
+          ESP_LOGI("LIGHT", "TRIGGERED BLOCK 6");
+      - lambda: |-
+          lv_obj_add_flag(id(${widget_name}_light_arc_color_temp), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_color_temp_gradient_obj), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_light_brightness_slider), LV_OBJ_FLAG_HIDDEN);
+
+      - delay: 300ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_light_arc_brightness), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_brightness_color_obj), LV_OBJ_FLAG_HIDDEN);
+
+          lv_anim_t anim_icon, anim_perc;
+
+          lv_anim_init(&anim_icon);
+          lv_anim_set_var(&anim_icon, id(${widget_name}_state_icon_bg));
+          lv_anim_set_values(&anim_icon, -160, -80);
+          lv_anim_set_time(&anim_icon, 600);
+          lv_anim_set_exec_cb(&anim_icon, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_icon, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_icon);
+
+          lv_anim_init(&anim_perc);
+          lv_anim_set_var(&anim_perc, id(${widget_name}_percentage_label));
+          lv_anim_set_values(&anim_perc, -160, -80);
+          lv_anim_set_time(&anim_perc, 600);
+          lv_anim_set_exec_cb(&anim_perc, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_perc, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_perc);
+
+  # 7. BRIGHTNESS -> COLOR_TEMP
+  - id: ${widget_name}_animate_light_brightness_to_color_temp
+    then:
+      - lambda: |-
+          ESP_LOGI("LIGHT", "TRIGGERED BLOCK 7");
+      - lambda: |-
+          lv_obj_add_flag(id(${widget_name}_light_arc_brightness), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_brightness_color_obj), LV_OBJ_FLAG_HIDDEN);
+      - delay: 300ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_light_arc_color_temp), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_color_temp_gradient_obj), LV_OBJ_FLAG_HIDDEN);
+
+          lv_anim_t anim_icon, anim_perc;
+
+          lv_anim_init(&anim_icon);
+          lv_anim_set_var(&anim_icon, id(${widget_name}_state_icon_bg));
+          lv_anim_set_values(&anim_icon, -80, -160);
+          lv_anim_set_time(&anim_icon, 600);
+          lv_anim_set_exec_cb(&anim_icon, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_icon, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_icon);
+
+          lv_anim_init(&anim_perc);
+          lv_anim_set_var(&anim_perc, id(${widget_name}_percentage_label));
+          lv_anim_set_values(&anim_perc, -80, -160);
+          lv_anim_set_time(&anim_perc, 600);
+          lv_anim_set_exec_cb(&anim_perc, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_perc, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_perc);
+
+      - delay: 400ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_light_brightness_slider), LV_OBJ_FLAG_HIDDEN);
+
+  # 8. RGB -> BRIGHTNESS
+  - id: ${widget_name}_animate_light_rgb_to_brightness
+    then:
+      - lambda: |-
+          ESP_LOGI("LIGHT", "TRIGGERED BLOCK 8");
+      - lambda: |-
+          lv_obj_add_flag(id(${widget_name}_light_arc_hue), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_hue_gradient_obj), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_light_brightness_slider), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_light_saturation_slider), LV_OBJ_FLAG_HIDDEN);
+      - delay: 300ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_light_arc_brightness), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_brightness_color_obj), LV_OBJ_FLAG_HIDDEN);
+
+          lv_anim_t anim_icon, anim_perc;
+
+          lv_anim_init(&anim_icon);
+          lv_anim_set_var(&anim_icon, id(${widget_name}_state_icon_bg));
+          lv_anim_set_values(&anim_icon, -160, -80);
+          lv_anim_set_time(&anim_icon, 600);
+          lv_anim_set_exec_cb(&anim_icon, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_icon, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_icon);
+
+          lv_anim_init(&anim_perc);
+          lv_anim_set_var(&anim_perc, id(${widget_name}_percentage_label));
+          lv_anim_set_values(&anim_perc, -160, -80);
+          lv_anim_set_time(&anim_perc, 600);
+          lv_anim_set_exec_cb(&anim_perc, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_perc, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_perc);
+
+  # 9. BRIGHTNESS -> RGB
+  - id: ${widget_name}_animate_light_brightness_to_rgb
+    then:
+      - lambda: |-
+          ESP_LOGI("LIGHT", "TRIGGERED BLOCK 9");
+      - lambda: |-
+          lv_obj_add_flag(id(${widget_name}_light_arc_brightness), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_brightness_color_obj), LV_OBJ_FLAG_HIDDEN);
+      - delay: 300ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_light_arc_hue), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_hue_gradient_obj), LV_OBJ_FLAG_HIDDEN);
+
+          lv_anim_t anim_icon, anim_perc;
+
+          lv_anim_init(&anim_icon);
+          lv_anim_set_var(&anim_icon, id(${widget_name}_state_icon_bg));
+          lv_anim_set_values(&anim_icon, -80, -160);
+          lv_anim_set_time(&anim_icon, 600);
+          lv_anim_set_exec_cb(&anim_icon, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_icon, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_icon);
+
+          lv_anim_init(&anim_perc);
+          lv_anim_set_var(&anim_perc, id(${widget_name}_percentage_label));
+          lv_anim_set_values(&anim_perc, -80, -160);
+          lv_anim_set_time(&anim_perc, 600);
+          lv_anim_set_exec_cb(&anim_perc, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_perc, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_perc);
+
+      - delay: 400ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_light_brightness_slider), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_light_saturation_slider), LV_OBJ_FLAG_HIDDEN);
+
+  # 10. RGB -> COLOR_TEMP
+  - id: ${widget_name}_animate_light_rgb_to_color_temp
+    then:
+      - lambda: |-
+          ESP_LOGI("LIGHT", "TRIGGERED BLOCK 10");
+      - lambda: |-
+          lv_obj_add_flag(id(${widget_name}_light_arc_hue), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_hue_gradient_obj), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_light_saturation_slider), LV_OBJ_FLAG_HIDDEN);
+      - delay: 300ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_light_arc_color_temp), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_color_temp_gradient_obj), LV_OBJ_FLAG_HIDDEN);
+
+          lv_anim_t anim_slider;
+
+          lv_anim_init(&anim_slider);
+          lv_anim_set_var(&anim_slider, id(${widget_name}_light_brightness_slider));
+          lv_anim_set_values(&anim_slider, -80, -40);
+          lv_anim_set_time(&anim_slider, 600);
+          lv_anim_set_exec_cb(&anim_slider, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_slider, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_slider);
+
+  # 11. COLOR_TEMP -> RGB
+  - id: ${widget_name}_animate_light_color_temp_to_rgb
+    then:
+      - lambda: |-
+          ESP_LOGI("LIGHT", "TRIGGERED BLOCK 11");
+      - lambda: |-
+          lv_obj_add_flag(id(${widget_name}_light_arc_color_temp), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(${widget_name}_color_temp_gradient_obj), LV_OBJ_FLAG_HIDDEN);
+      - delay: 300ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_light_arc_hue), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(${widget_name}_hue_gradient_obj), LV_OBJ_FLAG_HIDDEN);
+
+          lv_anim_t anim_slider;
+
+          lv_anim_init(&anim_slider);
+          lv_anim_set_var(&anim_slider, id(${widget_name}_light_brightness_slider));
+          lv_anim_set_values(&anim_slider, -40, -80);
+          lv_anim_set_time(&anim_slider, 600);
+          lv_anim_set_exec_cb(&anim_slider, [](void * var, int32_t v) {
+            lv_obj_set_x((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_slider, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_slider);
+
+      - delay: 400ms
+      - lambda: |-
+          lv_obj_clear_flag(id(${widget_name}_light_saturation_slider), LV_OBJ_FLAG_HIDDEN);
+
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # ГЛАВНЫЙ СКРИПТ: Матрица переходов между режимами (12 комбинаций)
+  # ═══════════════════════════════════════════════════════════════════════════
+  - id: ${widget_name}_start_lights_animation
+    parameters:
+      from_mode: int  # 0=onoff, 1=brightness, 2=color_temp, 3=rgb
+      to_mode: int    # 0=onoff, 1=brightness, 2=color_temp, 3=rgb
+    then:
+      - lambda: |-
+          ESP_LOGD("animation", "═══════════════════════════════════════");
+          ESP_LOGD("animation", "Starting animation: %d → %d", from_mode, to_mode);
+          
+          // ═══════════════════════════════════════════════════════════════════
+          // МАТРИЦА ПЕРЕХОДОВ (12 анимаций)
+          // ═══════════════════════════════════════════════════════════════════
+          
+          // ───────────────────────────────────────────────────────────────────
+          // ИЗ ONOFF (0) → 3 перехода
+          // ───────────────────────────────────────────────────────────────────
+          if (from_mode == 0 && to_mode == 1) {
+            ESP_LOGD("animation", "▶ ONOFF → Brightness");
+            id(${widget_name}_animate_light_onoff_to_brightness).execute();
+            
+          } else if (from_mode == 0 && to_mode == 2) {
+            ESP_LOGD("animation", "▶ ONOFF → Color Temp");
+            id(${widget_name}_animate_light_onoff_to_color_temp).execute();
+            
+          } else if (from_mode == 0 && to_mode == 3) {
+            ESP_LOGD("animation", "▶ ONOFF → RGB");
+            id(${widget_name}_animate_light_onoff_to_rgb).execute();
+          
+          // ───────────────────────────────────────────────────────────────────
+          // ИЗ BRIGHTNESS (1) → 3 перехода
+          // ───────────────────────────────────────────────────────────────────
+          } else if (from_mode == 1 && to_mode == 0) {
+            ESP_LOGD("animation", "▶ Brightness → ONOFF");
+            id(${widget_name}_animate_light_brightness_to_onoff).execute();
+            
+          } else if (from_mode == 1 && to_mode == 2) {
+            ESP_LOGD("animation", "▶ Brightness → Color Temp");
+            id(${widget_name}_animate_light_brightness_to_color_temp).execute();
+            
+          } else if (from_mode == 1 && to_mode == 3) {
+            ESP_LOGD("animation", "▶ Brightness → RGB");
+            id(${widget_name}_animate_light_brightness_to_rgb).execute();
+          
+          // ───────────────────────────────────────────────────────────────────
+          // ИЗ COLOR TEMP (2) → 3 перехода
+          // ───────────────────────────────────────────────────────────────────
+          } else if (from_mode == 2 && to_mode == 0) {
+            ESP_LOGD("animation", "▶ Color Temp → ONOFF");
+            id(${widget_name}_animate_light_color_temp_to_onoff).execute();
+            
+          } else if (from_mode == 2 && to_mode == 1) {
+            ESP_LOGD("animation", "▶ Color Temp → Brightness");
+            id(${widget_name}_animate_light_color_temp_to_brightness).execute();
+            
+          } else if (from_mode == 2 && to_mode == 3) {
+            ESP_LOGD("animation", "▶ Color Temp → RGB (mode switch)");
+            id(${widget_name}_animate_light_color_temp_to_rgb).execute();
+          
+          // ───────────────────────────────────────────────────────────────────
+          // ИЗ RGB (3) → 3 перехода
+          // ───────────────────────────────────────────────────────────────────
+          } else if (from_mode == 3 && to_mode == 0) {
+            ESP_LOGD("animation", "▶ RGB → ONOFF");
+            id(${widget_name}_animate_light_rgb_to_onoff).execute();
+            
+          } else if (from_mode == 3 && to_mode == 1) {
+            ESP_LOGD("animation", "▶ RGB → Brightness");
+            id(${widget_name}_animate_light_rgb_to_brightness).execute();
+            
+          } else if (from_mode == 3 && to_mode == 2) {
+            ESP_LOGD("animation", "▶ RGB → Color Temp (mode switch)");
+            id(${widget_name}_animate_light_rgb_to_color_temp).execute();
+          
+          // ───────────────────────────────────────────────────────────────────
+          // БЕЗ ИЗМЕНЕНИЙ (4 случая)
+          // ───────────────────────────────────────────────────────────────────
+          } else if (from_mode == to_mode) {
+            ESP_LOGD("animation", "⏸ No change: mode %d → %d", from_mode, to_mode);
+            
+          } else {
+            ESP_LOGW("animation", "⚠ Unknown transition: %d → %d", from_mode, to_mode);
+          }
+          
+          ESP_LOGD("animation", "═══════════════════════════════════════");

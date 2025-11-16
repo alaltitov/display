@@ -1,0 +1,16 @@
+substitutions: !include substitutions.yaml
+
+packages:
+  select: !include select.yaml
+
+  fan_1: !include
+    file: fan.yaml
+    vars:
+      fan_entity: "${fan_entity_1}"
+      widget_name: "${fan_widget_name_1}"
+
+  fan_2: !include
+    file: fan.yaml
+    vars:
+      fan_entity: "${fan_entity_2}"
+      widget_name: "${fan_widget_name_2}"

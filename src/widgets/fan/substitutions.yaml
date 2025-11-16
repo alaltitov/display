@@ -1,0 +1,7 @@
+fans_amount: "2" # choise 1 or 2
+
+fan_entity_1: "fan.percentage_full_fan"
+fan_entity_2: "fan.preset_only_limited_fan"
+
+fan_widget_name_1: "fan1"
+fan_widget_name_2: "fan2"

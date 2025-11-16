@@ -118,3 +118,9 @@ alarm_panel:
     disarming: In disattivazione
     pending: In attesa
     triggered: Innescato
+
+fan:
+  name: Fan
+  state:
+    "on": "Off"
+    "off": "On"

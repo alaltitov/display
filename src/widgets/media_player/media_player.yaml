@@ -841,7 +841,7 @@ script:
           data:
             entity_id: "${media_player_entity}"
             size: small
-      - delay: 1s
+      - delay: 1500ms
       - online_image.release: media_image_jpeg
       - online_image.set_url:
           id: media_image_jpeg

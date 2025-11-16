@@ -1,0 +1,801 @@
+globals:
+  - id: ${widget_name}_arc_range_initialized
+    type: bool
+    initial_value: "false"
+    restore_value: no
+
+  - id: ${widget_name}_ui_user_adjusting_target
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: ${widget_name}_temp_step
+    type: float
+    initial_value: "0.1"
+    restore_value: no
+
+  - id: ${widget_name}_temp_step_multiplier
+    type: int
+    initial_value: '10'
+    restore_value: no
+
+sensor:
+  # TARGET TEMPERATURE STEP (автоматически подтягивается)
+  - platform: homeassistant
+    id: ${widget_name}_sensor_target_temp_step
+    entity_id: "${boiler_entity}"
+    attribute: target_temp_step
+    on_value:
+      - lambda: |-
+          float raw = x;
+          float chosen = 0.1f;
+          int m = 10;
+          auto near = [](float a, float b)->bool { return fabsf(a-b) < 0.049f; };
+          if (near(raw,0.1f)) { chosen = 0.1f; m = 10; }
+          else if (near(raw,0.5f)) { chosen = 0.5f; m = 2; }
+          else if (near(raw,1.0f)) { chosen = 1.0f; m = 1; }
+          else { chosen = 0.1f; m = 10; }
+          id(${widget_name}_temp_step) = chosen;
+          id(${widget_name}_temp_step_multiplier) = m;
+          ESP_LOGI("${widget_name}_STEP","target_temp_step=%.3f -> multiplier=%d", chosen, m);
+          if (id(${widget_name}_arc_range_initialized)) {
+            id(${widget_name}_arc_range_initialized) = false;
+            id(${widget_name}_update_arc_temp_range).execute();
+          }
+
+  # TARGET TEMPERATURE
+  - platform: homeassistant
+    id: ${widget_name}_sensor_target_temp
+    entity_id: "${boiler_entity}"
+    attribute: temperature
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(${widget_name}_arc_range_initialized);'
+          timeout: 15s
+      - lvgl.arc.update:
+          id: ${widget_name}_arc_base_heat
+          value: !lambda return (int)(x * id(${widget_name}_temp_step_multiplier) + 0.5f);
+      - script.execute: ${widget_name}_update_segments
+      - lvgl.label.update:
+          id: ${widget_name}_target_temperature_whole
+          text: !lambda |-
+            static char buf[10];
+            float t = id(${widget_name}_sensor_target_temp).state;
+            int m = id(${widget_name}_temp_step_multiplier);
+            int scaled = (int)(t * m + 0.5f);
+            int whole = scaled / m;
+            snprintf(buf, sizeof(buf), "%d", whole);
+            return buf;
+      - lvgl.label.update:
+          id: ${widget_name}_target_temperature_fraction
+          text: !lambda |-
+            static char buf[10];
+            float t = id(${widget_name}_sensor_target_temp).state;
+            int m = id(${widget_name}_temp_step_multiplier);
+            int scaled = (int)(t * m + 0.5f);
+            int frac_digit = ((scaled * 10) / m) % 10;
+            snprintf(buf, sizeof(buf), ".%01d", frac_digit);
+            return buf;
+
+  # CURRENT TEMPERATURE
+  - platform: homeassistant
+    id: ${widget_name}_sensor_current_temp
+    entity_id: "${boiler_entity}"
+    attribute: current_temperature
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(${widget_name}_arc_range_initialized);'
+          timeout: 15s
+      - script.execute: ${widget_name}_update_segments
+      - lvgl.arc.update:
+          id: ${widget_name}_arc_current_temperature
+          value: !lambda return (int)(x * id(${widget_name}_temp_step_multiplier) + 0.5f);
+      - lvgl.label.update:
+          id: ${widget_name}_current_temperature_label
+          text: !lambda |-
+            char buf[8]; 
+            snprintf(buf, sizeof(buf), "%.1f", x);
+            return std::string(buf);
+
+  # MIN TEMPERATURE (автоматически подтягивается)
+  - platform: homeassistant
+    id: ${widget_name}_sensor_min_temp
+    entity_id: "${boiler_entity}"
+    attribute: min_temp
+    on_value:
+      - lambda: |-
+          ESP_LOGI("${widget_name}_RANGE", "min_temp updated: %.1f", x);
+      - script.execute: ${widget_name}_update_arc_temp_range
+    
+  # MAX TEMPERATURE (автоматически подтягивается)
+  - platform: homeassistant
+    id: ${widget_name}_sensor_max_temp
+    entity_id: "${boiler_entity}"
+    attribute: max_temp
+    on_value:
+      - lambda: |-
+          ESP_LOGI("${widget_name}_RANGE", "max_temp updated: %.1f", x);
+      - script.execute: ${widget_name}_update_arc_temp_range
+
+text_sensor:
+  # FRIENDLY NAME
+  - platform: homeassistant
+    id: ${widget_name}_name_sensor
+    entity_id: "${boiler_entity}"
+    attribute: friendly_name
+    on_value:
+      - lvgl.label.update:
+          id: ${widget_name}_name_label
+          text: !lambda return x;
+
+  # CLIMATE STATE (heat/off)
+  - platform: homeassistant
+    id: ${widget_name}_sensor_state
+    entity_id: "${boiler_entity}"
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(${widget_name}_arc_range_initialized);'
+          timeout: 15s
+      - if:
+          condition:
+            lambda: 'return id(${widget_name}_sensor_state).state == "heat";'
+          then:
+            - lvgl.widget.show: ${widget_name}_arc_base_heat
+            - lvgl.widget.show: ${widget_name}_arc_segment_heat
+            - lvgl.widget.show: ${widget_name}_arc_dot_heat
+            - lvgl.widget.show: ${widget_name}_arc_knob_heat
+            - lambda: 'id(${widget_name}_ui_user_adjusting_target) = false;'
+            - lvgl.label.update:
+                id: ${widget_name}_target_temperature_whole
+                text_color: ${boiler_arc_color}
+            - lvgl.label.update:
+                id: ${widget_name}_target_temperature_fraction
+                text_color: ${boiler_arc_color}
+            - lvgl.label.update:
+                id: ${widget_name}_target_temperature_measurement
+                text_color: ${boiler_arc_color}
+            - lvgl.arc.update:
+                id: ${widget_name}_arc_base_heat
+                value: !lambda return (int)(id(${widget_name}_sensor_target_temp).state * id(${widget_name}_temp_step_multiplier) + 0.5f);
+            - lvgl.arc.update:
+                id: ${widget_name}_arc_knob_heat
+                value: !lambda return (int)(id(${widget_name}_sensor_target_temp).state * id(${widget_name}_temp_step_multiplier) + 0.5f);
+            - lvgl.label.update:
+                id: ${widget_name}_toggle_mode_label
+                text: "${heat_icon}"
+                text_color: ${boiler_arc_color}
+            - lvgl.label.update:
+                id: ${widget_name}_plus_label
+                text_color: ${boiler_button_color}
+            - lvgl.label.update:
+                id: ${widget_name}_minus_label
+                text_color: ${boiler_button_color}
+            - script.execute: ${widget_name}_update_segments
+          else:
+            - lvgl.widget.hide: ${widget_name}_arc_base_heat
+            - lvgl.widget.hide: ${widget_name}_arc_segment_heat
+            - lvgl.widget.hide: ${widget_name}_arc_dot_heat
+            - lvgl.widget.hide: ${widget_name}_arc_knob_heat
+            - lvgl.label.update:
+                id: ${widget_name}_target_temperature_whole
+                text_color: 0x9BA2BC
+            - lvgl.label.update:
+                id: ${widget_name}_target_temperature_fraction
+                text_color: 0x9BA2BC
+            - lvgl.label.update:
+                id: ${widget_name}_target_temperature_measurement
+                text_color: 0x9BA2BC
+            - lvgl.label.update:
+                id: ${widget_name}_toggle_mode_label
+                text: "${off_icon}"
+                text_color: 0x9BA2BC
+            - lvgl.label.update:
+                id: ${widget_name}_plus_label
+                text_color: 0x9BA2BC
+            - lvgl.label.update:
+                id: ${widget_name}_minus_label
+                text_color: 0x9BA2BC
+
+  # HVAC ACTION (heating/idle/off)
+  - platform: homeassistant
+    id: ${widget_name}_sensor_hvac_action
+    entity_id: "${boiler_entity}"
+    attribute: hvac_action
+    on_value:
+      - wait_until:
+          condition:
+            lambda: 'return id(${widget_name}_arc_range_initialized);'
+          timeout: 15s
+      - lvgl.label.update:
+          id: ${widget_name}_state_label
+          text: !lambda |-
+            std::string s = x;
+            if (!s.empty()) s[0] = (char)toupper((unsigned char)s[0]);
+            return s;
+          text_color: !lambda |-
+            std::string a = x;
+            for (auto &c : a) c = (char)tolower((unsigned char)c);
+            if (a == "heating") return lv_color_hex(${boiler_arc_color});
+            if (a == "idle") return lv_color_hex(0x9BA2BC);
+            if (a == "off") return lv_color_hex(0x606682);
+            return lv_color_hex(0x606682);
+
+lvgl:
+  pages:
+    - id: ${widget_name}_page
+      bg_color: color_black
+      scrollable: false
+      widgets:
+        - label:
+            id: ${widget_name}_name_label
+            y: 15
+            align: top_mid
+            text_font: nunito_20
+            text_color: color_misty_blue
+            text: "My Boiler"
+
+        - obj:
+            id: ${widget_name}_up_background
+            y: 60
+            width: 440
+            height: 80
+            align: top_mid
+            clickable: false
+            scrollable: false
+            radius: 20
+            pad_all: 0
+            bg_color: color_slate_blue_gray
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            widgets:
+              # TOGGLE BUTTON (HEAT/OFF)
+              - obj:
+                  id: ${widget_name}_toggle_mode_btn
+                  x: 20
+                  width: 54
+                  height: 54
+                  pad_all: 0
+                  radius: 30
+                  align: left_mid
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 5
+                  shadow_spread: 1
+                  shadow_color: 0x000000
+                  pressed:
+                    bg_color: 0x000000
+                    shadow_width: 4
+                  widgets:
+                    - label:
+                        id: ${widget_name}_toggle_mode_label
+                        align: center
+                        text_font: mdi_icons_28
+                        text_color: 0x9BA2BC
+                        text: "${off_icon}"
+                  on_press:
+                    - lambda: |-
+                        std::string current_state = id(${widget_name}_sensor_state).state;
+                        std::string new_mode = (current_state == "heat") ? "off" : "heat";
+                        ESP_LOGI("${widget_name}_TOGGLE", "Current: %s, Switching to: %s", current_state.c_str(), new_mode.c_str());
+                    - homeassistant.action: 
+                        action: climate.set_hvac_mode
+                        data: 
+                          entity_id: "${boiler_entity}"
+                          hvac_mode: !lambda |-
+                            return (id(${widget_name}_sensor_state).state == "heat") ? "off" : "heat";
+              # STATE LABEL
+              - label:
+                  id: ${widget_name}_state_label
+                  x: 100
+                  align: left_mid
+                  text_font: nunito_20
+                  text_color: 0x9BA2BC
+                  text: " "
+          
+        - obj:
+            id: ${widget_name}_middle_background
+            y: 150
+            width: 440
+            height: 180
+            align: top_mid
+            clickable: false
+            scrollable: false
+            radius: 20
+            pad_all: 0
+            bg_color: color_slate_blue_gray
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+
+        - obj:
+            id: ${widget_name}_down_background
+            y: 340
+            width: 440
+            height: 80
+            align: top_mid
+            clickable: false
+            scrollable: false
+            radius: 20
+            pad_all: 0
+            bg_color: color_slate_blue_gray
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+ 
+
+        # TEMPERATURE WIDGET
+        - obj:
+            id: ${widget_name}_bg_main_temperature
+            width: 240
+            height: 480
+            align: right_mid
+            pad_all: 0
+            bg_opa: transp
+            scrollable: false
+            border_opa: transp 
+            shadow_opa: transp
+            widgets:
+              - obj:
+                  x: 240
+                  width: 480
+                  height: 480
+                  scrollable: false
+                  align: right_mid
+                  pad_all: 0
+                  bg_opa: transp
+                  shadow_opa: transp
+                  border_opa: transp
+                  widgets:
+                    - obj:
+                        width: 380
+                        height: 380
+                        align: center
+                        clickable: true
+                        radius: 190
+                        bg_color: color_black
+                        border_opa: transp
+                        border_width: 0
+
+              - obj:
+                  x: 190
+                  width: 380
+                  height: 380
+                  align: right_mid
+                  pad_all: 0
+                  bg_opa: transp
+                  shadow_opa: transp
+                  border_opa: transp
+                  widgets:
+                    - obj:
+                        width: 290
+                        height: 290
+                        align: center
+                        clickable: false
+                        radius: 145
+                        bg_color: color_slate_blue_gray
+                        border_width: 0
+                        border_opa: transp
+
+                    # CURRENT TEMP DOT
+                    - arc:
+                        id: ${widget_name}_arc_current_temperature
+                        clickable: false
+                        adjustable: true
+                        adv_hittest: true
+                        align: center
+                        width: 370
+                        height: 370
+                        start_angle: 0
+                        end_angle: 180
+                        min_value: 50
+                        max_value: 300
+                        value: 216
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_opa: transp
+                          arc_width: 34
+                        knob:
+                          pad_all: -12
+                          bg_color: 0x606682
+
+                    # HEAT BASE ARC
+                    - arc:
+                        id: ${widget_name}_arc_base_heat
+                        adjustable: true
+                        adv_hittest: true
+                        align: center
+                        width: 370
+                        height: 370
+                        start_angle: 0
+                        end_angle: 180
+                        min_value: 50
+                        max_value: 300
+                        value: 220
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_color: ${boiler_arc_color}
+                          arc_width: 34
+                        knob:
+                          pad_all: -1
+                          bg_color: 0xFFFFFF
+                          border_color: ${boiler_arc_color}
+                          border_width: 4
+                          shadow_color: 0x000000
+                        on_value:
+                          - lambda: |-
+                              if (!id(${widget_name}_ui_user_adjusting_target))
+                                id(${widget_name}_ui_user_adjusting_target) = true;
+                              int low = lv_arc_get_value(id(${widget_name}_arc_base_heat));
+                              lv_arc_set_value(id(${widget_name}_arc_knob_heat), low);
+                              float temp = low / (float)id(${widget_name}_temp_step_multiplier);
+                              int whole = (int)temp;
+                              int m = id(${widget_name}_temp_step_multiplier);
+                              int scaled = (int)(temp * m + 0.5f);
+                              int frac = ((scaled * 10) / m) % 10;
+                              char wbuf[8], fbuf[8];
+                              snprintf(wbuf, sizeof(wbuf), "%d", whole);
+                              snprintf(fbuf, sizeof(fbuf), ".%d", frac);
+                              lv_label_set_text(id(${widget_name}_target_temperature_whole), wbuf);
+                              lv_label_set_text(id(${widget_name}_target_temperature_fraction), fbuf);
+                              id(${widget_name}_update_segments).execute();
+                        on_release:
+                          - lambda: 'id(${widget_name}_ui_user_adjusting_target) = false;'
+                          - homeassistant.action:
+                              action: climate.set_temperature
+                              data:
+                                entity_id: "${boiler_entity}"
+                                temperature: !lambda 'return lv_arc_get_value(id(${widget_name}_arc_base_heat)) / (float)id(${widget_name}_temp_step_multiplier);'
+
+                    # HEAT SEGMENT ARC
+                    - arc:
+                        id: ${widget_name}_arc_segment_heat
+                        clickable: false
+                        adjustable: false
+                        adv_hittest: false
+                        align: center
+                        width: 370
+                        height: 370
+                        start_angle: 90
+                        end_angle: 100
+                        min_value: 0
+                        max_value: 100
+                        value: 100
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_color: ${boiler_arc_segment_color}
+                          arc_width: 34
+                        knob:
+                          bg_opa: transp
+
+                    # HEAT DOT ARC
+                    - arc:
+                        id: ${widget_name}_arc_dot_heat
+                        clickable: false
+                        adjustable: true
+                        adv_hittest: true
+                        align: center
+                        width: 370
+                        height: 370
+                        start_angle: 0
+                        end_angle: 180
+                        min_value: 50
+                        max_value: 300
+                        value: 216
+                        arc_width: 34
+                        rotation: 90.0
+                        arc_opa: transp
+                        indicator:
+                          arc_opa: transp
+                          arc_width: 34
+                        knob:
+                          pad_all: -12
+                          bg_color: ${boiler_arc_color}
+
+                    # HEAT KNOB ARC
+                    - arc:
+                        id: ${widget_name}_arc_knob_heat
+                        align: center
+                        width: 370
+                        height: 370
+                        start_angle: 0
+                        end_angle: 180
+                        rotation: 90.0
+                        min_value: 50
+                        max_value: 300
+                        value: 220
+                        adjustable: true
+                        adv_hittest: true
+                        clickable: false
+                        arc_width: 34
+                        arc_opa: transp
+                        indicator:
+                          arc_opa: transp
+                          arc_width: 34
+                        knob:
+                          pad_all: 0
+                          bg_color: 0xFFFFFF
+                          border_color: ${boiler_arc_color}
+                          border_width: 4
+                          shadow_color: 0x000000
+
+              # TARGET TEMPERATURE LABEL
+              - obj:
+                  id: ${widget_name}_target_temperature_single
+                  width: 140
+                  height: 120
+                  align: RIGHT_MID
+                  bg_color: 0x2C2F3E
+                  pad_all: 0
+                  border_opa: transp
+                  shadow_opa: transp
+                  widgets:
+                    - label:
+                        id: ${widget_name}_target_temperature_whole
+                        x: -40
+                        y: 0
+                        align: RIGHT_MID
+                        text_font: nunito_84
+                        text_color: 0x606682
+                        text: " "
+                
+                    - label:
+                        id: ${widget_name}_target_temperature_fraction
+                        x: -10
+                        y: 15
+                        align: RIGHT_MID
+                        text_font: nunito_36
+                        text_color: 0x606682
+                        text: " "
+
+                    - label:
+                        id: ${widget_name}_target_temperature_measurement
+                        x: -12
+                        y: -20
+                        align: RIGHT_MID
+                        text_font: nunito_30
+                        text_color: 0x606682
+                        text: "°C"
+
+              # CURRENT TEMPERATURE LABEL
+              - label:
+                  id: ${widget_name}_current_temperature_label
+                  x: -10
+                  y: 100
+                  align: RIGHT_MID
+                  text_font: nunito_30
+                  text_color: 0x606682
+                  text: " "
+
+        # PLUS BUTTON
+        - obj:
+            x: 170
+            y: -50
+            width: 90
+            height: 90
+            align: left_mid
+            pad_all: 0
+            bg_opa: transp
+            shadow_opa: transp
+            border_opa: transp
+            widgets:
+              - obj:
+                  width: 70
+                  height: 70
+                  align: center
+                  clickable: true
+                  radius: 50
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 8
+                  shadow_spread: 2
+                  shadow_color: color_black
+                  pressed:
+                    bg_color: color_black
+                    shadow_width: 5
+                  on_press:
+                    - lambda: |-
+                        if (id(${widget_name}_sensor_state).state != "heat") return;
+                        float step = id(${widget_name}_temp_step);
+                        int m = id(${widget_name}_temp_step_multiplier);
+                        float max_t = id(${widget_name}_sensor_max_temp).has_state() ? id(${widget_name}_sensor_max_temp).state : 30.0f;
+                        float cur = id(${widget_name}_sensor_target_temp).has_state() ? id(${widget_name}_sensor_target_temp).state : (lv_arc_get_value(id(${widget_name}_arc_base_heat)) / (float)m);
+                        cur += step;
+                        if (cur > max_t) cur = max_t;
+                        int cur_scaled = (int)(cur * m + 0.5f);
+                        lv_arc_set_value(id(${widget_name}_arc_base_heat), cur_scaled);
+                        lv_arc_set_value(id(${widget_name}_arc_knob_heat), cur_scaled);
+                        id(${widget_name}_update_segments).execute();
+                    - homeassistant.action:
+                        action: climate.set_temperature
+                        data:
+                          entity_id: "${boiler_entity}"
+                          temperature: !lambda 'return lv_arc_get_value(id(${widget_name}_arc_base_heat)) / (float)id(${widget_name}_temp_step_multiplier);'
+
+              - obj:
+                  width: 65
+                  height: 65
+                  pad_all: 0
+                  align: center
+                  clickable: false
+                  radius: 50
+                  border_opa: transp
+                  bg_color: color_slate_blue_gray
+                  widgets:
+                    - label:
+                        id: ${widget_name}_plus_label
+                        align: center
+                        text_font: mdi_icons_40
+                        text_color: 0x9BA2BC
+                        text: "${plus_icon}"
+
+        # MINUS BUTTON
+        - obj:
+            x: 170
+            y: 50
+            width: 90
+            height: 90
+            align: left_mid
+            pad_all: 0
+            bg_opa: transp
+            shadow_opa: transp
+            border_opa: transp
+            widgets:
+              - obj:
+                  width: 70
+                  height: 70
+                  align: center
+                  clickable: true
+                  radius: 50
+                  pad_all: 0
+                  bg_opa: transp
+                  border_opa: transp
+                  shadow_width: 8
+                  shadow_spread: 2
+                  shadow_color: 0x000000
+                  pressed:
+                    bg_color: 0x3A3A4C
+                    shadow_width: 5
+                  on_press:
+                    - lambda: |-
+                        if (id(${widget_name}_sensor_state).state != "heat") return;
+                        float step = id(${widget_name}_temp_step);
+                        int m = id(${widget_name}_temp_step_multiplier);
+                        float min_t = id(${widget_name}_sensor_min_temp).has_state() ? id(${widget_name}_sensor_min_temp).state : 5.0f;
+                        float cur = id(${widget_name}_sensor_target_temp).has_state() ? id(${widget_name}_sensor_target_temp).state : (lv_arc_get_value(id(${widget_name}_arc_base_heat)) / (float)m);
+                        cur -= step;
+                        if (cur < min_t) cur = min_t;
+                        int cur_scaled = (int)(cur * m + 0.5f);
+                        lv_arc_set_value(id(${widget_name}_arc_base_heat), cur_scaled);
+                        lv_arc_set_value(id(${widget_name}_arc_knob_heat), cur_scaled);
+                        id(${widget_name}_update_segments).execute();
+                    - homeassistant.action:
+                        action: climate.set_temperature
+                        data:
+                          entity_id: "${boiler_entity}"
+                          temperature: !lambda 'return lv_arc_get_value(id(${widget_name}_arc_base_heat)) / (float)id(${widget_name}_temp_step_multiplier);'
+
+              - obj:
+                  width: 65
+                  height: 65
+                  pad_all: 0
+                  align: center
+                  clickable: false
+                  radius: 50
+                  border_opa: transp
+                  bg_color: color_slate_blue_gray
+                  widgets:
+                    - label:
+                        id: ${widget_name}_minus_label
+                        align: CENTER
+                        text_font: mdi_icons_40
+                        text_color: 0x9BA2BC
+                        text: "${minus_icon}"
+
+        # BACK
+        - obj:
+            y: 0
+            width: 80
+            height: 70
+            align: bottom_mid
+            bg_opa: transp
+            pad_all: 0
+            border_opa: transp
+            border_width: 0
+            shadow_opa: transp
+            radius: 0
+            widgets:
+              - obj:
+                  y: -20
+                  width: 80
+                  height: 5
+                  align: bottom_mid
+                  bg_color: color_steel_blue
+                  pad_all: 0
+                  border_opa: transp
+                  border_width: 0
+                  shadow_opa: transp
+                  radius: 15 
+            on_click:
+              - lvgl.widget.hide: boiler_select_widget
+              - lvgl.page.show: home_page
+
+script:
+  # АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ ДИАПАЗОНА (min_temp, max_temp)
+  - id: ${widget_name}_update_arc_temp_range
+    then:
+      - lambda: |-
+          if (!id(${widget_name}_arc_range_initialized) &&
+              id(${widget_name}_sensor_min_temp).has_state() &&
+              id(${widget_name}_sensor_max_temp).has_state()) {
+            
+            float min_val = id(${widget_name}_sensor_min_temp).state;
+            float max_val = id(${widget_name}_sensor_max_temp).state;
+            int m = id(${widget_name}_temp_step_multiplier);
+            int min_scaled = (int)(min_val * m + 0.5f);
+            int max_scaled = (int)(max_val * m + 0.5f);
+            
+            ESP_LOGI("${widget_name}_RANGE", "Setting range: min=%.1f (scaled=%d), max=%.1f (scaled=%d), multiplier=%d", 
+                     min_val, min_scaled, max_val, max_scaled, m);
+            
+            lv_arc_set_range(id(${widget_name}_arc_current_temperature), min_scaled, max_scaled);
+            lv_arc_set_range(id(${widget_name}_arc_base_heat), min_scaled, max_scaled);
+            lv_arc_set_range(id(${widget_name}_arc_segment_heat), min_scaled, max_scaled);
+            lv_arc_set_range(id(${widget_name}_arc_dot_heat), min_scaled, max_scaled);
+            lv_arc_set_range(id(${widget_name}_arc_knob_heat), min_scaled, max_scaled);
+            
+            id(${widget_name}_arc_range_initialized) = true;
+            ESP_LOGI("${widget_name}_RANGE", "Range initialized successfully");
+          }
+
+  # ОБНОВЛЕНИЕ СЕГМЕНТОВ (визуализация разницы между текущей и целевой температурой)
+  - id: ${widget_name}_update_segments
+    mode: restart
+    then:
+      - lambda: |-
+          if (!id(${widget_name}_sensor_current_temp).has_state()) return;
+          
+          int min_v = lv_arc_get_min_value(id(${widget_name}_arc_base_heat));
+          int max_v = lv_arc_get_max_value(id(${widget_name}_arc_base_heat));
+          if (min_v >= max_v) return;
+          
+          int mseg = id(${widget_name}_temp_step_multiplier);
+          float current_scaled_f = id(${widget_name}_sensor_current_temp).state * mseg;
+          if (current_scaled_f < min_v) current_scaled_f = min_v;
+          if (current_scaled_f > max_v) current_scaled_f = max_v;
+          int current_scaled = (int) current_scaled_f;
+          
+          auto angle_for_precise = [&](float v)->int {
+            float precise_angle = (v - min_v) * 180.0f / (float)(max_v - min_v);
+            return (int)(precise_angle * 10.0f + 0.5f) / 10;
+          };
+
+          int low_scaled = lv_arc_get_value(id(${widget_name}_arc_base_heat));
+          
+          // Показываем сегмент только если текущая температура ниже целевой
+          if (current_scaled < low_scaled - 0.1f * mseg) {
+            lv_obj_clear_flag(id(${widget_name}_arc_segment_heat), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(id(${widget_name}_arc_dot_heat), LV_OBJ_FLAG_HIDDEN);
+            float a_start = angle_for_precise((float)current_scaled);
+            float a_end   = angle_for_precise((float)low_scaled);
+            if (a_end < a_start + 1.0f) a_end = a_start + 1.0f;
+            lv_arc_set_start_angle(id(${widget_name}_arc_segment_heat), (int)a_start);
+            lv_arc_set_end_angle(id(${widget_name}_arc_segment_heat), (int)a_end);
+            lv_arc_set_value(id(${widget_name}_arc_dot_heat), current_scaled);
+          } else {
+            lv_obj_add_flag(id(${widget_name}_arc_segment_heat), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(${widget_name}_arc_dot_heat), LV_OBJ_FLAG_HIDDEN);
+          }
+
+
+

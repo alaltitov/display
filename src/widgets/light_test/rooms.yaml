@@ -1,0 +1,43 @@
+packages:
+  # Селектор светильников для комнаты
+  room_light_selector: !include
+    file: light_select.yaml
+    vars:
+      room_prefix: "${room_name}"
+      light_widget_name_1: "${room_name}_light1"
+      light_widget_name_2: "${room_name}_light2"
+      light_widget_name_3: "${room_name}_light3"
+      light_widget_name_4: "${room_name}_light4"
+      light_icon_1: "${light_icon_1}"
+      light_icon_2: "${light_icon_2}"
+      light_icon_3: "${light_icon_3}"
+      light_icon_4: "${light_icon_4}"
+      lights_amount: "${lights_amount}"
+
+  light_1: !include
+    file: light.yaml
+    vars:
+      light_entity: "${light_entity_1}"
+      widget_name: "${room_name}_light1"
+      room_prefix: "${room_name}"
+      
+  light_2: !include
+    file: light.yaml
+    vars:
+      light_entity: "${light_entity_2}"
+      widget_name: "${room_name}_light2"
+      room_prefix: "${room_name}"
+
+  light_3: !include
+    file: light.yaml
+    vars:
+      light_entity: "${light_entity_3}"
+      widget_name: "${room_name}_light3"
+      room_prefix: "${room_name}"
+
+  light_4: !include
+    file: light.yaml
+    vars:
+      light_entity: "${light_entity_4}"
+      widget_name: "${room_name}_light4"
+      room_prefix: "${room_name}"

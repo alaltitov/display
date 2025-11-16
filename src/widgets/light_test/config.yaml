@@ -1,0 +1,85 @@
+substitutions:
+  rooms_amount: "4"  # Количество комнат (1-4)
+  
+  # Иконки комнат
+  room_icon_1:                    "\U000F04B9"  # mdi:sofa (Living Room)
+  room_icon_2:                    "\U000F04A6"  # mdi:silverware-variant (Kitchen)
+  room_icon_3:                    "\U000F02E3"  # mdi:bed (Bedroom)
+  room_icon_4:                    "\U000F1818"  # mdi:bathtub (Bathroom)
+
+  # Иконки светильников
+  track_light_icon:               "\U000F0914" # mdi:track-light
+  ceiling_light_multiple_icon:    "\U000F18DD" # mdi:ceiling-light-multiple
+  flor_lamp_icon:                 "\U000F08DD" # mdi:floor-lamp
+  vanity_light_icon:              "\U000F11E1" # mdi:vanity-light
+
+packages:
+  room_selector: !include room_select.yaml
+
+  living_room: !include
+    file: rooms.yaml
+    vars:
+      room_name: "room_name_1"
+      room_icon: "${room_icon_1}"
+      lights_amount: "4"
+
+      light_entity_1: "light.cbe_rgbcw_wi_fi_bluetooth_light"
+      light_entity_2: "light.display01_backlight"
+      light_entity_3: "light.lumi_v3_48df_light"
+      light_entity_4: "light.office_rgbw_lights"
+
+      light_icon_1: "${track_light_icon}"
+      light_icon_2: "${ceiling_light_multiple_icon}"
+      light_icon_3: "${flor_lamp_icon}"
+      light_icon_4: "${vanity_light_icon}"
+
+  kitchen: !include
+    file: rooms.yaml
+    vars:
+      room_name: "room_name_2"
+      room_icon: "${room_icon_2}"
+      lights_amount: "3"
+
+      light_entity_1: "light.living_room_rgbww_lights"
+      light_entity_2: "light.kitchen_lights"
+      light_entity_3: "light.cbe_rgbcw_wi_fi_bluetooth_light"
+      light_entity_4: "light.kitchen_cabinet"
+
+      light_icon_1: "${track_light_icon}"
+      light_icon_2: "${ceiling_light_multiple_icon}"
+      light_icon_3: "${flor_lamp_icon}"
+      light_icon_4: "${vanity_light_icon}"
+
+  bedroom: !include
+    file: rooms.yaml
+    vars:
+      room_name: "room_name_3"
+      room_icon: "${room_icon_3}"
+      lights_amount: "2"
+
+      light_entity_1: "light.ceiling_lights"
+      light_entity_2: "light.entrance_color_white_lights"
+      light_entity_3: "light.bedroom_bedside_right"
+      light_entity_4: "light.bedroom_wardrobe"
+
+      light_icon_1: "${track_light_icon}"
+      light_icon_2: "${ceiling_light_multiple_icon}"
+      light_icon_3: "${flor_lamp_icon}"
+      light_icon_4: "${vanity_light_icon}"
+
+  bathroom: !include
+    file: rooms.yaml
+    vars:
+      room_name: "room_name_4"
+      room_icon: "${room_icon_4}"
+      lights_amount: "1"
+
+      light_entity_1: "light.bed_light"
+      light_entity_2: "light.bathroom2"
+      light_entity_3: "light.bathroom3"
+      light_entity_4: "light.bathroom4"
+
+      light_icon_1: "${track_light_icon}"
+      light_icon_2: "${ceiling_light_multiple_icon}"
+      light_icon_3: "${flor_lamp_icon}"
+      light_icon_4: "${vanity_light_icon}"

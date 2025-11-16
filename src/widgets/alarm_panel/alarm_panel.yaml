@@ -318,7 +318,7 @@ lvgl:
                   id: ${widget_name}_keypad_widget
                   hidden: true
                   width: 440
-                  height: 290
+                  height: 360
                   pad_all: 0
                   align: top_left
                   bg_opa: transp
@@ -349,8 +349,8 @@ lvgl:
 
                     - buttonmatrix:
                         id: ${widget_name}_keypad
-                        width: 300
-                        height: 220
+                        width: 290
+                        height: 260
                         pad_all: 20
                         bg_opa: transp
                         border_opa: transp
@@ -928,6 +928,8 @@ lvgl:
               - lvgl.widget.hide: alarm_panel_select_widget
               - lvgl.page.show: home_page
 
+
+
 key_collector:
   - source_id: ${widget_name}_keypad
     min_length: 4
@@ -938,13 +940,18 @@ key_collector:
     allowed_keys: "0123456789*#"
     timeout: 5s
     on_progress:
-      - if:
-          condition:
-            lambda: return (0 != x.compare(std::string{""}));
-          then:
-            - lvgl.label.update:
+      - if: 
+          condition: 
+            lambda: return x.size() > 0; 
+          then: 
+            - lvgl.label.update: 
+                id: ${widget_name}_keypad_code_label 
+                text: !lambda |-
+                  return std::string(x.size(), '*');
+          else: 
+            - lvgl.label.update: 
                 id: ${widget_name}_keypad_code_label
-                text: !lambda 'return x.c_str();'
+                text: ""
 
     on_result:
       - if:

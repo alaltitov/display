@@ -118,3 +118,9 @@ alarm_panel:
     disarming: Снятие с охраны
     pending: Ожидание
     triggered: Тревога
+
+fan:
+  name: "Вентилятор"
+  state:
+    "off": "Выключено"
+    "on": "Включено"

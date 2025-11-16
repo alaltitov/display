@@ -261,6 +261,7 @@
     "\U000F02DC", # preset home
     "\U000F0904", # preset sleep
     "\U000F046E", # preset activity
+    "\U000F09D1", # present smart
     "\U000F0210", # fan on
     "\U000F081D", # fan off
     "\U000F171D", # fan auto
@@ -337,6 +338,12 @@
     "\U000F0483", # shield custom
     "\U000F099E", # shield off
     "\U000F0498", # shield
+    "\U000F0465", # rotate left
+    "\U000F0467", # rotate right
+    "\U000F1C91", # swing on
+    "\U000F1C92", # swing off
+    "\U000F1B29", # faucet
+    "\U000F0E47", # hand
   ]
 
 - file: "assets/fonts/materialdesignicons-webfont.ttf"
@@ -389,6 +396,7 @@
     "\U000F03E4", # pause
     "\U000F04DB", # stop
     "\U000F04B2", # sleep
+    "\U000F0906", # power
   ]
 
   

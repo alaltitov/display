@@ -120,3 +120,8 @@ alarm_panel:
     triggered: Disparada
 
 
+fan:
+  name: Fan
+  state:
+    "on": "Off"
+    "off": "On"

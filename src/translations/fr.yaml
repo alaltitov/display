@@ -118,3 +118,9 @@ alarm_panel:
     disarming: Désactivation
     pending: En suspens
     triggered: Déclenchée
+
+fan:
+  name: Fan
+  state:
+    "on": "Off"
+    "off": "On"

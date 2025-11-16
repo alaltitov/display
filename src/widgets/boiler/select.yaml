@@ -1,0 +1,139 @@
+lvgl:
+  on_boot:
+    then:
+      - lvgl.obj.update:
+          id: boiler_ch_mode_btn
+          outline_opa: cover
+
+  top_layer:
+    widgets:
+      - obj:
+          id: boiler_select_widget
+          hidden: true
+          y: -50
+          width: 440
+          height: 100
+          align: bottom_mid
+          pad_all: 0
+          bg_opa: transp
+          border_opa: transp
+          border_width: 0
+          scrollable: false
+          radius: 20
+          widgets:
+            # CH BUTTON
+            - obj:
+                id: boiler_ch_mode_btn
+                x: 20
+                width: 54
+                height: 54
+                pad_all: 0
+                radius: 30
+                align: left_mid
+                bg_opa: transp
+                border_opa: transp
+                shadow_width: 5
+                shadow_spread: 1
+                shadow_color: 0x000000
+                outline_color: color_misty_blue
+                outline_width: 2
+                outline_opa: transp
+                pressed:
+                  bg_color: 0x000000
+                  shadow_width: 4
+                widgets:
+                  - label:
+                      id: boiler_ch_mode_label
+                      align: center
+                      text_font: mdi_icons_28
+                      text_color: 0x9BA2BC
+                      text: "${heat_icon}"
+                on_press:
+                  - lvgl.page.show: boiler_ch_page
+                  - lvgl.obj.update:
+                      id: boiler_ch_mode_btn
+                      outline_opa: cover
+                  - lvgl.obj.update:
+                      id: boiler_dhw_mode_btn
+                      outline_opa: transp
+                  - lvgl.obj.update:
+                      id: boiler_manual_mode_btn
+                      outline_opa: transp
+
+            # DHW BUTTON
+            - obj:
+                id: boiler_dhw_mode_btn
+                x: 100
+                width: 54
+                height: 54
+                pad_all: 0
+                radius: 30
+                align: left_mid
+                bg_opa: transp
+                border_opa: transp
+                shadow_width: 5
+                shadow_spread: 1
+                shadow_color: 0x000000
+                outline_color: color_misty_blue
+                outline_width: 2
+                outline_opa: transp
+                pressed:
+                  bg_color: 0x000000
+                  shadow_width: 4
+                widgets:
+                  - label:
+                      id: boiler_dhw_mode_label
+                      align: center
+                      text_font: mdi_icons_28
+                      text_color: 0x9BA2BC
+                      text: "${faucet_icon}"
+                on_press:
+                  - lvgl.page.show: boiler_dhw_page
+                  - lvgl.obj.update:
+                      id: boiler_ch_mode_btn
+                      outline_opa: transp
+                  - lvgl.obj.update:
+                      id: boiler_dhw_mode_btn
+                      outline_opa: cover
+                  - lvgl.obj.update:
+                      id: boiler_manual_mode_btn
+                      outline_opa: transp
+
+            # MANUAL BUTTON
+            - obj:
+                id: boiler_manual_mode_btn
+                x: 180
+                width: 54
+                height: 54
+                pad_all: 0
+                radius: 30
+                align: left_mid
+                bg_opa: transp
+                border_opa: transp
+                shadow_width: 5
+                shadow_spread: 1
+                shadow_color: 0x000000
+                outline_color: color_misty_blue
+                outline_width: 2
+                outline_opa: transp
+                pressed:
+                  bg_color: 0x000000
+                  shadow_width: 4
+                widgets:
+                  - label:
+                      id: boiler_manual_mode_label
+                      align: center
+                      text_font: mdi_icons_28
+                      text_color: 0x9BA2BC
+                      text: "${manual_icon}"
+                on_press:
+                  - lvgl.page.show: boiler_manual_page
+                  - lvgl.obj.update:
+                      id: boiler_ch_mode_btn
+                      outline_opa: transp
+                  - lvgl.obj.update:
+                      id: boiler_dhw_mode_btn
+                      outline_opa: transp
+                  - lvgl.obj.update:
+                      id: boiler_manual_mode_btn
+                      outline_opa: cover

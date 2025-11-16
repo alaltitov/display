@@ -51,7 +51,7 @@ script:
     then:
       - lambda: |-
           // Одновременно: кнопки уезжают, круг вниз, datetime исчезает
-          lv_anim_t anim_circle, anim_state_fade;          
+          lv_anim_t anim_circle, anim_state_fade, anim_buttons;        
           
           lv_anim_init(&anim_circle);
           lv_anim_set_var(&anim_circle, id(${widget_name}_circle_background));
@@ -62,6 +62,16 @@ script:
           });
           lv_anim_set_path_cb(&anim_circle, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_circle);
+
+          lv_anim_init(&anim_buttons);
+          lv_anim_set_var(&anim_buttons, id(alarm_panel_select_widget));
+          lv_anim_set_values(&anim_buttons, -40, 140);
+          lv_anim_set_time(&anim_buttons, 400);
+          lv_anim_set_exec_cb(&anim_buttons, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_buttons, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_buttons);
           
           lv_anim_init(&anim_state_fade);
           lv_anim_set_var(&anim_state_fade, id(${widget_name}_state_widget));
@@ -73,14 +83,15 @@ script:
           lv_anim_set_path_cb(&anim_state_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_state_fade);
 
+
       - delay: 600ms
       - lambda: |-
           // Одновременно изменяем размеры контейнеров И поднимаем middle_widget_background
-          lv_anim_t anim_main_expand, anim_middle_shrink, anim_middle_move_down;
+          lv_anim_t anim_main_expand, anim_middle_shrink, anim_middle_move_down, anim_down_shrink, anim_down_move_down;
           
           lv_anim_init(&anim_main_expand);
           lv_anim_set_var(&anim_main_expand, id(${widget_name}_main_background));
-          lv_anim_set_values(&anim_main_expand, 180, 290);
+          lv_anim_set_values(&anim_main_expand, 180, 360);
           lv_anim_set_time(&anim_main_expand, 350);
           lv_anim_set_exec_cb(&anim_main_expand, [](void * var, int32_t v) {
             lv_obj_set_height((lv_obj_t*)var, v);
@@ -97,7 +108,18 @@ script:
           });
           lv_anim_set_path_cb(&anim_middle_shrink, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_shrink);
+
+          lv_anim_init(&anim_down_shrink);
+          lv_anim_set_var(&anim_down_shrink, id(${widget_name}_secondary_buttons_background));
+          lv_anim_set_values(&anim_down_shrink, 60, 0);
+          lv_anim_set_time(&anim_down_shrink, 350);
+          lv_anim_set_exec_cb(&anim_down_shrink, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_down_shrink, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_down_shrink);
           
+
           // Опускаем ${widget_name}_primary_buttons_background на 100px вниз
           lv_anim_init(&anim_middle_move_down);
           lv_anim_set_var(&anim_middle_move_down, id(${widget_name}_primary_buttons_background));
@@ -108,6 +130,16 @@ script:
           });
           lv_anim_set_path_cb(&anim_middle_move_down, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_move_down);
+
+          lv_anim_init(&anim_down_move_down);
+          lv_anim_set_var(&anim_down_move_down, id(${widget_name}_secondary_buttons_background));
+          lv_anim_set_values(&anim_down_move_down, lv_obj_get_y(id(${widget_name}_secondary_buttons_background)), lv_obj_get_y(id(${widget_name}_secondary_buttons_background)) + 60);
+          lv_anim_set_time(&anim_down_move_down, 350);
+          lv_anim_set_exec_cb(&anim_down_move_down, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_down_move_down, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_down_move_down);
 
       - delay: 350ms
       - lambda: |-
@@ -151,11 +183,11 @@ script:
       - delay: 600ms
       - lambda: |-
           // Одновременно изменяем размеры контейнеров И поднимаем middle_widget_background
-          lv_anim_t anim_main_shrink, anim_middle_expand, anim_middle_move_up;
+          lv_anim_t anim_main_shrink, anim_middle_expand, anim_middle_move_up, anim_down_expand, anim_down_move_up;
           
           lv_anim_init(&anim_main_shrink);
           lv_anim_set_var(&anim_main_shrink, id(${widget_name}_main_background));
-          lv_anim_set_values(&anim_main_shrink, 290, 180);
+          lv_anim_set_values(&anim_main_shrink, 360, 180);
           lv_anim_set_time(&anim_main_shrink, 350);
           lv_anim_set_exec_cb(&anim_main_shrink, [](void * var, int32_t v) {
             lv_obj_set_height((lv_obj_t*)var, v);
@@ -172,6 +204,16 @@ script:
           });
           lv_anim_set_path_cb(&anim_middle_expand, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_expand);
+
+          lv_anim_init(&anim_down_expand);
+          lv_anim_set_var(&anim_down_expand, id(${widget_name}_secondary_buttons_background));
+          lv_anim_set_values(&anim_down_expand, 0, 60);
+          lv_anim_set_time(&anim_down_expand, 350);
+          lv_anim_set_exec_cb(&anim_down_expand, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_down_expand, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_down_expand);
           
           // Опускаем ${widget_name}_primary_buttons_background на 100px вниз
           lv_anim_init(&anim_middle_move_up);
@@ -184,6 +226,16 @@ script:
           lv_anim_set_path_cb(&anim_middle_move_up, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_move_up);
 
+          lv_anim_init(&anim_down_move_up);
+          lv_anim_set_var(&anim_down_move_up, id(${widget_name}_secondary_buttons_background));
+          lv_anim_set_values(&anim_down_move_up, lv_obj_get_y(id(${widget_name}_secondary_buttons_background)), lv_obj_get_y(id(${widget_name}_secondary_buttons_background)) - 60);
+          lv_anim_set_time(&anim_down_move_up, 350);
+          lv_anim_set_exec_cb(&anim_down_move_up, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_down_move_up, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_down_move_up);
+
       - delay: 350ms
       - lambda: |-
           lv_obj_clear_flag(id(${widget_name}_state_widget), LV_OBJ_FLAG_HIDDEN);
@@ -191,7 +243,7 @@ script:
 
           lv_obj_set_style_opa(id(${widget_name}_state_widget), 0, 0);
           
-          lv_anim_t anim_state_fade;
+          lv_anim_t anim_state_fade, anim_buttons;
           
           lv_anim_init(&anim_state_fade);
           lv_anim_set_var(&anim_state_fade, id(${widget_name}_state_widget));
@@ -202,6 +254,16 @@ script:
           });
           lv_anim_set_path_cb(&anim_state_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_state_fade);
+
+          lv_anim_init(&anim_buttons);
+          lv_anim_set_var(&anim_buttons, id(alarm_panel_select_widget));
+          lv_anim_set_values(&anim_buttons, 140, -40);
+          lv_anim_set_time(&anim_buttons, 400);
+          lv_anim_set_exec_cb(&anim_buttons, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_buttons, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_buttons);
           
       - delay: 150ms
       - lambda: |-
@@ -212,7 +274,7 @@ script:
     then:
       - lambda: |-
           // Одновременно: кнопки уезжают, круг вниз, datetime исчезает
-          lv_anim_t anim_state_fade;          
+          lv_anim_t anim_state_fade, anim_buttons;          
           
           lv_anim_init(&anim_state_fade);
           lv_anim_set_var(&anim_state_fade, id(${widget_name}_state_widget));
@@ -224,14 +286,24 @@ script:
           lv_anim_set_path_cb(&anim_state_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_state_fade);
 
+          lv_anim_init(&anim_buttons);
+          lv_anim_set_var(&anim_buttons, id(alarm_panel_select_widget));
+          lv_anim_set_values(&anim_buttons, -40, 140);
+          lv_anim_set_time(&anim_buttons, 400);
+          lv_anim_set_exec_cb(&anim_buttons, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_buttons, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_buttons);
+
       - delay: 600ms
       - lambda: |-
           // Одновременно изменяем размеры контейнеров И поднимаем middle_widget_background
-          lv_anim_t anim_main_expand, anim_middle_shrink, anim_middle_move_down;
+          lv_anim_t anim_main_expand, anim_middle_shrink, anim_middle_move_down, anim_down_shrink, anim_down_move_down;
           
           lv_anim_init(&anim_main_expand);
           lv_anim_set_var(&anim_main_expand, id(${widget_name}_main_background));
-          lv_anim_set_values(&anim_main_expand, 180, 290);
+          lv_anim_set_values(&anim_main_expand, 180, 360);
           lv_anim_set_time(&anim_main_expand, 350);
           lv_anim_set_exec_cb(&anim_main_expand, [](void * var, int32_t v) {
             lv_obj_set_height((lv_obj_t*)var, v);
@@ -248,6 +320,17 @@ script:
           });
           lv_anim_set_path_cb(&anim_middle_shrink, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_shrink);
+
+          lv_anim_init(&anim_down_shrink);
+          lv_anim_set_var(&anim_down_shrink, id(${widget_name}_secondary_buttons_background));
+          lv_anim_set_values(&anim_down_shrink, 60, 0);
+          lv_anim_set_time(&anim_down_shrink, 350);
+          lv_anim_set_exec_cb(&anim_down_shrink, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_down_shrink, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_down_shrink);
+          
           
           // Опускаем ${widget_name}_primary_buttons_background на 100px вниз
           lv_anim_init(&anim_middle_move_down);
@@ -259,6 +342,16 @@ script:
           });
           lv_anim_set_path_cb(&anim_middle_move_down, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_move_down);
+
+          lv_anim_init(&anim_down_move_down);
+          lv_anim_set_var(&anim_down_move_down, id(${widget_name}_secondary_buttons_background));
+          lv_anim_set_values(&anim_down_move_down, lv_obj_get_y(id(${widget_name}_secondary_buttons_background)), lv_obj_get_y(id(${widget_name}_secondary_buttons_background)) + 60);
+          lv_anim_set_time(&anim_down_move_down, 350);
+          lv_anim_set_exec_cb(&anim_down_move_down, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_down_move_down, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_down_move_down);
 
       - delay: 350ms
       - lambda: |-
@@ -304,11 +397,11 @@ script:
       - delay: 600ms
       - lambda: |-
           // Одновременно изменяем размеры контейнеров И поднимаем middle_widget_background
-          lv_anim_t anim_main_shrink, anim_middle_expand, anim_middle_move_up;
+          lv_anim_t anim_main_shrink, anim_middle_expand, anim_middle_move_up, anim_down_expand, anim_down_move_up;
           
           lv_anim_init(&anim_main_shrink);
           lv_anim_set_var(&anim_main_shrink, id(${widget_name}_main_background));
-          lv_anim_set_values(&anim_main_shrink, 290, 180);
+          lv_anim_set_values(&anim_main_shrink, 360, 180);
           lv_anim_set_time(&anim_main_shrink, 350);
           lv_anim_set_exec_cb(&anim_main_shrink, [](void * var, int32_t v) {
             lv_obj_set_height((lv_obj_t*)var, v);
@@ -325,6 +418,16 @@ script:
           });
           lv_anim_set_path_cb(&anim_middle_expand, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_expand);
+
+          lv_anim_init(&anim_down_expand);
+          lv_anim_set_var(&anim_down_expand, id(${widget_name}_secondary_buttons_background));
+          lv_anim_set_values(&anim_down_expand, 0, 60);
+          lv_anim_set_time(&anim_down_expand, 350);
+          lv_anim_set_exec_cb(&anim_down_expand, [](void * var, int32_t v) {
+            lv_obj_set_height((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_down_expand, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_down_expand);
           
           // Опускаем ${widget_name}_primary_buttons_background на 100px вниз
           lv_anim_init(&anim_middle_move_up);
@@ -337,13 +440,23 @@ script:
           lv_anim_set_path_cb(&anim_middle_move_up, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_middle_move_up);
 
+          lv_anim_init(&anim_down_move_up);
+          lv_anim_set_var(&anim_down_move_up, id(${widget_name}_secondary_buttons_background));
+          lv_anim_set_values(&anim_down_move_up, lv_obj_get_y(id(${widget_name}_secondary_buttons_background)), lv_obj_get_y(id(${widget_name}_secondary_buttons_background)) - 60);
+          lv_anim_set_time(&anim_down_move_up, 350);
+          lv_anim_set_exec_cb(&anim_down_move_up, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_down_move_up, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_down_move_up);
+
       - delay: 350ms
       - lambda: |-
           lv_obj_clear_flag(id(${widget_name}_state_widget), LV_OBJ_FLAG_HIDDEN);
 
           lv_obj_set_style_opa(id(${widget_name}_state_widget), 0, 0);
           
-          lv_anim_t anim_state_fade, anim_circle;
+          lv_anim_t anim_state_fade, anim_circle, anim_buttons;
           
           lv_anim_init(&anim_state_fade);
           lv_anim_set_var(&anim_state_fade, id(${widget_name}_state_widget));
@@ -354,7 +467,16 @@ script:
           });
           lv_anim_set_path_cb(&anim_state_fade, lv_anim_path_ease_in_out);
           lv_anim_start(&anim_state_fade);
-      
+
+          lv_anim_init(&anim_buttons);
+          lv_anim_set_var(&anim_buttons, id(alarm_panel_select_widget));
+          lv_anim_set_values(&anim_buttons, 140, -40);
+          lv_anim_set_time(&anim_buttons, 400);
+          lv_anim_set_exec_cb(&anim_buttons, [](void * var, int32_t v) {
+            lv_obj_set_y((lv_obj_t*)var, v);
+          });
+          lv_anim_set_path_cb(&anim_buttons, lv_anim_path_ease_in_out);
+          lv_anim_start(&anim_buttons);
           
           lv_anim_init(&anim_circle);
           lv_anim_set_var(&anim_circle, id(${widget_name}_circle_background));
@@ -487,6 +609,7 @@ script:
           lv_obj_set_y(id(${widget_name}_circle_background), 400);  // Круг внизу
           lv_obj_set_height(id(${widget_name}_main_background), 180);
           lv_obj_set_height(id(${widget_name}_primary_buttons_background), 100);
+          lv_obj_set_height(id(${widget_name}_secondary_buttons_background), 60);
           
           // Показываем нужные элементы
           lv_obj_clear_flag(id(${widget_name}_state_widget), LV_OBJ_FLAG_HIDDEN);
@@ -507,7 +630,8 @@ script:
           lv_obj_set_y(id(${widget_name}_circle_background), 60);  // Круг вверху
           lv_obj_set_height(id(${widget_name}_main_background), 180);
           lv_obj_set_height(id(${widget_name}_primary_buttons_background), 100);
-          
+          lv_obj_set_height(id(${widget_name}_secondary_buttons_background), 60);
+
           // Показываем нужные элементы
           lv_obj_clear_flag(id(${widget_name}_state_widget), LV_OBJ_FLAG_HIDDEN);
           lv_obj_add_flag(id(${widget_name}_primary_buttons_container), LV_OBJ_FLAG_HIDDEN);

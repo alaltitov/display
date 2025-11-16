@@ -118,3 +118,9 @@ alarm_panel:
     disarming: Schakelt uit
     pending: In behandeling
     triggered: Getriggerd
+
+fan:
+  name: Fan
+  state:
+    "on": "Off"
+    "off": "On"

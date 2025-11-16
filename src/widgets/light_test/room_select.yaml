@@ -1,0 +1,323 @@
+globals:
+
+  - id: light_previous_mode
+    type: int
+    initial_value: '0'  # 0=onoff, 1=brightness, 2=color_temp, 3=rgb
+
+lvgl:
+  on_boot:
+    then:
+      - script.execute: get_rooms_amount_btn
+      - lvgl.obj.update:
+          id: room_1_btn
+          outline_opa: cover
+
+  top_layer:
+    widgets:
+      - obj:
+          id: room_select_widget
+          hidden: true
+          x: 0
+          y: 70
+          width: 400
+          height: 60
+          align: top_mid
+          pad_all: 0
+          bg_opa: transp
+          border_opa: transp
+          border_width: 0
+          shadow_opa: transp
+          scrollable: false
+          radius: 40
+          widgets:
+            - obj:
+                id: room_select_widget_cont
+                width: 400
+                height: 60
+                align: center
+                bg_opa: transp
+                border_opa: transp
+                border_width: 0
+                pad_all: 0
+                layout:
+                  type: flex
+                  flex_align_main: space_evenly
+                  flex_align_cross: center
+                  flex_align_track: center
+                widgets:
+                  # КОМНАТА 1
+                  - obj:
+                      id: room_1_btn
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      outline_color: color_misty_blue
+                      outline_width: 2
+                      outline_opa: transp
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${room_icon_1}"
+                      on_press:
+                        - script.execute: switch_to_room_1
+
+                  # КОМНАТА 2
+                  - obj:
+                      id: room_2_btn
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      outline_color: color_misty_blue
+                      outline_width: 2
+                      outline_opa: transp
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${room_icon_2}"
+                      on_press:
+                        - script.execute: switch_to_room_2
+
+                  # КОМНАТА 3
+                  - obj:
+                      id: room_3_btn
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      outline_color: color_misty_blue
+                      outline_width: 2
+                      outline_opa: transp
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${room_icon_3}"
+                      on_press:
+                        - script.execute: switch_to_room_3
+
+                  # КОМНАТА 4
+                  - obj:
+                      id: room_4_btn
+                      width: 48
+                      height: 48
+                      pad_all: 0
+                      radius: 30
+                      bg_opa: transp
+                      border_opa: transp
+                      shadow_width: 5
+                      shadow_spread: 1
+                      shadow_color: color_black
+                      outline_color: color_misty_blue
+                      outline_width: 2
+                      outline_opa: transp
+                      pressed:
+                        bg_color: color_black
+                        shadow_width: 4
+                      widgets:
+                        - label:
+                            align: center
+                            text_font: mdi_icons_24
+                            text_color: color_misty_blue
+                            text: "${room_icon_4}"
+                      on_press:
+                        - script.execute: switch_to_room_4
+
+
+script:
+  # Скрипт для показа нужного количества кнопок комнат
+  - id: get_rooms_amount_btn
+    then:
+      - lambda: |-
+          int rooms = ${rooms_amount};
+          
+          if (rooms >= 2) {
+            lv_obj_set_width(id(room_select_widget), 190);
+            lv_obj_set_width(id(room_select_widget_cont), 130);
+            lv_obj_clear_flag(id(room_1_btn), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(id(room_2_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(room_1_btn), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(room_2_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          if (rooms >= 3) {
+            lv_obj_set_width(id(room_select_widget), 245);
+            lv_obj_set_width(id(room_select_widget_cont), 185);
+            lv_obj_clear_flag(id(room_3_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(room_3_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+          
+          if (rooms >= 4) {
+            lv_obj_set_width(id(room_select_widget), 300);
+            lv_obj_set_width(id(room_select_widget_cont), 240);
+            lv_obj_clear_flag(id(room_4_btn), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(room_4_btn), LV_OBJ_FLAG_HIDDEN);
+          }
+
+  # Переключение на комнату 1
+  - id: switch_to_room_1
+    then:
+      # Скрываем селекторы светильников других комнат
+      - lvgl.widget.hide: room_name_2_light_select_widget
+      - lvgl.widget.hide: room_name_3_light_select_widget
+      - lvgl.widget.hide: room_name_4_light_select_widget
+      # Показываем селектор светильников комнаты 1
+      - lvgl.widget.show: room_name_1_light_select_widget
+      # Открываем первый светильник комнаты 1
+      - lvgl.page.show: room_name_1_light1_light_page
+      # Обновляем подсветку кнопок комнат
+      - lvgl.obj.update:
+          id: room_1_btn
+          outline_opa: cover
+      - lvgl.obj.update:
+          id: room_2_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_3_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_4_btn
+          outline_opa: transp
+      # Обновляем подсветку кнопок светильников
+      - lvgl.obj.update:
+          id: room_name_1_light1_btn
+          outline_opa: cover
+      - lvgl.obj.update:
+          id: room_name_1_light2_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_name_1_light3_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_name_1_light4_btn
+          outline_opa: transp
+
+  # Переключение на комнату 2
+  - id: switch_to_room_2
+    then:
+      - lvgl.widget.hide: room_name_1_light_select_widget
+      - lvgl.widget.hide: room_name_3_light_select_widget
+      - lvgl.widget.show: room_name_2_light_select_widget
+      - lvgl.page.show: room_name_2_light1_light_page
+      - lvgl.obj.update:
+          id: room_1_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_2_btn
+          outline_opa: cover
+      - lvgl.obj.update:
+          id: room_3_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_4_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_name_2_light1_btn
+          outline_opa: cover
+      - lvgl.obj.update:
+          id: room_name_2_light2_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_name_2_light3_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_name_2_light4_btn
+          outline_opa: transp
+
+  # Переключение на комнату 3
+  - id: switch_to_room_3
+    then:
+      - lvgl.widget.hide: room_name_1_light_select_widget
+      - lvgl.widget.hide: room_name_2_light_select_widget
+      - lvgl.widget.show: room_name_3_light_select_widget
+      - lvgl.page.show: room_name_3_light1_light_page
+      - lvgl.obj.update:
+          id: room_1_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_2_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_3_btn
+          outline_opa: cover
+      - lvgl.obj.update:
+          id: room_4_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_name_3_light1_btn
+          outline_opa: cover
+      - lvgl.obj.update:
+          id: room_name_3_light2_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_name_3_light3_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_name_3_light4_btn
+          outline_opa: transp
+
+  # Переключение на комнату 4
+  - id: switch_to_room_4
+    then:
+      - lvgl.widget.hide: room_name_1_light_select_widget
+      - lvgl.widget.hide: room_name_2_light_select_widget
+      - lvgl.widget.hide: room_name_3_light_select_widget
+      - lvgl.widget.show: room_name_4_light_select_widget
+      - lvgl.page.show: room_name_4_light1_light_page
+      - lvgl.obj.update:
+          id: room_1_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_2_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_3_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_4_btn
+          outline_opa: cover
+      - lvgl.obj.update:
+          id: room_name_4_light1_btn
+          outline_opa: cover
+      - lvgl.obj.update:
+          id: room_name_4_light2_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_name_4_light3_btn
+          outline_opa: transp
+      - lvgl.obj.update:
+          id: room_name_4_light4_btn
+          outline_opa: transp

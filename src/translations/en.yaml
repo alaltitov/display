@@ -118,3 +118,9 @@ alarm_panel:
     disarming: Disarming
     pending: Pending
     triggered: Triggered
+
+fan:
+  name: Fan
+  state:
+    "on": "Off"
+    "off": "On"
