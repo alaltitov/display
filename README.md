@@ -66,6 +66,10 @@
     - it (from [echopage1964](https://github.com/echopage1964))
     - de (from [MATZE-MAN](https://github.com/MATZE-MAN))
 
+## Attention!!! 
+This app only works on versions 2025.11.*
+It doesn't work on versions 2025.12+ due to an API change. Support for new versions will be implemented later!
+
 ## 📦 Installation
 > 📹 **Video [instruction](https://youtu.be/HYN_2hvcbes?si=JfYQH4vCuFlr8Q9r)**
 
