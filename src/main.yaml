@@ -18,12 +18,24 @@ font: !include common/fonts.yaml
 color: !include common/colors.yaml
 
 http_request:
-  verify_ssl: false
+  useragent: esphome-4848s040
+  follow_redirects: true
+  redirect_limit: 5
+  timeout: 30s
+  buffer_size_rx: 2048
+  buffer_size_tx: 1024
 
 external_components:
   - source: github://alaltitov/esphome@dev
     components: [i18n]
 
+update:
+  - platform: http_request
+    id: firmware_update
+    name: "Firmware"
+    source: https://github.com/tntlarsn/Guition-ESP32-S3-4848S040/releases/latest/download/my_display.manifest.json
+    device_class: firmware
+    update_interval: 24h
 
 i18n:
   id: i18n_translations
@@ -99,8 +111,6 @@ logger:
 
 
 api:
-  encryption:
-    key: !secret display_key
 
 ota:
   - platform: esphome
@@ -172,7 +182,8 @@ ota:
             return id(i18n_translations).translate("ota.error.secondary");
       - lambda: |-
           id(lvgl_component).loop();
-
+  - platform: http_request
+    id: firmware_ota
 
 wifi:
   networks:
@@ -275,6 +286,9 @@ i2c:
     scl:
       number: GPIO45
       ignore_strapping_warning: true
+    # Reduced from default (400kHz) to 100kHz to improve GT911 reliability on this PCB;
+    # higher I2C speeds caused intermittent touch events / ghost touches, so we trade
+    # a small reduction in maximum touch update rate for stable, accurate input.
     frequency: 100kHz
 
 

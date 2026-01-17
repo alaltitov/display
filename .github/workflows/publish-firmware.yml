@@ -14,7 +14,7 @@ jobs:
     with:
       #### Modify below here to match your project ####
       files: |
-        main.yaml
+        src/main.yaml
       esphome-version: 2025.12.7
       # combined-name: project-template
       #### Modify above here to match your project ####

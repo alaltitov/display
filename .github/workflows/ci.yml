@@ -24,7 +24,7 @@ jobs:
       matrix:
         #### Modify below here to match your project ####
         file:
-          - main
+          - src/main
         #### Modify above here to match your project ####
 
         esphome-version:
@@ -37,10 +37,10 @@ jobs:
       - name: ESPHome ${{ matrix.esphome-version }}
         uses: esphome/build-action@v7
         with:
-          yaml-file: ${{ matrix.file }}.yaml
+          yaml-file: src/${{ matrix.file }}.yaml
           version: ${{ matrix.esphome-version }}
       - name: ESPHome ${{ matrix.esphome-version }} Factory
         uses: esphome/build-action@v7
         with:
-          yaml-file: ${{ matrix.file }}.factory.yaml
+          yaml-file: src/${{ matrix.file }}.factory.yaml
           version: ${{ matrix.esphome-version }}

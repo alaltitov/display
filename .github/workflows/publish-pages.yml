@@ -49,7 +49,7 @@ jobs:
         uses: actions/upload-pages-artifact@v4
         with:
           path: output
-          retention-days: 1
+          retention-days: 7
 
   publish:
     if: github.event_name != 'pull_request'
