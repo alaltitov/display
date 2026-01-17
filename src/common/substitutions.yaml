@@ -7,9 +7,9 @@ version:                  "2026.1.0"
 
 # ENTITIES
 
-weather_entity:           "weather.home_assistant"
-temperature_entity:       "sensor.outside_temperature"
-humidity_entity:          "sensor.outside_humidity"
+weather_entity:           "weather.wetter_garten"
+temperature_entity:       "sensor.bthome_sensor_fccb_temperatur"
+humidity_entity:          "sensor.bthome_sensor_fccb_luftfeuchtigkeit"
 
 
 

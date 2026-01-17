@@ -4,3 +4,5 @@
 src/.esphome/
 src/secrets.yaml
 .DS_Store
+.github/copilot-instructions.md
+tools/
