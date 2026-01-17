@@ -57,6 +57,9 @@ esphome:
   name: ${display_name}
   friendly_name: ${display_friendly_name}
   name_add_mac_suffix: true
+  project:
+    name: ${project_name}
+    version: ${version}
   includes:
     - <sstream>
     - <algorithm>
