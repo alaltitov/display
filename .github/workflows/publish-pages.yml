@@ -1,5 +1,7 @@
 name: Publish Pages
-
+permissions:
+  contents: write
+  pull-requests: write
 on:
   push:
     branches:
