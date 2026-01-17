@@ -282,6 +282,14 @@ output:
     id: backlight_output
     frequency: 100Hz
 
+sensor:
+  - platform: uptime
+    name: "Uptime"
+    id: uptime_sensor
+    entity_category: "diagnostic"
+    device_class: "duration"
+    unit_of_measurement: "s"
+
 i2c:
   - id: bus_a
     sda: GPIO19
@@ -324,11 +332,7 @@ spi:
     clk_pin: GPIO48
     mosi_pin: GPIO47
 
-# display:
-#   - platform: mipi_rgb
-#     id: ${display_name}
-#     model: GUITION-4848S040
-#     rotation: 180
+
 
 display:
   - platform: st7701s
