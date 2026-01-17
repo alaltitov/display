@@ -1,7 +1,9 @@
 # NAMES
 
-display_name:             display
+display_name:             my_display
 display_friendly_name:    Display
+project_name:             TNT_Larsn.ESPhome Display
+version:                  "2026.1.0"
 
 # ENTITIES
 

@@ -11,7 +11,7 @@ esphome:
 # In this case it is the core yaml file that does not contain the extra things
 # that are provided by this factory yaml file as the user does not need these once adopted.
 dashboard_import:
-  package_import_url: github://tntlarsn/guition-esp32-s3-4848s040/main.yaml@main
+  package_import_url: github://tntlarsn/guition-esp32-s3-4848s040/src/main.yaml@main
   import_full_config: false
 # Sets up the improv via serial client for Wi-Fi provisioning.
 # Handy if your device has a usb port for the user to add credentials when they first get it.
