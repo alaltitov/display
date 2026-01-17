@@ -33,7 +33,7 @@ update:
   - platform: http_request
     id: firmware_update
     name: "Firmware"
-    source: https://github.com/tntlarsn/Guition-ESP32-S3-4848S040/releases/latest/download/my_display.manifest.json
+    source: https://github.com/tntlarsn/Guition-ESP32-S3-4848S040/releases/latest/download/display01.manifest.json
     device_class: firmware
     update_interval: 24h
 
