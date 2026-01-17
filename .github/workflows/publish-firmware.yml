@@ -1,0 +1,32 @@
+name: Publish Firmware
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-firmware:
+    name: Build Firmware
+    uses: esphome/workflows/.github/workflows/build.yml@2025.10.0
+    with:
+      #### Modify below here to match your project ####
+      files: |
+        main.yaml
+      esphome-version: 2025.12.7
+      # combined-name: project-template
+      #### Modify above here to match your project ####
+
+      release-summary: ${{ github.event.release.body }}
+      release-url: ${{ github.event.release.html_url }}
+      release-version: ${{ github.event.release.tag_name }}
+
+  upload-to-release:
+    name: Upload to Release
+    uses: esphome/workflows/.github/workflows/upload-to-gh-release.yml@2025.10.0
+    needs:
+      - build-firmware
+    with:
+      version: ${{ github.event.release.tag_name }}

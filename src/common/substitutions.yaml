@@ -1,7 +1,7 @@
 # NAMES
 
-display_name:             display01
-display_friendly_name:    Display My Room
+display_name:             display
+display_friendly_name:    Display
 
 # ENTITIES
 
@@ -13,8 +13,8 @@ humidity_entity:          "sensor.outside_humidity"
 
 # SETTINGS
 
-secondary_language:        "ru"
-timezone:                  "Europe/Moscow"
+secondary_language:        "de"
+timezone:                  "Europe/Berlin"
 
 # ICONS
 

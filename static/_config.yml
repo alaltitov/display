@@ -1,0 +1,4 @@
+# CHANGEME: Set these variable to your liking
+title: ESPHome Display
+description: Powered by ESPHome and ESP Web Tools
+theme: jekyll-theme-slate

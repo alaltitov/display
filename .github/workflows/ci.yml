@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+    paths:
+      - '*.yaml'
+      - '.github/workflows/ci.yml'
+  schedule:
+    - cron: '0 0 * * *'
+  # Allow manual workflow dispatch from GitHub Actions UI
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Building ${{ matrix.file }} / ${{ matrix.esphome-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        #### Modify below here to match your project ####
+        file:
+          - main
+        #### Modify above here to match your project ####
+
+        esphome-version:
+          - stable
+          - beta
+          - dev
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v6
+      - name: ESPHome ${{ matrix.esphome-version }}
+        uses: esphome/build-action@v7
+        with:
+          yaml-file: ${{ matrix.file }}.yaml
+          version: ${{ matrix.esphome-version }}
+      - name: ESPHome ${{ matrix.esphome-version }} Factory
+        uses: esphome/build-action@v7
+        with:
+          yaml-file: ${{ matrix.file }}.factory.yaml
+          version: ${{ matrix.esphome-version }}
