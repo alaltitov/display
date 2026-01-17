@@ -56,6 +56,7 @@ i18n:
 esphome:
   name: ${display_name}
   friendly_name: ${display_friendly_name}
+  name_add_mac_suffix: true
   includes:
     - <sstream>
     - <algorithm>
@@ -115,7 +116,6 @@ api:
 ota:
   - platform: esphome
     id: ota_state
-    password: !secret display_ota
     on_begin: 
       - logger.log: "OTA Start"
       - light.turn_on: display_backlight
@@ -186,9 +186,7 @@ ota:
     id: firmware_ota
 
 wifi:
-  networks:
-    - ssid: !secret wifi_ssid
-      password: !secret wifi_password
+  ap:
   on_connect:
     - lvgl.label.update:
         id: wifi_status
@@ -198,6 +196,7 @@ wifi:
         id: wifi_status
         text_color: color_steel_blue
 
+captive_portal:
 
 lvgl:
   id: lvgl_component
