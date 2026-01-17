@@ -27,7 +27,7 @@ jobs:
       matrix:
         #### Modify below here to match your project ####
         file:
-          - src/main
+          - main
         #### Modify above here to match your project ####
 
         esphome-version:
