@@ -2020,7 +2020,6 @@ script:
           if (id(forecast_daily_count) == 0) return;
           if (!id(weather_forecast_daily)) return;
           
-          static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
           
           lv_obj_clean(id(weather_forecast_daily));
           
@@ -2085,7 +2084,7 @@ script:
             if (day_label) {
               lv_label_set_text(day_label, get_day_name(i));
               lv_obj_align(day_label, LV_ALIGN_TOP_MID, 0, 0);
-              lv_obj_set_style_text_font(day_label, fe_nunito_16.get_lv_font(), 0);
+              lv_obj_set_style_text_font(day_label, id(nunito_16), 0);
               lv_obj_set_style_text_color(day_label, lv_color_hex(0x9BA2BC), 0);
             }
             
@@ -2103,7 +2102,7 @@ script:
               snprintf(temp_str, sizeof(temp_str), "%.0f°", id(forecast_daily_temps)[i]);
               lv_label_set_text(temp_label, temp_str);
               lv_obj_align(temp_label, LV_ALIGN_BOTTOM_MID, 0, 0);
-              lv_obj_set_style_text_font(temp_label, fe_nunito_16.get_lv_font(), 0);
+              lv_obj_set_style_text_font(temp_label, id(mdi_icons_24), 0);
               lv_obj_set_style_text_color(temp_label, lv_color_hex(0x9BA2BC), 0);
             }
           }
@@ -2117,8 +2116,6 @@ script:
       - lambda: |-
           if (id(forecast_hourly_count) == 0) return;
           if (!id(weather_forecast_hourly)) return;
-          
-          static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
           
           lv_obj_clean(id(weather_forecast_hourly));
           
@@ -2201,7 +2198,7 @@ script:
               std::string time_str = get_time_str(id(forecast_hourly_timestamps)[i]);
               lv_label_set_text(time_label, time_str.c_str());
               lv_obj_align(time_label, LV_ALIGN_TOP_MID, 0, 0);
-              lv_obj_set_style_text_font(time_label, fe_nunito_16.get_lv_font(), 0);
+              lv_obj_set_style_text_font(time_label, id(nunito_16), 0);
               lv_obj_set_style_text_color(time_label, lv_color_hex(0x9BA2BC), 0);
             }
             
@@ -2219,7 +2216,7 @@ script:
               snprintf(temp_str, sizeof(temp_str), "%.0f°", id(forecast_hourly_temps)[i]);
               lv_label_set_text(temp_label, temp_str);
               lv_obj_align(temp_label, LV_ALIGN_BOTTOM_MID, 0, 0);
-              lv_obj_set_style_text_font(temp_label, fe_nunito_16.get_lv_font(), 0);
+              lv_obj_set_style_text_font(temp_label, id(mdi_icons_24), 0);
               lv_obj_set_style_text_color(temp_label, lv_color_hex(0x9BA2BC), 0);
             }
           }
