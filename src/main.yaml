@@ -7,7 +7,7 @@ packages:
   # media_player: !include widgets/media_player/media_player.yaml
   vacuum: !include widgets/vacuum/vacuum.yaml
   # cover: !include widgets/cover/config.yaml
-  boiler: !include widgets/boiler/config.yaml
+  # boiler: !include widgets/boiler/config.yaml
   # alarm_panel: !include widgets/alarm_panel/config.yaml
   fan: !include widgets/fan/config.yaml
 

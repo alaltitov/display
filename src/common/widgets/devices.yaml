@@ -63,9 +63,9 @@ lvgl:
                         text_font: nunito_18
                         text_color: color_misty_blue
                         text: "Boiler"
-                  on_click:
-                    - lvgl.page.show: boiler_ch_page
-                    - lvgl.widget.show: boiler_select_widget
+                  # on_click:
+                  #   - lvgl.page.show: boiler_ch_page
+                  #   - lvgl.widget.show: boiler_select_widget
               # Climate button
               - button:
                   id: devices_climate_btn

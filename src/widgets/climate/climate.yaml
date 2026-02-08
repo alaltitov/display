@@ -3678,9 +3678,6 @@ script:
   - id: climate_build_fan_modes_panel
     then:
       - lambda: |-
-          static esphome::lvgl::FontEngine fe_mdi_24(id(mdi_icons_24));
-          static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
-
           lv_obj_t * cont = id(climate_fan_modes_panel);
           if (!cont) return;
 
@@ -3738,14 +3735,14 @@ script:
 
             lv_obj_t * icon = lv_label_create(btn);
             lv_label_set_text(icon, icon_for(list[i]).c_str());
-            lv_obj_set_style_text_font(icon, fe_mdi_24.get_lv_font(), 0);
+            lv_obj_set_style_text_font(icon, id(mdi_icons_24), 0);
 
             lv_obj_t * txt = lv_label_create(btn);
             std::string caption = list[i];
             if (!caption.empty())
               caption[0] = (char)std::toupper((unsigned char)caption[0]);
             lv_label_set_text(txt, caption.c_str());
-            lv_obj_set_style_text_font(txt, fe_nunito_16.get_lv_font(), 0);
+            lv_obj_set_style_text_font(txt, id(nunito_16), 0);
 
             set_btn_state(btn, i == sel);
 
@@ -3858,9 +3855,6 @@ script:
   - id: climate_build_swing_modes_panel
     then:
       - lambda: |-
-          static esphome::lvgl::FontEngine fe_mdi_24(id(mdi_icons_24));
-          static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
-
           lv_obj_t * cont = id(climate_swing_modes_panel);
           if (!cont) return;
 
@@ -3915,14 +3909,14 @@ script:
 
             lv_obj_t * icon = lv_label_create(btn);
             lv_label_set_text(icon, icon_for(list[i]).c_str());
-            lv_obj_set_style_text_font(icon, fe_mdi_24.get_lv_font(), 0);
+            lv_obj_set_style_text_font(icon, id(mdi_icons_24), 0);
 
             lv_obj_t * txt = lv_label_create(btn);
             std::string caption = list[i];
             if (!caption.empty())
               caption[0] = (char)std::toupper((unsigned char)caption[0]);
             lv_label_set_text(txt, caption.c_str());
-            lv_obj_set_style_text_font(txt, fe_nunito_16.get_lv_font(), 0);
+            lv_obj_set_style_text_font(txt, id(nunito_16), 0);
 
             set_btn_state(btn, i == sel);
 
