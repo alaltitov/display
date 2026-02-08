@@ -923,8 +923,6 @@ script:
   - id: media_player_build_source_panel
     then:
       - lambda: |-
-          static esphome::lvgl::FontEngine fe_nunito_16(id(nunito_16));
-
           lv_obj_t * cont = id(media_player_source_panel);
           if (!cont) return;
 
@@ -977,7 +975,7 @@ script:
               caption[0] = (char)std::toupper((unsigned char)caption[0]);
             }
             lv_label_set_text(txt, caption.c_str());
-            lv_obj_set_style_text_font(txt, fe_nunito_16.get_lv_font(), 0);
+            lv_obj_set_style_text_font(txt, id(nunito_16), 0);
 
             bool is_active = (item == current_source);
             lv_color_t c = is_active ? COLOR_ACTIVE : COLOR_DEFAULT;
