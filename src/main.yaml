@@ -66,12 +66,12 @@ esp32:
   board: esp32-s3-devkitc-1
   variant: esp32s3
   flash_size: 16MB
+  cpu_frequency: 240MHz
   framework:
     type: esp-idf
     advanced:
       loop_task_stack_size: 8192
     sdkconfig_options:
-      CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: "y"
       # CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: y
       # CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
       # CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
@@ -96,7 +96,6 @@ logger:
   logs:
     lvgl: info
   hardware_uart: UART0
-
 
 api:
   encryption:
