@@ -1,0 +1,21 @@
+- button:
+    id: devices_light_btn
+    width: 130
+    height: 40
+    bg_opa: transp
+    shadow_opa: transp
+    border_opa: transp
+    widgets:
+      - label:
+          align: center
+          text_font: nunito_18
+          text_color: color_misty_blue
+          text: "Light"
+    on_click:
+      - lvgl.page.show: ${light_widget_name_1}_light_page
+      - delay: 250ms
+      - lambda: |-
+          int lights = ${lights_amount};
+          if (lights >= 2) {
+            lv_obj_clear_flag(id(light_select_widget), LV_OBJ_FLAG_HIDDEN);
+          }

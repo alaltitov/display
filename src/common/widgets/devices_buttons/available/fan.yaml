@@ -1,0 +1,21 @@
+- button:
+    id: devices_fan_btn
+    width: 130
+    height: 40
+    bg_opa: transp
+    shadow_opa: transp
+    border_opa: transp
+    widgets:
+      - label:
+          align: center
+          text_font: nunito_18
+          text_color: color_misty_blue
+          text: "Fan"
+    on_click:
+      - lvgl.page.show: ${fan_widget_name_1}_page
+      - delay: 250ms
+      - lambda: |-
+          int fans = ${fans_amount};
+          if (fans >= 2) {
+            lv_obj_clear_flag(id(fan_select_widget), LV_OBJ_FLAG_HIDDEN);
+          }

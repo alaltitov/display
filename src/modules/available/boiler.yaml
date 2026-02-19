@@ -1,0 +1,1 @@
+boiler: !include ../../widgets/boiler/config.yaml

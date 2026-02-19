@@ -1,0 +1,15 @@
+- button:
+    id: devices_climate_btn
+    width: 130
+    height: 40
+    bg_opa: transp
+    shadow_opa: transp
+    border_opa: transp
+    widgets:
+      - label:
+          align: center
+          text_font: nunito_18
+          text_color: color_misty_blue
+          text: "Climate"
+    on_click:
+      - lvgl.page.show: climate_page

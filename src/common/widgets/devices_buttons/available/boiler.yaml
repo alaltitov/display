@@ -1,0 +1,16 @@
+- button:
+    id: devices_boiler_btn
+    width: 130
+    height: 40
+    bg_opa: transp
+    shadow_opa: transp
+    border_opa: transp
+    widgets:
+      - label:
+          align: center
+          text_font: nunito_18
+          text_color: color_misty_blue
+          text: "Boiler"
+    on_click:
+      - lvgl.page.show: boiler_ch_page
+      - lvgl.widget.show: boiler_select_widget

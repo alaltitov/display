@@ -67,6 +67,25 @@
     - de (from [MATZE-MAN](https://github.com/MATZE-MAN))
 
 
+## 🧩 Modular configuration (new)
+
+The default `src/main.yaml` now loads device modules from `src/modules/enabled/`.
+
+- Start minimal: only `loading`, `home`, `devices`, and `light` are enabled by default.
+- Add a new device module:
+  1. Copy a module file from `src/modules/available/` to `src/modules/enabled/`.
+  2. Copy matching button file from `src/common/widgets/devices_buttons/available/` to `src/common/widgets/devices_buttons/enabled/`.
+  3. Edit substitutions in the selected widget folder (for example `src/widgets/fan/substitutions.yaml`).
+
+Example:
+
+```bash
+cp src/modules/available/fan.yaml src/modules/enabled/20_fan.yaml
+cp src/common/widgets/devices_buttons/available/fan.yaml src/common/widgets/devices_buttons/enabled/fan.yaml
+```
+
+To disable a module, simply remove its file from `modules/enabled` and remove its button file from `devices_buttons/enabled`.
+
 ## 📦 Installation
 > 📹 **Video [instruction](https://youtu.be/HYN_2hvcbes?si=JfYQH4vCuFlr8Q9r)**
 
