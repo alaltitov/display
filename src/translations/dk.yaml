@@ -1,0 +1,126 @@
+loading:
+  synchronization: "Synkroniserer..."
+  connection_api: "Forbinder til API..."
+
+ota:
+  start:
+    primary: "Starter OTA!"
+    secondary: "Vent venligst..."
+  end: 
+    primary: "Opdatering færdig!"
+    secondary: "Genstarter..."
+  error:
+    primary: "FEJL i Opdatering!"
+    secondary: "Genstarter..."
+  progress: "Firmware status %0.1f%%"
+
+settings:
+  backlight: "Baggrundslys"
+  sleep_time: "Slumretid"
+
+sleep_time:
+  never: "Aldrig"
+  minute1: "1 minut"
+  minute5: "5 minuter" 
+  minute10: "10 minuter"
+  minute30: "30 minuter"
+  hour1: "1 time"
+  hour6: "6 timer"
+  hour12: "12 timer"
+
+forecasts:
+  daily: "Daglig"
+  hourly: "Hver time"
+
+weather:
+  clear-night: "Klart, nat"
+  cloudy: "Overskyet"
+  exceptional: "Enestående"
+  fog: "Tåge"
+  hail: "Hagl"
+  lightning: "Lynende"
+  lightning-rainy: "Tordenvejr"
+  partlycloudy: "Letskyet"
+  pouring: "Øsregn"
+  rainy: "Regn"
+  snowy: "Sne"
+  snowy-rainy: "Slud"
+  sunny: "Solskin"
+  windy: "Blæsende"
+  windy-variant: "Blæsende og skyet"
+
+day_of_week:
+  monday: "Mandag"
+  tuesday: "Tirsdag"
+  wednesday: "Onsdag"
+  thursday: "Torsdag"
+  friday: "Fredag"
+  saturday: "Lørdag"
+  sunday: "Søndag"
+
+day_of_week_short:
+  monday: "MAN"
+  tuesday: "TIR"
+  wednesday: "ONS"
+  thursday: "TOR"
+  friday: "FRE"
+  saturday: "LØR"
+  sunday: "SØN"
+
+month:
+  january: "Januar"
+  february: "Februar"
+  march: "Marts"
+  april: "April"
+  may: "Maj"
+  june: "Juni"
+  july: "July"
+  august: "August"
+  september: "September"
+  october: "Oktober"
+  november: "November"
+  december: "December"
+
+vacuum:
+  name: "Støvsuger"
+  state:
+    cleaning: "Igang"
+    docked: "I dok"
+    error: "Fejl"
+    idle: "Afventer"
+    off: "Slukket"
+    on: "Tændt"
+    paused: "Pause"
+    returning: "Vender tilbage til dok"
+
+cover:
+  name: "Gardin"
+  state:
+    closed: "Lukket"
+    closing: "Lukker"
+    open: "Åben"
+    opening: "Åbner"
+    stopped: "Stoppet"
+
+alarm_panel:
+  name: "Alarmpanel"
+  enter_pass: "Indtast kode"
+  wrong_pass: "Forkert kode"
+  state:
+    armed: "Tilkoblet"
+    armed_away: "Tilkoblet (Ude)"
+    armed_custom_bypass: "Tilkoblet (Brugerdefineret)"
+    armed_home: "Tilkoblet (Hjemme)"
+    armed_night: "Tilkoblet (Nat)"
+    armed_vacation: "Tilkoblet (Ferie)"
+    arming: "Tilkobler"
+    disarmed: "Frakoblet"
+    disarming: "Frakobler"
+    pending: "Afventer"
+    triggered: "Alarm udløst"
+
+fan:
+  name: Ventilator
+  state:
+    "on": "Tændt"
+    "off": "Slukket"

@@ -1625,7 +1625,7 @@ mapping:
       nl: flags_nl_img
       si: flags_si_img
       pl: flags_pl_img
-
+      dk: flags_dk_img
 script:
 
   - id: update_home_translations

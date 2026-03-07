@@ -364,6 +364,12 @@
   resize: 40x60
   transparency: alpha_channel
 
+- file: 'assets/images/flags/dk.png'
+  id: flags_dk_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
   #############################
   ########## BATTERY ##########
   #############################
