@@ -5,9 +5,10 @@ display_friendly_name:    Display My Room
 
 # ENTITIES
 
-weather_entity:           "weather.home_assistant"
-temperature_entity:       "sensor.outside_temperature"
-humidity_entity:          "sensor.outside_humidity"
+weather_entity:           "weather.yandex_pogoda"
+temperature_entity:       "sensor.climate_lounge_room_temperature"
+humidity_entity:          "sensor.climate_lounge_room_humidity"
+co2_entity:               "sensor.co2_lounge_room_co2"
 
 
 

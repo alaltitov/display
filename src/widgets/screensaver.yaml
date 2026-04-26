@@ -1,0 +1,154 @@
+globals:
+  - id: screensaver_active
+    type: bool
+    restore_value: false
+    initial_value: 'false'
+
+script:
+  - id: show_screensaver
+    then:
+      - if:
+          condition:
+            lambda: 'return !id(screensaver_active);'
+          then:
+            - globals.set:
+                id: screensaver_active
+                value: 'true'
+            - lvgl.widget.show: screensaver_overlay
+
+  - id: hide_screensaver
+    then:
+      - if:
+          condition:
+            lambda: 'return id(screensaver_active);'
+          then:
+            - globals.set:
+                id: screensaver_active
+                value: 'false'
+            - lvgl.widget.hide: screensaver_overlay
+
+lvgl:
+  top_layer:
+    widgets:
+      - obj:
+          id: screensaver_overlay
+          hidden: true
+          width: 100%
+          height: 100%
+          bg_color: color_slate_blue_gray
+          bg_opa: 100%
+          border_opa: TRANSP
+          border_width: 0
+          shadow_opa: TRANSP
+          pad_all: 0
+          widgets:
+            - obj:
+                id: screensaver_outdoor_block
+                x: 0
+                y: 0
+                width: 240
+                height: 240
+                align: TOP_LEFT
+                bg_color: color_steel_blue
+                bg_opa: 24%
+                border_opa: TRANSP
+                border_width: 0
+                shadow_opa: TRANSP
+                radius: 0
+                pad_all: 0
+                widgets:
+                  - label:
+                      id: screensaver_outdoor_temp_value
+                      align: BOTTOM_MID
+                      y: -3
+                      text_font: nunito_64
+                      text_color: color_misty_blue
+                      text: '--.-°'
+                  - image:
+                      id: screensaver_weather_icon
+                      align: TOP_MID
+                      y: 43
+                      src: cloudy_img
+
+            - obj:
+                id: screensaver_indoor_block
+                x: 240
+                y: 0
+                width: 240
+                height: 240
+                align: TOP_LEFT
+                bg_color: color_steel_blue
+                bg_opa: 24%
+                border_opa: TRANSP
+                border_width: 0
+                shadow_opa: TRANSP
+                radius: 0
+                pad_all: 0
+                widgets:
+                  - label:
+                      id: screensaver_clock_value
+                      align: TOP_RIGHT
+                      x: -12
+                      y: 10
+                      text_font: nunito_36
+                      text_color: color_misty_blue
+                      text: '--:--'
+                  - label:
+                      id: screensaver_indoor_temp_value
+                      align: CENTER
+                      y: 30
+                      text_font: nunito_64
+                      text_color: color_misty_blue
+                      text: '--.-°'
+
+            - obj:
+                id: screensaver_humidity_block
+                x: 0
+                y: 240
+                width: 240
+                height: 240
+                align: TOP_LEFT
+                bg_color: color_steel_blue
+                bg_opa: 24%
+                border_opa: TRANSP
+                border_width: 0
+                shadow_opa: TRANSP
+                radius: 0
+                pad_all: 0
+                widgets:
+                  - label:
+                      id: screensaver_humidity_value
+                      align: CENTER
+                      text_font: nunito_64
+                      text_color: color_misty_blue
+                      text: '--%'
+
+            - obj:
+                id: screensaver_co2_block
+                x: 240
+                y: 240
+                width: 240
+                height: 240
+                align: TOP_LEFT
+                bg_color: color_steel_blue
+                bg_opa: 24%
+                border_opa: TRANSP
+                border_width: 0
+                shadow_opa: TRANSP
+                radius: 0
+                pad_all: 0
+                widgets:
+                  - label:
+                      id: screensaver_co2_value
+                      align: CENTER
+                      y: -28
+                      text_font: nunito_64
+                      text_color: color_misty_blue
+                      text: '----'
+                  - label:
+                      id: screensaver_co2_unit
+                      align: CENTER
+                      y: 26
+                      text_font: nunito_30
+                      text_color: color_misty_blue
+                      text: 'ppm'
