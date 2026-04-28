@@ -27,6 +27,26 @@ script:
                 value: 'false'
             - lvgl.widget.hide: screensaver_overlay
 
+  - id: configure_screensaver_layout
+    then:
+      - if:
+          condition:
+            lambda: 'return "${has_co2}" == std::string("true");'
+          then:
+            - lvgl.widget.show: screensaver_indoor_temp_value
+            - lvgl.widget.show: screensaver_co2_value
+            - lvgl.widget.show: screensaver_co2_unit
+            - lvgl.widget.show: screensaver_clock_value
+            - lvgl.widget.hide: screensaver_clock_center_value
+            - lvgl.widget.hide: screensaver_temp_no_co2_value
+          else:
+            - lvgl.widget.hide: screensaver_indoor_temp_value
+            - lvgl.widget.hide: screensaver_co2_value
+            - lvgl.widget.hide: screensaver_co2_unit
+            - lvgl.widget.hide: screensaver_clock_value
+            - lvgl.widget.show: screensaver_clock_center_value
+            - lvgl.widget.show: screensaver_temp_no_co2_value
+
 lvgl:
   top_layer:
     widgets:
@@ -94,6 +114,13 @@ lvgl:
                       text_color: color_misty_blue
                       text: '--:--'
                   - label:
+                      id: screensaver_clock_center_value
+                      hidden: true
+                      align: CENTER
+                      text_font: nunito_72
+                      text_color: color_misty_blue
+                      text: '--:--'
+                  - label:
                       id: screensaver_indoor_temp_value
                       align: CENTER
                       y: 30
@@ -152,3 +179,10 @@ lvgl:
                       text_font: nunito_30
                       text_color: color_misty_blue
                       text: 'ppm'
+                  - label:
+                      id: screensaver_temp_no_co2_value
+                      hidden: true
+                      align: CENTER
+                      text_font: nunito_64
+                      text_color: color_misty_blue
+                      text: '--.-°'

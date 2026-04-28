@@ -68,23 +68,41 @@ esphome:
         - script.execute: update_loading_page
     - priority: -100
       then:
+        - script.execute: configure_screensaver_layout
         - number.set:
             id: display_timeout_backlight
             value: !lambda |-
               int idx = id(display_timeout);
-              if (idx < 0 || idx > 6) {
-                idx = 3;
+              if (idx < 0 || idx > 7) {
+                idx = 2;
                 id(display_timeout) = idx;
+              }
+              static const int backlight_time[] = {-1, 1, 5, 10, 30, 60, 360, 720};
+              return backlight_time[idx];
+        - lvgl.roller.update:
+            id: backlight_settings_sleep_time_roller
+            selected_index: !lambda |-
+              if (id(display_timeout) < 0 || id(display_timeout) > 7) {
+                return 2;
+              }
+              return id(display_timeout);
+        - number.set:
+            id: screensaver_timeout_number
+            value: !lambda |-
+              int idx = id(screensaver_timeout);
+              if (idx < 0 || idx > 6) {
+                idx = 2;
+                id(screensaver_timeout) = idx;
               }
               static const int screensaver_time[] = {-1, 15, 30, 60, 120, 300, 600};
               return screensaver_time[idx];
         - lvgl.roller.update:
-            id: backlight_settings_sleep_time_roller
+            id: screensaver_timeout_roller
             selected_index: !lambda |-
-              if (id(display_timeout) < 0 || id(display_timeout) > 6) {
-                return 3;
+              if (id(screensaver_timeout) < 0 || id(screensaver_timeout) > 6) {
+                return 2;
               }
-              return id(display_timeout);
+              return id(screensaver_timeout);
 
 esp32:
   board: esp32-s3-devkitc-1

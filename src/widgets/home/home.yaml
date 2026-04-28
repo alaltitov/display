@@ -13,6 +13,11 @@ globals:
     restore_value: yes
     initial_value: '2'
 
+  - id: screensaver_timeout
+    type: int
+    restore_value: yes
+    initial_value: '2'
+
   # Данные daily прогноза
   - id: forecast_daily_count
     type: int
@@ -60,10 +65,22 @@ globals:
 number:
   - platform: template
     id: display_timeout_backlight
+    name: Backlight timeout
+    optimistic: true
+    unit_of_measurement: "m"
+    initial_value: 10
+    restore_value: true
+    min_value: -1
+    max_value: 720
+    step: 1
+    mode: box
+
+  - platform: template
+    id: screensaver_timeout_number
     name: Screensaver timeout
     optimistic: true
     unit_of_measurement: "s"
-    initial_value: 60
+    initial_value: 30
     restore_value: true
     min_value: -1
     max_value: 600
@@ -129,6 +146,18 @@ time:
         seconds: 0
         then:
           - script.execute: time_update
+
+interval:
+  - interval: 1s
+    then:
+      - if:
+          condition:
+            lambda: |-
+              if (id(screensaver_timeout_number).state < 0 || id(screensaver_active)) return false;
+              if (!id(display_backlight).current_values.is_on()) return false;
+              return lv_disp_get_inactive_time(NULL) >= (id(screensaver_timeout_number).state * 1000);
+          then:
+            - script.execute: show_screensaver
 
 
 sensor:
@@ -215,12 +244,20 @@ sensor:
             text:
               format: "%.1f°"
               args: [id(home_temperature_sensor).state]
+        - lvgl.label.update:
+            id: screensaver_temp_no_co2_value
+            text:
+              format: "%.1f°"
+              args: [id(home_temperature_sensor).state]
         - if:
             condition:
               lambda: 'return id(home_temperature_sensor).state >= 30.0;'
             then:
               - lvgl.label.update:
                   id: screensaver_indoor_temp_value
+                  text_color: color_red
+              - lvgl.label.update:
+                  id: screensaver_temp_no_co2_value
                   text_color: color_red
             else:
               - if:
@@ -230,9 +267,15 @@ sensor:
                     - lvgl.label.update:
                         id: screensaver_indoor_temp_value
                         text_color: color_orange
+                    - lvgl.label.update:
+                        id: screensaver_temp_no_co2_value
+                        text_color: color_orange
                   else:
                     - lvgl.label.update:
                         id: screensaver_indoor_temp_value
+                        text_color: color_misty_blue
+                    - lvgl.label.update:
+                        id: screensaver_temp_no_co2_value
                         text_color: color_misty_blue
 
   # Home humidity sensor
@@ -451,18 +494,17 @@ text_sensor:
 lvgl:
 
   on_idle:
-    timeout: !lambda |-
-      if (id(display_timeout_backlight).state < 0) {
-        return 2147483647;
-      }
-      return (uint32_t) (id(display_timeout_backlight).state * 1000);
+    timeout: !lambda "return (id(display_timeout_backlight).state * 60 * 1000);"
     then:
       - if:
           condition:
             lambda: 'return id(display_timeout_backlight).state >= 0;'
           then:
             - logger.log: "LVGL is idle"
-            - script.execute: show_screensaver
+            - light.turn_off: display_backlight
+            - lvgl.pause:
+          else:
+            - logger.log: "LVGL idle, but backlight is on"
 
   pages:
     - id: home_page
@@ -886,16 +928,16 @@ lvgl:
                         border_width: 0
                         shadow_opa: transp
                         widgets:
-                          - label:  
+                          - label:
                               id: backlight_settings_sleep_time_label
-                              y: 20
+                              y: 23
                               align: top_mid
                               text_font: nunito_18
                               text_color: color_misty_blue
                               text: "Sleep time"
                           - roller:
                               id: backlight_settings_sleep_time_roller
-                              y: 10
+                              y: -33
                               width: 140
                               align: center
                               bg_opa: transp
@@ -909,10 +951,59 @@ lvgl:
                                 text_font: nunito_20
                                 text_color: color_misty_blue
                               selected_index: !lambda |-
-                                if (id(display_timeout) < 0 || id(display_timeout) > 6) {
-                                  return 3;
+                                if (id(display_timeout) < 0 || id(display_timeout) > 7) {
+                                  return 2;
                                 }
                                 return id(display_timeout);
+                              options:
+                                - Never
+                                - 1 minute
+                                - 5 minutes
+                                - 10 minutes
+                                - 30 minutes
+                                - 1 hour
+                                - 6 hours
+                                - 12 hours
+                              visible_row_count: 1
+                              on_value:
+                                  then:
+                                    - number.set:
+                                        id: display_timeout_backlight
+                                        value: !lambda |-
+                                          static const int backlight_time[] = {-1, 1, 5, 10, 30, 60, 360, 720};
+                                          return backlight_time[x];
+                                    - globals.set:
+                                        id: display_timeout
+                                        value: !lambda return x;
+
+                          - label:
+                              id: screensaver_timeout_label
+                              y: 131
+                              align: top_mid
+                              text_font: nunito_18
+                              text_color: color_misty_blue
+                              text: "Screensaver"
+
+                          - roller:
+                              id: screensaver_timeout_roller
+                              y: 75
+                              width: 140
+                              align: center
+                              bg_opa: transp
+                              border_opa: transp
+                              shadow_opa: transp
+                              text_font: nunito_20
+                              text_color: color_steel_blue
+                              text_line_space: 4
+                              selected:
+                                bg_opa: transp
+                                text_font: nunito_20
+                                text_color: color_misty_blue
+                              selected_index: !lambda |-
+                                if (id(screensaver_timeout) < 0 || id(screensaver_timeout) > 6) {
+                                  return 2;
+                                }
+                                return id(screensaver_timeout);
                               options:
                                 - Never
                                 - 15 seconds
@@ -925,13 +1016,18 @@ lvgl:
                               on_value:
                                   then:
                                     - number.set:
-                                        id: display_timeout_backlight
+                                        id: screensaver_timeout_number
                                         value: !lambda |-
-                                          static const int backlight_time[] = {-1, 15, 30, 60, 120, 300, 600};
-                                          return backlight_time[x];
+                                          static const int screensaver_time[] = {-1, 15, 30, 60, 120, 300, 600};
+                                          return screensaver_time[x];
                                     - globals.set:
-                                        id: display_timeout
+                                        id: screensaver_timeout
                                         value: !lambda return x;
+                                    - if:
+                                        condition:
+                                          lambda: 'return x == 0;'
+                                        then:
+                                          - script.execute: hide_screensaver
 
 
         - obj:
@@ -1757,17 +1853,22 @@ script:
 
           uint16_t old_selection = lv_roller_get_selected(roller_obj);
 
-          std::string options =
-            "Never\n"
-            "15 seconds\n"
-            "30 seconds\n"
-            "1 minute\n"
-            "2 minutes\n"
-            "5 minutes\n"
-            "10 minutes";
+          std::string options = 
+            id(i18n_translations).translate("sleep_time.never") + "\n" +
+            id(i18n_translations).translate("sleep_time.minute1") + "\n" +
+            id(i18n_translations).translate("sleep_time.minute5") + "\n" +
+            id(i18n_translations).translate("sleep_time.minute10") + "\n" +
+            id(i18n_translations).translate("sleep_time.minute30") + "\n" +
+            id(i18n_translations).translate("sleep_time.hour1") + "\n" +
+            id(i18n_translations).translate("sleep_time.hour6") + "\n" +
+            id(i18n_translations).translate("sleep_time.hour12");
 
           lv_roller_set_options(roller_obj, options.c_str(), LV_ROLLER_MODE_NORMAL);
           lv_roller_set_selected(roller_obj, old_selection, LV_ANIM_OFF);
+
+      - lvgl.label.update:
+          id: screensaver_timeout_label
+          text: "Screensaver"
 
 
   - id: display_block_buttons
@@ -1791,6 +1892,7 @@ script:
             - lvgl.button.update: { id: weather_forecast_hourly_btn, clickable: true }
             - lvgl.slider.update: { id: backlight_settings_brightness_slider, clickable: true }
             - lvgl.roller.update: { id: backlight_settings_sleep_time_roller, clickable: true }
+            - lvgl.roller.update: { id: screensaver_timeout_roller, clickable: true }
             - lvgl.button.update: { id: circle_settings_widget_lang_btn, clickable: true }
           else:
             - lvgl.label.update:
@@ -1807,6 +1909,7 @@ script:
             - lvgl.button.update: { id: weather_forecast_hourly_btn, clickable: false }
             - lvgl.slider.update: { id: backlight_settings_brightness_slider, clickable: false }
             - lvgl.roller.update: { id: backlight_settings_sleep_time_roller, clickable: false }
+            - lvgl.roller.update: { id: screensaver_timeout_roller, clickable: false }
             - lvgl.button.update: { id: circle_settings_widget_lang_btn, clickable: false }
 
   - id: update_weather_image
@@ -1928,6 +2031,14 @@ script:
 
       - lvgl.label.update:
           id: screensaver_clock_value
+          text: !lambda |-
+            static char time_buf[16];
+            auto now = id(sntp_time).now();
+            snprintf(time_buf, sizeof(time_buf), "%02d:%02d", now.hour, now.minute);
+            return time_buf;
+
+      - lvgl.label.update:
+          id: screensaver_clock_center_value
           text: !lambda |-
             static char time_buf[16];
             auto now = id(sntp_time).now();
