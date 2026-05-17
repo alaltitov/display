@@ -66,6 +66,7 @@
     - it (from [echopage1964](https://github.com/echopage1964))
     - de (from [MATZE-MAN](https://github.com/MATZE-MAN))
     - dk (from [petanque](https://github.com/petanque))
+    - br (from [pehdepano](https://github.com/pehdepano))
 
 
 ## 📦 Installation

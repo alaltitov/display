@@ -280,6 +280,12 @@
   resize: 40x60
   transparency: alpha_channel
 
+- file: 'assets/images/flags/br.png'
+  id: flags_br_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
 - file: 'assets/images/flags/pt.png'
   id: flags_pt_img
   type: rgb565

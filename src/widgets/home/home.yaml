@@ -1620,6 +1620,7 @@ mapping:
       fr: flags_fr_img
       en: flags_gb_img
       it: flags_it_img
+      br: flags_br_img
       pt: flags_pt_img
       ru: flags_ru_img
       nl: flags_nl_img
