@@ -38,6 +38,7 @@ i18n:
     - translations/it.yaml
     - translations/de.yaml
     - translations/dk.yaml
+    - translations/br.yaml
   default_locale: en
   use_psram: true
   buffer_size: "512"

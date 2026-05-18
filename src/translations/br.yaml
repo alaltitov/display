@@ -1,0 +1,126 @@
+loading:
+  synchronization: "Sincronização..."
+  connection_api: "Conectando à API..."
+
+ota:
+  start:
+    primary: "Iniciando OTA!"
+    secondary: "Aguarde..."
+  end: 
+    primary: "Atualização concluída!"
+    secondary: "Reiniciando..."
+  error:
+    primary: "Erro na atualização!"
+    secondary: "Reiniciando..."
+  progress: "Progresso do firmware %0.1f%%"
+
+settings:
+  backlight: "Luz de fundo"
+  sleep_time: "Tempo de suspensão"
+
+sleep_time:
+  never: "Nunca"
+  minute1: "1 minuto"
+  minute5: "5 minutos"
+  minute10: "10 minutos"
+  minute30: "30 minutos"
+  hour1: "1 hora"
+  hour6: "6 horas"
+  hour12: "12 horas"
+
+forecasts:
+  daily: "Diário"
+  hourly: "Por hora"
+
+weather:
+  clear-night: "Noite clara"
+  cloudy: "Nublado"
+  exceptional: "Excepcional"
+  fog: "Nevoeiro"
+  hail: "Granizo"
+  lightning: "Relâmpago"
+  lightning-rainy: "Chuvoso com relâmpagos"
+  partlycloudy: "Parcialmente nublado"
+  pouring: "Chuva forte"
+  rainy: "Chuvoso"
+  snowy: "Nevando"
+  snowy-rainy: "Neve e chuva"
+  sunny: "Ensolarado"
+  windy: "Ventoso"
+  windy-variant: "Nublado e ventoso"
+
+day_of_week:
+  monday: "Segunda-feira"
+  tuesday: "Terça-feira"
+  wednesday: "Quarta-feira"
+  thursday: "Quinta-feira"
+  friday: "Sexta-feira"
+  saturday: "Sábado"
+  sunday: "Domingo"
+
+day_of_week_short:
+  monday: "SEG"
+  tuesday: "TER"
+  wednesday: "QUA"
+  thursday: "QUI"
+  friday: "SEX"
+  saturday: "SÁB"
+  sunday: "DOM"
+
+month:
+  january: "Janeiro"
+  february: "Fevereiro"
+  march: "Março"
+  april: "Abril"
+  may: "Maio"
+  june: "Junho"
+  july: "Julho"
+  august: "Agosto"
+  september: "Setembro"
+  october: "Outubro"
+  november: "Novembro"
+  december: "Dezembro"
+
+vacuum:
+  name: "Aspirador"
+  state:
+    cleaning: "Limpando"
+    docked: "Acoplado"
+    error: "Erro"
+    idle: "Ocioso"
+    off: "Desligado"
+    on: "Ligado"
+    paused: "Pausado"
+    returning: "Retornando para a base"
+
+cover:
+  name: "Cortina"
+  state:
+    closed: "Fechada"
+    closing: "Fechando"
+    open: "Aberta"
+    opening: "Abrindo"
+    stopped: "Parada"
+
+alarm_panel:
+  name: "Painel de controle de alarme"
+  enter_pass: "Digite a senha"
+  wrong_pass: "Senha incorreta"
+  state:
+    armed: Armado
+    armed_away: Armado fora de casa
+    armed_custom_bypass: Armado com bypass personalizado
+    armed_home: Armado em casa
+    armed_night: Armado à noite
+    armed_vacation: Armado em férias
+    arming: Armando
+    disarmed: Desarmado
+    disarming: Desarmando
+    pending: Pendente
+    triggered: Disparado
+
+fan:
+  name: Ventilador
+  state:
+    "on": "Ligado"
+    "off": "Desligado"
