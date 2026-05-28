@@ -1,0 +1,130 @@
+# Hebrew (he) translation.
+# NOTE: strings are stored pre-reversed (visual RTL order) because the
+# ESPHome LVGL build has LV_USE_BIDI disabled. Do not edit by hand in a
+# plain editor; regenerate from logical text via gen_he.py instead.
+loading:
+  synchronization: "...ןרכנסמ"
+  connection_api: "...תרשל רבחתמ"
+
+ota:
+  start:
+    primary: "!ןוכדע ליחתמ"
+    secondary: "...ןתמה"
+  end:
+    primary: "!םלשוה ןוכדעה"
+    secondary: "...לחתאמ"
+  error:
+    primary: "!ןוכדע תאיגש"
+    secondary: "...לחתאמ"
+  progress: "%0.1f%% החשוק תומדקתה"
+
+settings:
+  backlight: "עקר תרואת"
+  sleep_time: "יוביכ ןמז"
+
+sleep_time:
+  never: "אל םלועל"
+  minute1: "תחא הקד"
+  minute5: "תוקד 5"
+  minute10: "תוקד 10"
+  minute30: "תוקד 30"
+  hour1: "תחא העש"
+  hour6: "תועש 6"
+  hour12: "תועש 12"
+
+forecasts:
+  daily: "ימוי"
+  hourly: "יתעש"
+
+weather:
+  clear-night: "הלילב ריהב"
+  cloudy: "ןנועמ"
+  exceptional: "גירח"
+  fog: "לפרע"
+  hail: "דרב"
+  lightning: "םיקרב"
+  lightning-rainy: "םשגו םיקרב"
+  partlycloudy: "תיקלח ןנועמ"
+  pouring: "ףטוש םשג"
+  rainy: "םושג"
+  snowy: "גלש"
+  snowy-rainy: "םשגו גלש"
+  sunny: "ישמש"
+  windy: "תוחור"
+  windy-variant: "םיננעו תוחור"
+
+day_of_week:
+  monday: "ינש םוי"
+  tuesday: "ישילש םוי"
+  wednesday: "יעיבר םוי"
+  thursday: "ישימח םוי"
+  friday: "ישיש םוי"
+  saturday: "תבש"
+  sunday: "ןושאר םוי"
+
+day_of_week_short:
+  monday: "׳ב"
+  tuesday: "׳ג"
+  wednesday: "׳ד"
+  thursday: "׳ה"
+  friday: "׳ו"
+  saturday: "׳ש"
+  sunday: "׳א"
+
+month:
+  january: "ראוני"
+  february: "ראורבפ"
+  march: "ץרמ"
+  april: "לירפא"
+  may: "יאמ"
+  june: "ינוי"
+  july: "ילוי"
+  august: "טסוגוא"
+  september: "רבמטפס"
+  october: "רבוטקוא"
+  november: "רבמבונ"
+  december: "רבמצד"
+
+vacuum:
+  name: "קבא באוש"
+  state:
+    cleaning: "הקנמ"
+    docked: "הניגע תדמעב"
+    error: "האיגש"
+    idle: "החונמב"
+    off: "יובכ"
+    on: "לעופ"
+    paused: "ההשומ"
+    returning: "הדמעל רזוח"
+
+cover:
+  name: "סירת"
+  state:
+    closed: "רוגס"
+    closing: "רגסנ"
+    open: "חותפ"
+    opening: "חתפנ"
+    stopped: "רוצע"
+
+alarm_panel:
+  name: "הקעזא תרקב חול"
+  enter_pass: "המסיס ןזה"
+  wrong_pass: "היוגש המסיס"
+  state:
+    armed: "ךורד"
+    armed_away: "האיציב ךורד"
+    armed_custom_bypass: "תמאתומ הכירד"
+    armed_home: "תיבב ךורד"
+    armed_night: "הלילב ךורד"
+    armed_vacation: "השפוחב ךורד"
+    arming: "הכירד ליעפמ"
+    disarmed: "לרטונמ"
+    disarming: "לרטנמ"
+    pending: "ןיתממ"
+    triggered: "לעפוה"
+
+fan:
+  name: "ררוואמ"
+  state:
+    "on": "יובכ"
+    "off": "לעופ"
