@@ -376,6 +376,12 @@
   resize: 40x60
   transparency: alpha_channel
 
+- file: 'assets/images/flags/il.png'
+  id: flags_il_img
+  type: rgb565
+  resize: 40x60
+  transparency: alpha_channel
+
   #############################
   ########## BATTERY ##########
   #############################

@@ -7,6 +7,9 @@
   glyphsets:
     - GF_Latin_Core
     - GF_Cyrillic_Core
+  extras:
+    - file: "assets/fonts/Rubik-Hebrew.ttf"
+      glyphs: "אבגדהוזחטיכךלמםנןסעפףצץקרשת׳״"
   glyphs: "²"
 
 - file: "assets/fonts/Nunito-SemiBold.ttf"
@@ -16,6 +19,9 @@
   glyphsets:
     - GF_Latin_Core
     - GF_Cyrillic_Core
+  extras:
+    - file: "assets/fonts/Rubik-Hebrew.ttf"
+      glyphs: "אבגדהוזחטיכךלמםנןסעפףצץקרשת׳״"
   glyphs: "²"
 
 - file: "assets/fonts/Nunito-SemiBold.ttf"
@@ -25,6 +31,9 @@
   glyphsets:
     - GF_Latin_Core
     - GF_Cyrillic_Core
+  extras:
+    - file: "assets/fonts/Rubik-Hebrew.ttf"
+      glyphs: "אבגדהוזחטיכךלמםנןסעפףצץקרשת׳״"
 
 - file: "assets/fonts/Nunito-SemiBold.ttf"
   id: nunito_30
@@ -33,6 +42,9 @@
   glyphsets:
     - GF_Latin_Core
     - GF_Cyrillic_Core
+  extras:
+    - file: "assets/fonts/Rubik-Hebrew.ttf"
+      glyphs: "אבגדהוזחטיכךלמםנןסעפףצץקרשת׳״"
 
 - file: "assets/fonts/Nunito-SemiBold.ttf"
   id: nunito_36
@@ -41,6 +53,9 @@
   glyphsets:
     - GF_Latin_Core
     - GF_Cyrillic_Core
+  extras:
+    - file: "assets/fonts/Rubik-Hebrew.ttf"
+      glyphs: "אבגדהוזחטיכךלמםנןסעפףצץקרשת׳״"
 
 - file: "assets/fonts/Nunito-SemiBold.ttf"
   id: nunito_48
@@ -49,6 +64,9 @@
   glyphsets:
     - GF_Latin_Core
     - GF_Cyrillic_Core
+  extras:
+    - file: "assets/fonts/Rubik-Hebrew.ttf"
+      glyphs: "אבגדהוזחטיכךלמםנןסעפףצץקרשת׳״"
 
 - file: "assets/fonts/Nunito-SemiBold.ttf"
   id: nunito_56
@@ -57,6 +75,9 @@
   glyphsets:
     - GF_Latin_Core
     - GF_Cyrillic_Core
+  extras:
+    - file: "assets/fonts/Rubik-Hebrew.ttf"
+      glyphs: "אבגדהוזחטיכךלמםנןסעפףצץקרשת׳״"
 
 - file: "assets/fonts/Nunito-SemiBold.ttf"
   id: nunito_64
@@ -65,6 +86,9 @@
   glyphsets:
     - GF_Latin_Core
     - GF_Cyrillic_Core
+  extras:
+    - file: "assets/fonts/Rubik-Hebrew.ttf"
+      glyphs: "אבגדהוזחטיכךלמםנןסעפףצץקרשת׳״"
 
 - file: "assets/fonts/Nunito-SemiBold.ttf"
   id: nunito_84
@@ -73,6 +97,9 @@
   glyphsets:
     - GF_Latin_Core
     - GF_Cyrillic_Core
+  extras:
+    - file: "assets/fonts/Rubik-Hebrew.ttf"
+      glyphs: "אבגדהוזחטיכךלמםנןסעפףצץקרשת׳״"
 
 # CUSTOM ICONS FONT
 
