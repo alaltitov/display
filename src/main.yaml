@@ -52,6 +52,12 @@ esphome:
     - <algorithm>
   platformio_options:
     board_build.flash_mode: dio
+    # Enable LVGL bidirectional text so RTL languages (Hebrew/Arabic/Persian)
+    # render correctly. LVGL 8.4 guards LV_USE_BIDI with #ifndef, and ESPHome
+    # does not define it, so this build flag turns it on. Base direction
+    # defaults to AUTO (per-paragraph), leaving LTR layouts unaffected.
+    build_flags:
+      - "-DLV_USE_BIDI=1"
 
   on_boot:
     - priority: 400

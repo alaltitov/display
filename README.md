@@ -67,7 +67,7 @@
     - de (from [MATZE-MAN](https://github.com/MATZE-MAN))
     - dk (from [petanque](https://github.com/petanque))
     - br (from [pehdepano](https://github.com/pehdepano))
-    - he (from [yosef-chai](https://github.com/yosef-chai))
+    - he
 
 
 ## 📦 Installation

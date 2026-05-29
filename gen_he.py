@@ -1,36 +1,14 @@
 # -*- coding: utf-8 -*-
-"""Generate src/translations/he.yaml.
+"""Generate translations/he.yaml in LOGICAL Hebrew order.
 
-The strings are authored in LOGICAL Hebrew order here, then visually
-reordered (pre-reversed) before writing, because ESPHome's LVGL build has
-LV_USE_BIDI disabled and cannot be toggled from YAML. Pre-reversing makes the
-text render correctly right-to-left on the display. Digit runs and the printf
-format token (%0.1f%%) are preserved in their original (LTR) order.
+The firmware build enables LV_USE_BIDI=1 (see main.yaml platformio_options),
+so LVGL performs the bidirectional reordering at render time. Therefore the
+translations are stored in natural LOGICAL Hebrew order (human-readable and
+maintainable) - do NOT pre-reverse them.
 """
 import io
 
-LTR = set("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ%.")
-
-
-def visual(s):
-    rev = list(s)[::-1]
-    out = []
-    i = 0
-    n = len(rev)
-    while i < n:
-        if rev[i] in LTR:
-            j = i
-            while j < n and rev[j] in LTR:
-                j += 1
-            out.extend(rev[i:j][::-1])  # restore original order of the LTR run
-            i = j
-        else:
-            out.append(rev[i])
-            i += 1
-    return "".join(out)
-
-
-# Logical-order Hebrew translations (proper, human-readable Hebrew).
+# Logical-order Hebrew translations (natural, human-readable Hebrew).
 T = [
     ("loading", [
         ("synchronization", "מסנכרן..."),
@@ -168,24 +146,23 @@ T = [
     ]),
 ]
 
+
 def emit(items, indent, out, quote_onoff=False):
     pad = "  " * indent
     for key, val in items:
-        # Match the source convention: only the fan widget quotes its on/off
-        # keys; vacuum leaves them unquoted (YAML-coerced) like en.yaml.
         k = '"%s"' % key if (quote_onoff and key in ("on", "off")) else key
         if isinstance(val, list):
             out.write("%s%s:\n" % (pad, k))
             emit(val, indent + 1, out, quote_onoff)
         else:
-            out.write('%s%s: "%s"\n' % (pad, k, visual(val)))
+            out.write('%s%s: "%s"\n' % (pad, k, val))
 
 
 buf = io.StringIO()
 buf.write("# Hebrew (he) translation.\n")
-buf.write("# NOTE: strings are stored pre-reversed (visual RTL order) because the\n")
-buf.write("# ESPHome LVGL build has LV_USE_BIDI disabled. Do not edit by hand in a\n")
-buf.write("# plain editor; regenerate from logical text via gen_he.py instead.\n")
+buf.write("# Stored in LOGICAL order; the firmware build enables LV_USE_BIDI=1 so\n")
+buf.write("# LVGL handles right-to-left reordering at render time.\n")
+buf.write("# Regenerate with gen_he.py instead of editing by hand.\n")
 first = True
 for key, val in T:
     if not first:
@@ -197,5 +174,4 @@ for key, val in T:
 with open("src/translations/he.yaml", "w", encoding="utf-8", newline="\n") as f:
     f.write(buf.getvalue())
 
-# Also print a logical-order preview for verification
-print("WROTE src/translations/he.yaml")
+print("WROTE translations/he.yaml (logical order)")
