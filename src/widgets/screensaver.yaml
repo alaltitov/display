@@ -77,18 +77,40 @@ lvgl:
                 radius: 0
                 pad_all: 0
                 widgets:
-                  - label:
-                      id: screensaver_outdoor_temp_value
-                      align: BOTTOM_MID
-                      y: -3
-                      text_font: nunito_64
-                      text_color: color_misty_blue
-                      text: '--.-°'
-                  - image:
-                      id: screensaver_weather_icon
+                  - obj:
+                      id: screensaver_outdoor_icon_area
+                      width: 240
+                      height: 110
                       align: TOP_MID
-                      y: 43
-                      src: cloudy_img
+                      bg_opa: transp
+                      border_opa: TRANSP
+                      border_width: 0
+                      shadow_opa: TRANSP
+                      pad_all: 0
+                      widgets:
+                        - image:
+                            id: screensaver_weather_icon
+                            align: CENTER
+                            src: cloudy_img
+
+                  - obj:
+                      id: screensaver_outdoor_temp_area
+                      width: 240
+                      height: 130
+                      align: BOTTOM_MID
+                      bg_opa: transp
+                      border_opa: TRANSP
+                      border_width: 0
+                      shadow_opa: TRANSP
+                      pad_all: 0
+                      widgets:
+                        - label:
+                            id: screensaver_outdoor_temp_value
+                            align: BOTTOM_MID
+                            y: -3
+                            text_font: nunito_64
+                            text_color: color_misty_blue
+                            text: '--.-°'
 
             - obj:
                 id: screensaver_indoor_block
