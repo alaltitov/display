@@ -191,6 +191,52 @@ sensor:
             text:
               format: "%.0f°"
               args: [id(weather_temperature_sensor).state]
+        - if:
+            condition:
+              lambda: |-
+                if (!id(weather_feels_like_temperature_sensor).has_state()) return false;
+                float feels_like = id(weather_feels_like_temperature_sensor).state;
+                return !isnan(feels_like) && abs((int) roundf(feels_like) - (int) roundf(x)) >= 2;
+            then:
+              - lambda: |-
+                  lv_obj_set_y(id(screensaver_outdoor_temp_value), -42);
+              - lvgl.label.update:
+                  id: screensaver_outdoor_feels_like_value
+                  text:
+                    format: "~%.0f°"
+                    args: [id(weather_feels_like_temperature_sensor).state]
+              - lvgl.widget.show: screensaver_outdoor_feels_like_value
+            else:
+              - lvgl.widget.hide: screensaver_outdoor_feels_like_value
+              - lambda: |-
+                  lv_obj_set_y(id(screensaver_outdoor_temp_value), -3);
+
+  # Weather feels-like temperature sensor
+  - platform: homeassistant
+    id: weather_feels_like_temperature_sensor
+    entity_id: "${feels_like_temperature_entity}"
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: |-
+                if (isnan(x)) return false;
+                if (!id(weather_temperature_sensor).has_state()) return true;
+                float outdoor = id(weather_temperature_sensor).state;
+                return isnan(outdoor) || abs((int) roundf(x) - (int) roundf(outdoor)) >= 2;
+            then:
+              - lambda: |-
+                  lv_obj_set_y(id(screensaver_outdoor_temp_value), -42);
+              - lvgl.label.update:
+                  id: screensaver_outdoor_feels_like_value
+                  text:
+                    format: "~%.0f°"
+                    args: [x]
+              - lvgl.widget.show: screensaver_outdoor_feels_like_value
+            else:
+              - lvgl.widget.hide: screensaver_outdoor_feels_like_value
+              - lambda: |-
+                  lv_obj_set_y(id(screensaver_outdoor_temp_value), -3);
 
   # Weather humidity sensor
   - platform: homeassistant

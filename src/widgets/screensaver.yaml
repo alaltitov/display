@@ -111,6 +111,14 @@ lvgl:
                             text_font: nunito_64
                             text_color: color_misty_blue
                             text: '--.-°'
+                        - label:
+                            id: screensaver_outdoor_feels_like_value
+                            hidden: true
+                            align: BOTTOM_MID
+                            y: 0
+                            text_font: nunito_36
+                            text_color: color_steel_blue
+                            text: ''
 
             - obj:
                 id: screensaver_indoor_block
