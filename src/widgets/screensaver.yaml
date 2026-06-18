@@ -82,6 +82,7 @@ lvgl:
                       width: 240
                       height: 110
                       align: TOP_MID
+                      y: 10
                       bg_opa: transp
                       border_opa: TRANSP
                       border_width: 0
