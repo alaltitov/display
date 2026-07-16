@@ -13,6 +13,11 @@ globals:
     restore_value: yes
     initial_value: '2'
 
+  - id: screensaver_timeout
+    type: int
+    restore_value: yes
+    initial_value: '2'
+
   # Данные daily прогноза
   - id: forecast_daily_count
     type: int
@@ -67,6 +72,18 @@ number:
     restore_value: true
     min_value: -1
     max_value: 720
+    step: 1
+    mode: box
+
+  - platform: template
+    id: screensaver_timeout_number
+    name: Screensaver timeout
+    optimistic: true
+    unit_of_measurement: "s"
+    initial_value: 30
+    restore_value: true
+    min_value: -1
+    max_value: 600
     step: 1
     mode: box
 
@@ -130,6 +147,18 @@ time:
         then:
           - script.execute: time_update
 
+interval:
+  - interval: 1s
+    then:
+      - if:
+          condition:
+            lambda: |-
+              if (id(screensaver_timeout_number).state < 0 || id(screensaver_active)) return false;
+              if (!id(display_backlight).current_values.is_on()) return false;
+              return lv_disp_get_inactive_time(NULL) >= (id(screensaver_timeout_number).state * 1000);
+          then:
+            - script.execute: show_screensaver
+
 
 sensor:
 
@@ -157,6 +186,57 @@ sensor:
             text:
               format: "%.0f°"
               args: [id(weather_temperature_sensor).state]
+        - lvgl.label.update:
+            id: screensaver_outdoor_temp_value
+            text:
+              format: "%.0f°"
+              args: [id(weather_temperature_sensor).state]
+        - if:
+            condition:
+              lambda: |-
+                if (!id(weather_feels_like_temperature_sensor).has_state()) return false;
+                float feels_like = id(weather_feels_like_temperature_sensor).state;
+                return !isnan(feels_like) && abs((int) roundf(feels_like) - (int) roundf(x)) >= 2;
+            then:
+              - lambda: |-
+                  lv_obj_set_y(id(screensaver_outdoor_temp_value), -42);
+              - lvgl.label.update:
+                  id: screensaver_outdoor_feels_like_value
+                  text:
+                    format: "~%.0f°"
+                    args: [id(weather_feels_like_temperature_sensor).state]
+              - lvgl.widget.show: screensaver_outdoor_feels_like_value
+            else:
+              - lvgl.widget.hide: screensaver_outdoor_feels_like_value
+              - lambda: |-
+                  lv_obj_set_y(id(screensaver_outdoor_temp_value), -3);
+
+  # Weather feels-like temperature sensor
+  - platform: homeassistant
+    id: weather_feels_like_temperature_sensor
+    entity_id: "${feels_like_temperature_entity}"
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: |-
+                if (isnan(x)) return false;
+                if (!id(weather_temperature_sensor).has_state()) return true;
+                float outdoor = id(weather_temperature_sensor).state;
+                return isnan(outdoor) || abs((int) roundf(x) - (int) roundf(outdoor)) >= 2;
+            then:
+              - lambda: |-
+                  lv_obj_set_y(id(screensaver_outdoor_temp_value), -42);
+              - lvgl.label.update:
+                  id: screensaver_outdoor_feels_like_value
+                  text:
+                    format: "~%.0f°"
+                    args: [x]
+              - lvgl.widget.show: screensaver_outdoor_feels_like_value
+            else:
+              - lvgl.widget.hide: screensaver_outdoor_feels_like_value
+              - lambda: |-
+                  lv_obj_set_y(id(screensaver_outdoor_temp_value), -3);
 
   # Weather humidity sensor
   - platform: homeassistant
@@ -205,6 +285,44 @@ sensor:
             text:
               format: "%.1f°"
               args: [id(home_temperature_sensor).state]
+        - lvgl.label.update:
+            id: screensaver_indoor_temp_value
+            text:
+              format: "%.1f°"
+              args: [id(home_temperature_sensor).state]
+        - lvgl.label.update:
+            id: screensaver_temp_no_co2_value
+            text:
+              format: "%.1f°"
+              args: [id(home_temperature_sensor).state]
+        - if:
+            condition:
+              lambda: 'return id(home_temperature_sensor).state >= 30.0;'
+            then:
+              - lvgl.label.update:
+                  id: screensaver_indoor_temp_value
+                  text_color: color_red
+              - lvgl.label.update:
+                  id: screensaver_temp_no_co2_value
+                  text_color: color_red
+            else:
+              - if:
+                  condition:
+                    lambda: 'return id(home_temperature_sensor).state >= 27.0;'
+                  then:
+                    - lvgl.label.update:
+                        id: screensaver_indoor_temp_value
+                        text_color: color_orange
+                    - lvgl.label.update:
+                        id: screensaver_temp_no_co2_value
+                        text_color: color_orange
+                  else:
+                    - lvgl.label.update:
+                        id: screensaver_indoor_temp_value
+                        text_color: color_misty_blue
+                    - lvgl.label.update:
+                        id: screensaver_temp_no_co2_value
+                        text_color: color_misty_blue
 
   # Home humidity sensor
   - platform: homeassistant
@@ -217,6 +335,69 @@ sensor:
             text:
               format: "%.0f%%"
               args: [id(home_humidity_sensor).state]
+        - lvgl.label.update:
+            id: screensaver_humidity_value
+            text:
+              format: "%.0f%%"
+              args: [id(home_humidity_sensor).state]
+        - if:
+            condition:
+              lambda: 'return id(home_humidity_sensor).state >= 70.0 || id(home_humidity_sensor).state <= 20.0;'
+            then:
+              - lvgl.label.update:
+                  id: screensaver_humidity_value
+                  text_color: color_red
+            else:
+              - if:
+                  condition:
+                    lambda: 'return id(home_humidity_sensor).state >= 60.0 || id(home_humidity_sensor).state <= 30.0;'
+                  then:
+                    - lvgl.label.update:
+                        id: screensaver_humidity_value
+                        text_color: color_orange
+                  else:
+                    - lvgl.label.update:
+                        id: screensaver_humidity_value
+                        text_color: color_misty_blue
+
+  - platform: homeassistant
+    id: home_co2_sensor
+    entity_id: "${co2_entity}"
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: screensaver_co2_value
+            text:
+              format: "%.0f"
+              args: [id(home_co2_sensor).state]
+        - if:
+            condition:
+              lambda: 'return id(home_co2_sensor).state >= 1200.0;'
+            then:
+              - lvgl.label.update:
+                  id: screensaver_co2_value
+                  text_color: color_red
+              - lvgl.label.update:
+                  id: screensaver_co2_unit
+                  text_color: color_red
+            else:
+              - if:
+                  condition:
+                    lambda: 'return id(home_co2_sensor).state >= 800.0;'
+                  then:
+                    - lvgl.label.update:
+                        id: screensaver_co2_value
+                        text_color: color_orange
+                    - lvgl.label.update:
+                        id: screensaver_co2_unit
+                        text_color: color_orange
+                  else:
+                    - lvgl.label.update:
+                        id: screensaver_co2_value
+                        text_color: color_misty_blue
+                    - lvgl.label.update:
+                        id: screensaver_co2_unit
+                        text_color: color_misty_blue
 
   # Chip temperature
   - platform: internal_temperature
@@ -793,16 +974,16 @@ lvgl:
                         border_width: 0
                         shadow_opa: transp
                         widgets:
-                          - label:  
+                          - label:
                               id: backlight_settings_sleep_time_label
-                              y: 20
+                              y: 23
                               align: top_mid
                               text_font: nunito_18
                               text_color: color_misty_blue
                               text: "Sleep time"
                           - roller:
                               id: backlight_settings_sleep_time_roller
-                              y: 10
+                              y: -33
                               width: 140
                               align: center
                               bg_opa: transp
@@ -815,7 +996,11 @@ lvgl:
                                 bg_opa: transp
                                 text_font: nunito_20
                                 text_color: color_misty_blue
-                              selected_index: !lambda return id(display_timeout);
+                              selected_index: !lambda |-
+                                if (id(display_timeout) < 0 || id(display_timeout) > 7) {
+                                  return 2;
+                                }
+                                return id(display_timeout);
                               options:
                                 - Never
                                 - 1 minute
@@ -836,6 +1021,59 @@ lvgl:
                                     - globals.set:
                                         id: display_timeout
                                         value: !lambda return x;
+
+                          - label:
+                              id: screensaver_timeout_label
+                              y: 131
+                              align: top_mid
+                              text_font: nunito_18
+                              text_color: color_misty_blue
+                              text: "Screensaver"
+
+                          - roller:
+                              id: screensaver_timeout_roller
+                              y: 75
+                              width: 140
+                              align: center
+                              bg_opa: transp
+                              border_opa: transp
+                              shadow_opa: transp
+                              text_font: nunito_20
+                              text_color: color_steel_blue
+                              text_line_space: 4
+                              selected:
+                                bg_opa: transp
+                                text_font: nunito_20
+                                text_color: color_misty_blue
+                              selected_index: !lambda |-
+                                if (id(screensaver_timeout) < 0 || id(screensaver_timeout) > 6) {
+                                  return 2;
+                                }
+                                return id(screensaver_timeout);
+                              options:
+                                - Never
+                                - 15 seconds
+                                - 30 seconds
+                                - 1 minute
+                                - 2 minutes
+                                - 5 minutes
+                                - 10 minutes
+                              visible_row_count: 1
+                              on_value:
+                                  then:
+                                    - number.set:
+                                        id: screensaver_timeout_number
+                                        value: !lambda |-
+                                          static const int screensaver_time[] = {-1, 15, 30, 60, 120, 300, 600};
+                                          return screensaver_time[x];
+                                    - globals.set:
+                                        id: screensaver_timeout
+                                        value: !lambda return x;
+                                    - if:
+                                        condition:
+                                          lambda: 'return x == 0;'
+                                        then:
+                                          - script.execute: hide_screensaver
 
 
         - obj:
@@ -1674,6 +1912,10 @@ script:
           lv_roller_set_options(roller_obj, options.c_str(), LV_ROLLER_MODE_NORMAL);
           lv_roller_set_selected(roller_obj, old_selection, LV_ANIM_OFF);
 
+      - lvgl.label.update:
+          id: screensaver_timeout_label
+          text: "Screensaver"
+
 
   - id: display_block_buttons
     mode: restart
@@ -1696,6 +1938,7 @@ script:
             - lvgl.button.update: { id: weather_forecast_hourly_btn, clickable: true }
             - lvgl.slider.update: { id: backlight_settings_brightness_slider, clickable: true }
             - lvgl.roller.update: { id: backlight_settings_sleep_time_roller, clickable: true }
+            - lvgl.roller.update: { id: screensaver_timeout_roller, clickable: true }
             - lvgl.button.update: { id: circle_settings_widget_lang_btn, clickable: true }
           else:
             - lvgl.label.update:
@@ -1712,6 +1955,7 @@ script:
             - lvgl.button.update: { id: weather_forecast_hourly_btn, clickable: false }
             - lvgl.slider.update: { id: backlight_settings_brightness_slider, clickable: false }
             - lvgl.roller.update: { id: backlight_settings_sleep_time_roller, clickable: false }
+            - lvgl.roller.update: { id: screensaver_timeout_roller, clickable: false }
             - lvgl.button.update: { id: circle_settings_widget_lang_btn, clickable: false }
 
   - id: update_weather_image
@@ -1763,6 +2007,28 @@ script:
             else show(id(weather_sunny_image));
           }
 
+          if (weather == "cloudy") lv_img_set_src(id(screensaver_weather_icon), id(cloudy_img));
+          else if (weather == "partlycloudy") {
+            if (is_night) lv_img_set_src(id(screensaver_weather_icon), id(partlycloudy_moon_img));
+            else lv_img_set_src(id(screensaver_weather_icon), id(partlycloudy_sun_img));
+          }
+          else if (weather == "sunny") lv_img_set_src(id(screensaver_weather_icon), id(sunny_img));
+          else if (weather == "clear-night") lv_img_set_src(id(screensaver_weather_icon), id(clear_night_img));
+          else if (weather == "rainy") lv_img_set_src(id(screensaver_weather_icon), id(rainy_img));
+          else if (weather == "lightning-rainy") lv_img_set_src(id(screensaver_weather_icon), id(lightning_rainy_img));
+          else if (weather == "lightning") lv_img_set_src(id(screensaver_weather_icon), id(lightning_img));
+          else if (weather == "pouring") lv_img_set_src(id(screensaver_weather_icon), id(pouring_img));
+          else if (weather == "snowy") lv_img_set_src(id(screensaver_weather_icon), id(snowy_img));
+          else if (weather == "snowy-rainy") lv_img_set_src(id(screensaver_weather_icon), id(snowy_rainy_img));
+          else if (weather == "fog") lv_img_set_src(id(screensaver_weather_icon), id(fog_img));
+          else if (weather == "hail") lv_img_set_src(id(screensaver_weather_icon), id(hail_img));
+          else if (weather == "windy") lv_img_set_src(id(screensaver_weather_icon), id(windy_img));
+          else if (weather == "windy-variant") lv_img_set_src(id(screensaver_weather_icon), id(windy_variant_img));
+          else {
+            if (is_night) lv_img_set_src(id(screensaver_weather_icon), id(clear_night_img));
+            else lv_img_set_src(id(screensaver_weather_icon), id(sunny_img));
+          }
+
   - id: log_widgets_status
     then:
       - lambda: |-
@@ -1806,6 +2072,22 @@ script:
           text: !lambda |-
             static char time_buf[16];
             auto now = id(sntp_time).now();            
+            snprintf(time_buf, sizeof(time_buf), "%02d:%02d", now.hour, now.minute);
+            return time_buf;
+
+      - lvgl.label.update:
+          id: screensaver_clock_value
+          text: !lambda |-
+            static char time_buf[16];
+            auto now = id(sntp_time).now();
+            snprintf(time_buf, sizeof(time_buf), "%02d:%02d", now.hour, now.minute);
+            return time_buf;
+
+      - lvgl.label.update:
+          id: screensaver_clock_center_value
+          text: !lambda |-
+            static char time_buf[16];
+            auto now = id(sntp_time).now();
             snprintf(time_buf, sizeof(time_buf), "%02d:%02d", now.hour, now.minute);
             return time_buf;
 

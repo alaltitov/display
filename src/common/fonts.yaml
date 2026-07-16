@@ -91,6 +91,14 @@
       glyphs: "אבגדהוזחטיכךלמםנןסעפףצץקרשת׳״"
 
 - file: "assets/fonts/Nunito-SemiBold.ttf"
+  id: nunito_72
+  size: 72
+  bpp: 4
+  glyphsets:
+    - GF_Latin_Core
+    - GF_Cyrillic_Core
+
+- file: "assets/fonts/Nunito-SemiBold.ttf"
   id: nunito_84
   size: 84
   bpp: 4

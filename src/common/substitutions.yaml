@@ -6,8 +6,11 @@ display_friendly_name:    Display My Room
 # ENTITIES
 
 weather_entity:           "weather.home_assistant"
+feels_like_temperature_entity: "sensor.feels_like_temperature"
 temperature_entity:       "sensor.outside_temperature"
 humidity_entity:          "sensor.outside_humidity"
+co2_entity:               "sensor.carbon_dioxide"
+has_co2:                  "true"
 
 
 
