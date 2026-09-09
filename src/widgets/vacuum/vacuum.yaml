@@ -1,4 +1,5 @@
-substitutions: !include substitutions.yaml
+packages:
+  substitutions: !include substitutions.yaml
 
 sensor:
   # Battery level
@@ -235,7 +236,7 @@ lvgl:
                         border_width: 0
                         shadow_width: 8
                         shadow_spread: 2
-                        shadow_ofs_y: 0
+                        shadow_offset_y: 0
                         shadow_color: color_black
                         shadow_opa: cover
                         pressed:
@@ -259,8 +260,8 @@ lvgl:
                         border_opa: transp
                         shadow_width: 4
                         shadow_color: 0xFFFFFF
-                        shadow_ofs_x: -4
-                        shadow_ofs_y: -2
+                        shadow_offset_x: -4
+                        shadow_offset_y: -2
                         shadow_opa: 30%
 
                     - obj:
@@ -305,7 +306,7 @@ lvgl:
                         border_width: 0
                         shadow_width: 8
                         shadow_spread: 2
-                        shadow_ofs_y: 0
+                        shadow_offset_y: 0
                         shadow_color: color_black
                         shadow_opa: cover
                         pressed:
@@ -329,8 +330,8 @@ lvgl:
                         border_opa: transp
                         shadow_width: 4
                         shadow_color: 0xFFFFFF
-                        shadow_ofs_x: -4
-                        shadow_ofs_y: -2
+                        shadow_offset_x: -4
+                        shadow_offset_y: -2
                         shadow_opa: 30%
 
                     - obj:
@@ -375,7 +376,7 @@ lvgl:
                         border_width: 0
                         shadow_width: 8
                         shadow_spread: 2
-                        shadow_ofs_y: 0
+                        shadow_offset_y: 0
                         shadow_color: color_black
                         shadow_opa: cover
                         pressed:
@@ -399,8 +400,8 @@ lvgl:
                         border_opa: transp
                         shadow_width: 4
                         shadow_color: 0xFFFFFF
-                        shadow_ofs_x: -4
-                        shadow_ofs_y: -2
+                        shadow_offset_x: -4
+                        shadow_offset_y: -2
                         shadow_opa: 30%
 
                     - obj:
@@ -445,7 +446,7 @@ lvgl:
                         border_width: 0
                         shadow_width: 8
                         shadow_spread: 2
-                        shadow_ofs_y: 0
+                        shadow_offset_y: 0
                         shadow_color: color_black
                         shadow_opa: cover
                         pressed:
@@ -469,8 +470,8 @@ lvgl:
                         border_opa: transp
                         shadow_width: 4
                         shadow_color: 0xFFFFFF
-                        shadow_ofs_x: -4
-                        shadow_ofs_y: -2
+                        shadow_offset_x: -4
+                        shadow_offset_y: -2
                         shadow_opa: 30%
 
                     - obj:

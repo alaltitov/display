@@ -1,6 +1,6 @@
 # https://esphome.io/components/climate/climate.html
-
-substitutions: !include substitutions.yaml
+packages:
+  substitutions: !include substitutions.yaml
 
 globals:
 
@@ -1185,7 +1185,7 @@ lvgl:
           border_opa: transp
           border_width: 0
           shadow_color: color_black
-          shadow_ofs_x: 0
+          shadow_offset_x: 0
           shadow_spread: 4
           shadow_width: 8
           radius: 0
@@ -1213,7 +1213,7 @@ lvgl:
           border_opa: transp
           border_width: 0
           shadow_color: color_black
-          shadow_ofs_x: 0
+          shadow_offset_x: 0
           shadow_spread: 4
           shadow_width: 8
           radius: 0
@@ -2559,8 +2559,8 @@ lvgl:
                   border_opa: transp
                   shadow_width: 4
                   shadow_color: 0xFFFFFF
-                  shadow_ofs_x: -4
-                  shadow_ofs_y: -2
+                  shadow_offset_x: -4
+                  shadow_offset_y: -2
                   shadow_opa: 30%
 
               - obj:
@@ -2772,8 +2772,8 @@ lvgl:
                   border_opa: transp
                   shadow_width: 4
                   shadow_color: 0xFFFFFF
-                  shadow_ofs_x: -4
-                  shadow_ofs_y: -2
+                  shadow_offset_x: -4
+                  shadow_offset_y: -2
                   shadow_opa: 30%
 
               - obj:

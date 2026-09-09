@@ -1,6 +1,5 @@
-substitutions: !include substitutions.yaml
-
 packages:
+  substitutions: !include substitutions.yaml
   select: !include select.yaml
 
   fan_1: !include

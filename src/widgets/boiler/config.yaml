@@ -1,6 +1,5 @@
-substitutions: !include substitutions.yaml
-
 packages:
+  substitutions: !include substitutions.yaml
   select: !include select.yaml
 
   boiler_ch: !include

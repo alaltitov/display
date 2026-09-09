@@ -1,21 +1,22 @@
-covers_amount: "3" # choise 1,2,3 or 4
+substitutions:  
+  covers_amount: "3" # choise 1,2,3 or 4
 
-cover_entity_1: "cover.kitchen_window"
-cover_entity_2: "cover.hall_window"
-cover_entity_3: "cover.garage_door"
-cover_entity_4: "cover.living_room_window"
+  cover_entity_1: "cover.kitchen_window"
+  cover_entity_2: "cover.hall_window"
+  cover_entity_3: "cover.garage_door"
+  cover_entity_4: "cover.living_room_window"
 
-cover_widget_name_1: "cover1"
-cover_widget_name_2: "cover2"
-cover_widget_name_3: "cover3"
-cover_widget_name_4: "cover4"
+  cover_widget_name_1: "cover1"
+  cover_widget_name_2: "cover2"
+  cover_widget_name_3: "cover3"
+  cover_widget_name_4: "cover4"
 
 
-cover_icon_opened_1: "\U000F1846"
-cover_icon_closed_1: "\U000F1847"
-cover_icon_opened_2: "\U000F111E"
-cover_icon_closed_2: "\U000F111C"
-cover_icon_opened_3: "\U000F12D4"
-cover_icon_closed_3: "\U000F12D3"
-cover_icon_opened_4: "\U000F1011"
-cover_icon_closed_4: "\U000F00AC"
+  cover_icon_opened_1: "\U000F1846"
+  cover_icon_closed_1: "\U000F1847"
+  cover_icon_opened_2: "\U000F111E"
+  cover_icon_closed_2: "\U000F111C"
+  cover_icon_opened_3: "\U000F12D4"
+  cover_icon_closed_3: "\U000F12D3"
+  cover_icon_opened_4: "\U000F1011"
+  cover_icon_closed_4: "\U000F00AC"

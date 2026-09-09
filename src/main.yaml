@@ -1,18 +1,17 @@
 packages:
+  substitutions: !include common/substitutions.yaml
   loading_page: !include common/widgets/loading.yaml
   home: !include widgets/home/home.yaml
   light: !include widgets/light/config.yaml
   devices: !include common/widgets/devices.yaml
   climate: !include widgets/climate/climate.yaml
-  # media_player: !include widgets/media_player/media_player.yaml
+  media_player: !include widgets/media_player/media_player.yaml
   vacuum: !include widgets/vacuum/vacuum.yaml
-  # cover: !include widgets/cover/config.yaml
+  cover: !include widgets/cover/config.yaml
   # boiler: !include widgets/boiler/config.yaml
-  # alarm_panel: !include widgets/alarm_panel/config.yaml
+  alarm_panel: !include widgets/alarm_panel/config.yaml
   fan: !include widgets/fan/config.yaml
 
-
-substitutions: !include common/substitutions.yaml
 image: !include common/image.yaml
 font: !include common/fonts.yaml
 color: !include common/colors.yaml
@@ -50,14 +49,8 @@ esphome:
   includes:
     - <sstream>
     - <algorithm>
-  platformio_options:
-    board_build.flash_mode: dio
-    # Enable LVGL bidirectional text so RTL languages (Hebrew/Arabic/Persian)
-    # render correctly. LVGL 8.4 guards LV_USE_BIDI with #ifndef, and ESPHome
-    # does not define it, so this build flag turns it on. Base direction
-    # defaults to AUTO (per-paragraph), leaving LTR layouts unaffected.
-    build_flags:
-      - "-DLV_USE_BIDI=1"
+  build_flags:
+    - "-DLV_USE_BIDI=1"
 
   on_boot:
     - priority: 400

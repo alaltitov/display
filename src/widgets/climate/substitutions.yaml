@@ -1,1 +1,2 @@
-climate_entity:     "climate.demo_template_climate" # climate.ecobee
+substitutions:
+  climate_entity:     "climate.demo_template_climate" # climate.ecobee

@@ -1,2 +1,3 @@
-ha_server: "http://homeassistant.local:8123"
-media_player_entity: "media_player.yandex_station_m00bv9j00dc7sg"
+substitutions:
+  ha_server: "http://homeassistant.local:8123"
+  media_player_entity: "media_player.yandex_station_m00bv9j00dc7sg"

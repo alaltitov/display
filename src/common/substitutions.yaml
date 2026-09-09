@@ -1,121 +1,122 @@
-# NAMES
+substitutions:
+  # NAMES
 
-display_name:             display01
-display_friendly_name:    Display My Room
+  display_name:             display01
+  display_friendly_name:    display01
 
-# ENTITIES
+  # ENTITIES
 
-weather_entity:           "weather.home_assistant"
-temperature_entity:       "sensor.outside_temperature"
-humidity_entity:          "sensor.outside_humidity"
+  weather_entity:           "weather.home_assistant"
+  temperature_entity:       "sensor.outside_temperature"
+  humidity_entity:          "sensor.outside_humidity"
 
 
 
-# SETTINGS
+  # SETTINGS
 
-secondary_language:        "ru"
-timezone:                  "Europe/Moscow"
+  secondary_language:        "ru"
+  timezone:                  "Europe/Moscow"
 
-# ICONS
+  # ICONS
 
-lock_icon:                  "\U0000e92e"
-lock_variant_icon:          "\U000F0341"
-air_conditioner_icon:       "\U0000e93b" 
-heating_icon:               "\U0000e936"
-ha_icon:                    "\U000F07D0" # home assistant
-wifi_25_icon:               "\U0000e931" # wifi signal from 25% to 1%
-wifi_50_icon:               "\U0000e932" # wifi signal from 50% to 25%
-wifi_75_icon:               "\U0000e933" # wifi signal from 75% to 50%
-wifi_100_icon:              "\U0000e934" # wifi signal from 100% to 75% or disable
+  lock_icon:                  "\U0000e92e"
+  lock_variant_icon:          "\U000F0341"
+  air_conditioner_icon:       "\U0000e93b" 
+  heating_icon:               "\U0000e936"
+  ha_icon:                    "\U000F07D0" # home assistant
+  wifi_25_icon:               "\U0000e931" # wifi signal from 25% to 1%
+  wifi_50_icon:               "\U0000e932" # wifi signal from 50% to 25%
+  wifi_75_icon:               "\U0000e933" # wifi signal from 75% to 50%
+  wifi_100_icon:              "\U0000e934" # wifi signal from 100% to 75% or disable
 
-humidity_icon:              "\U0000e938" 
-temperature_icon:           "\U0000e939" 
-lightbulb_icon:             "\U0000e908"
-ceiling_lights_icon:        "\U000F18DD"
-brightness_icon:            "\U000F1A4D" 
-info_icon:                  "\U000F1C70"
-settings_icon:              "\U000F08BB"
-dashboard_icon:             "\U000F056E" # devices
-home_icon:                  "\U000F06A1"
-weather_icon:               "\U000F18F6"
-palette_icon:               "\U000F03D8"
+  humidity_icon:              "\U0000e938" 
+  temperature_icon:           "\U0000e939" 
+  lightbulb_icon:             "\U0000e908"
+  ceiling_lights_icon:        "\U000F18DD"
+  brightness_icon:            "\U000F1A4D" 
+  info_icon:                  "\U000F1C70"
+  settings_icon:              "\U000F08BB"
+  dashboard_icon:             "\U000F056E" # devices
+  home_icon:                  "\U000F06A1"
+  weather_icon:               "\U000F18F6"
+  palette_icon:               "\U000F03D8"
 
-power_icon:                 "\U000F0906" # on/off
-play_icon:                  "\U000F040A"
-pause_icon:                 "\U000F03E4"
-stop_icon:                  "\U000F04DB"
-previous_track_icon:        "\U000F04AE"
-next_track_icon:            "\U000F04AD"
-volume_off_icon:            "\U000F0581"
-volume_on_icon:             "\U000F057E"
-volume_minus_icon:          "\U000F075E"
-volume_plus_icon:           "\U000F075D"
-repeat_all_icon:            "\U000F0456"
-repeat_off_icon:            "\U000F0457"
-repeat_one_icon:            "\U000F0458"
-media_source:               "\U000F0206"
+  power_icon:                 "\U000F0906" # on/off
+  play_icon:                  "\U000F040A"
+  pause_icon:                 "\U000F03E4"
+  stop_icon:                  "\U000F04DB"
+  previous_track_icon:        "\U000F04AE"
+  next_track_icon:            "\U000F04AD"
+  volume_off_icon:            "\U000F0581"
+  volume_on_icon:             "\U000F057E"
+  volume_minus_icon:          "\U000F075E"
+  volume_plus_icon:           "\U000F075D"
+  repeat_all_icon:            "\U000F0456"
+  repeat_off_icon:            "\U000F0457"
+  repeat_one_icon:            "\U000F0458"
+  media_source:               "\U000F0206"
 
-climate_icon:               "\U0000e93b"
-heat_icon:                  "\U000F0238"
-cool_icon:                  "\U000F0717"
-heat_cool_icon:             "\U000F1A79"
-fan_icon:                   "\U000F0210"
-auto_icon:                  "\U000F1B18"
-off_icon:                   "\U000F0425"
-plus_icon:                  "\U000F0415"
-minus_icon:                 "\U000F0374"
+  climate_icon:               "\U0000e93b"
+  heat_icon:                  "\U000F0238"
+  cool_icon:                  "\U000F0717"
+  heat_cool_icon:             "\U000F1A79"
+  fan_icon:                   "\U000F0210"
+  auto_icon:                  "\U000F1B18"
+  off_icon:                   "\U000F0425"
+  plus_icon:                  "\U000F0415"
+  minus_icon:                 "\U000F0374"
 
-none_preset_icon:           "\U000F043D"
-eco_preset_icon:            "\U000F032A"
-away_preset_icon:           "\U000F0F9B"
-boost_preset_icon:          "\U000F14DE"     
-comfort_preset_icon:        "\U000F04B9"
-home_preset_icon:           "\U000F02DC"
-sleep_preset_icon:          "\U000F0904"
-activity_preset_icon:       "\U000F046E"
-smart_preset_icon:          "\U000F09D1"
+  none_preset_icon:           "\U000F043D"
+  eco_preset_icon:            "\U000F032A"
+  away_preset_icon:           "\U000F0F9B"
+  boost_preset_icon:          "\U000F14DE"     
+  comfort_preset_icon:        "\U000F04B9"
+  home_preset_icon:           "\U000F02DC"
+  sleep_preset_icon:          "\U000F0904"
+  activity_preset_icon:       "\U000F046E"
+  smart_preset_icon:          "\U000F09D1"
 
-fan_on_icon:                "\U000F0210"
-fan_off_icon:               "\U000F081D"
-fan_auto_icon:              "\U000F171D"
-fan_low_icon:               "\U000F0F86"
-fan_medium_icon:            "\U000F0F85"
-fan_middle_icon:            "\U000F0F85"
-fan_high_icon:              "\U000F04C5"
-fan_focus_icon:             "\U000F04FE"
-fan_diffuse_icon:           "\U000F059D"
-fan_custom_icon:            "\U000F09DF"
+  fan_on_icon:                "\U000F0210"
+  fan_off_icon:               "\U000F081D"
+  fan_auto_icon:              "\U000F171D"
+  fan_low_icon:               "\U000F0F86"
+  fan_medium_icon:            "\U000F0F85"
+  fan_middle_icon:            "\U000F0F85"
+  fan_high_icon:              "\U000F04C5"
+  fan_focus_icon:             "\U000F04FE"
+  fan_diffuse_icon:           "\U000F059D"
+  fan_custom_icon:            "\U000F09DF"
 
-swing_on_icon:              "\U000F1C91"
-swing_off_icon:             "\U000F1C92"
-swing_both_icon:            "\U000F0041"
-swing_vertical_icon:        "\U000F0E79"
-swing_horizontal_icon:      "\U000F0E73"
+  swing_on_icon:              "\U000F1C91"
+  swing_off_icon:             "\U000F1C92"
+  swing_both_icon:            "\U000F0041"
+  swing_vertical_icon:        "\U000F0E79"
+  swing_horizontal_icon:      "\U000F0E73"
 
-sleep_icon:                 "\U000F04B2"
-return_to_base_icon:        "\U000F05F8"
-clean_spot_icon:            "\U000F0A77"
-locate_map_icon:            "\U000F034E"
+  sleep_icon:                 "\U000F04B2"
+  return_to_base_icon:        "\U000F05F8"
+  clean_spot_icon:            "\U000F0A77"
+  locate_map_icon:            "\U000F034E"
 
-arrow_up_icon:              "\U000F19B2"
-arrow_down_icon:            "\U000F19B3"
+  arrow_up_icon:              "\U000F19B2"
+  arrow_down_icon:            "\U000F19B3"
 
-curtains_opened:            "\U000F1846"
-curtains_closed:            "\U000F1847"
-shutter_closed:             "\U000F111C"
-shutter_opened:             "\U000F111E"
-garage_closed:              "\U000F12D3"
-garage_opened:              "\U000F12D4"
-blinds_closed:              "\U000F00AC"
-blinds_opened:              "\U000F1011"
+  curtains_opened:            "\U000F1846"
+  curtains_closed:            "\U000F1847"
+  shutter_closed:             "\U000F111C"
+  shutter_opened:             "\U000F111E"
+  garage_closed:              "\U000F12D3"
+  garage_opened:              "\U000F12D4"
+  blinds_closed:              "\U000F00AC"
+  blinds_opened:              "\U000F1011"
 
-shield_home_icon:           "\U000F068A"
-shield_night_icon:          "\U000F1828"
-shield_away_icon:           "\U000F099D"
-shield_vacation_icon:       "\U000F06BB"
-shield_disarmed_icon:       "\U000F099E"
-shield_custom_icon:         "\U000F0483"
-shield_arming_icon:         "\U000F0498"
+  shield_home_icon:           "\U000F068A"
+  shield_night_icon:          "\U000F1828"
+  shield_away_icon:           "\U000F099D"
+  shield_vacation_icon:       "\U000F06BB"
+  shield_disarmed_icon:       "\U000F099E"
+  shield_custom_icon:         "\U000F0483"
+  shield_arming_icon:         "\U000F0498"
 
-rotate_left_icon:        "\U000F0465"
-rotate_right_icon:       "\U000F0467"
+  rotate_left_icon:        "\U000F0465"
+  rotate_right_icon:       "\U000F0467"

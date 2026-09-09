@@ -1,6 +1,5 @@
-substitutions: !include substitutions.yaml
-
 packages:
+  substitutions: !include substitutions.yaml
   select: !include select.yaml
 
   cover_1: !include

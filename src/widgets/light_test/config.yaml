@@ -24,7 +24,7 @@ packages:
       lights_amount: "4"
 
       light_entity_1: "light.cbe_rgbcw_wi_fi_bluetooth_light"
-      light_entity_2: "light.display01_backlight"
+      light_entity_2: "light.2_backlight"
       light_entity_3: "light.lumi_v3_48df_light"
       light_entity_4: "light.office_rgbw_lights"
 

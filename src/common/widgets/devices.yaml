@@ -40,14 +40,14 @@ lvgl:
                         text_font: nunito_18
                         text_color: color_misty_blue
                         text: "Alarm Panel"
-                  # on_click:
-                  #   - lvgl.page.show: ${alarm_panel_widget_name_1}_page
-                  #   - delay: 250ms
-                  #   - lambda: |-
-                  #       int alarm_panels = ${alarm_panels_amount};
-                  #       if (alarm_panels >= 2) {
-                  #         lv_obj_clear_flag(id(alarm_panel_select_widget), LV_OBJ_FLAG_HIDDEN);
-                  #       }
+                  on_click:
+                    - lvgl.page.show: ${alarm_panel_widget_name_1}_page
+                    - delay: 250ms
+                    - lambda: |-
+                        int alarm_panels = ${alarm_panels_amount};
+                        if (alarm_panels >= 2) {
+                          lv_obj_clear_flag(id(alarm_panel_select_widget), LV_OBJ_FLAG_HIDDEN);
+                        }
 
               # Boiler button
               - button:
@@ -97,14 +97,14 @@ lvgl:
                         text_font: nunito_18
                         text_color: color_misty_blue
                         text: "Cover"
-                  # on_click:
-                  #   - lvgl.page.show: ${cover_widget_name_1}_cover_page
-                  #   - delay: 250ms
-                  #   - lambda: |-
-                  #       int covers = ${covers_amount};
-                  #       if (covers >= 2) {
-                  #         lv_obj_clear_flag(id(cover_select_widget), LV_OBJ_FLAG_HIDDEN);
-                  #       }
+                  on_click:
+                    - lvgl.page.show: ${cover_widget_name_1}_cover_page
+                    - delay: 250ms
+                    - lambda: |-
+                        int covers = ${covers_amount};
+                        if (covers >= 2) {
+                          lv_obj_clear_flag(id(cover_select_widget), LV_OBJ_FLAG_HIDDEN);
+                        }
 
               # Fan button
               - button:
@@ -143,8 +143,8 @@ lvgl:
                         text_font: nunito_18
                         text_color: color_misty_blue
                         text: "Media player"
-                  # on_click:
-                  #   - lvgl.page.show: media_player_page
+                  on_click:
+                    - lvgl.page.show: media_player_page
 
               # Vacuum button
               - button:
